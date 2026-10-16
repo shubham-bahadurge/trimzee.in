@@ -1,0 +1,167 @@
+/* Responsive third-party advertising slot for the Trimzee homepage. */
+.tz-ad-section {
+  width: min(100%, 1080px);
+  margin: 22px auto 8px;
+  padding: 0 20px;
+}
+
+.tz-ad-frame {
+  width: 100%;
+}
+
+.tz-ad-disclosure {
+  margin: 0 0 7px 2px;
+  color: #777486;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.tz-ad-banner {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 142px;
+  overflow: hidden;
+  border: 1px solid #e5e0f6;
+  border-radius: 18px;
+  background: linear-gradient(115deg, #f1edff 0%, #fbfaff 58%, #eee8ff 100%);
+  box-shadow: 0 8px 24px rgba(32, 25, 68, .05);
+}
+
+.tz-ad-placeholder {
+  display: flex;
+  min-height: 142px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px clamp(18px, 4vw, 40px);
+}
+
+.tz-ad-copy {
+  min-width: 0;
+}
+
+.tz-ad-kicker {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #7455e8;
+  font-size: .73rem;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.tz-ad-copy h2 {
+  margin: 0;
+  color: #191821;
+  font-size: clamp(1.2rem, 2.7vw, 1.9rem);
+  font-weight: 850;
+  line-height: 1.15;
+  letter-spacing: -.035em;
+}
+
+.tz-ad-copy p {
+  max-width: 580px;
+  margin: 8px 0 0;
+  color: #51466f;
+  font-size: .92rem;
+  line-height: 1.5;
+}
+
+.tz-ad-art {
+  display: grid;
+  flex: 0 0 128px;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  min-height: 90px;
+  border: 1px solid #ded5ff;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .75);
+}
+
+.tz-ad-art-mark {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border-radius: 13px;
+  background: #7455e8;
+  color: #fff;
+  font-size: .95rem;
+  font-weight: 900;
+}
+
+.tz-ad-art-line {
+  width: 62px;
+  height: 5px;
+  border-radius: 99px;
+  background: #ded5ff;
+}
+
+.tz-ad-art-line.short {
+  width: 40px;
+  background: #eee9ff;
+}
+
+.tz-ad-render-root {
+  width: 100%;
+  min-height: 90px;
+}
+
+.tz-ad-render-root[hidden],
+.tz-ad-placeholder[hidden] {
+  display: none !important;
+}
+
+.tz-ad-render-root > a {
+  display: block;
+  width: 100%;
+  color: inherit;
+}
+
+.tz-ad-render-root img {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  border-radius: inherit;
+}
+
+.tz-ad-render-root ins.adsbygoogle {
+  display: block;
+  width: 100%;
+  min-height: 100px;
+}
+
+@media (max-width: 600px) {
+  .tz-ad-section {
+    margin: 14px auto 4px;
+    padding: 0 14px;
+  }
+
+  .tz-ad-banner {
+    min-height: 118px;
+    border-radius: 14px;
+  }
+
+  .tz-ad-placeholder {
+    min-height: 118px;
+    padding: 18px;
+  }
+
+  .tz-ad-copy h2 {
+    font-size: 1.18rem;
+  }
+
+  .tz-ad-copy p {
+    font-size: .82rem;
+  }
+
+  .tz-ad-art {
+    display: none;
+  }
+}
