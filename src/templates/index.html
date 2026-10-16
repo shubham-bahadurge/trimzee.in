@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/css/auth.css">
   <link rel="stylesheet" href="/css/extra.css">
   <link rel="stylesheet" href="/css/trimzee-refresh.css">
+  <link rel="stylesheet" href="/css/ad-banner.css">
   <style>
     .tz-hero{padding:38px 20px 30px;text-align:center;background:linear-gradient(180deg,#f1edff,#faf9fd)}
     .tz-hero h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.08;letter-spacing:-.05em;color:#191821;margin:0}
@@ -60,6 +61,32 @@
         <label><input id="onlyAvailable" type="checkbox"> Available now</label>
       </div>
     </section>
+    <section class="tz-ad-section" aria-label="Advertisement">
+      <div class="tz-ad-frame">
+        <p class="tz-ad-disclosure">ADVERTISEMENT</p>
+        <div class="tz-ad-banner"
+             data-tz-ad-slot
+             data-adsense-client=""
+             data-adsense-slot=""
+             data-sponsor-image=""
+             data-sponsor-url=""
+             data-sponsor-alt="Sponsored partner banner">
+          <div class="tz-ad-placeholder" data-ad-placeholder>
+            <div class="tz-ad-copy">
+              <span class="tz-ad-kicker">Sponsored placement</span>
+              <h2>Your brand could be here.</h2>
+              <p>This banner space is ready for an approved ad network or a partner's banner.</p>
+            </div>
+            <div class="tz-ad-art" aria-hidden="true">
+              <span class="tz-ad-art-mark">AD</span>
+              <span class="tz-ad-art-line"></span>
+              <span class="tz-ad-art-line short"></span>
+            </div>
+          </div>
+          <div class="tz-ad-render-root" data-ad-render-root hidden></div>
+        </div>
+      </div>
+    </section>
     <section class="home-content">
       <div class="section-heading"><div><h2>Salons near you</h2><p>Find a great salon and reserve a time that works for you.</p></div></div>
       <div class="category-row tz-hidden-filters" id="chips">
@@ -93,6 +120,7 @@
     <button class="tz-chat-launcher" id="tzChatLauncher" type="button" aria-expanded="false" aria-controls="tzChatPanel">✦ Ask Shubhiii</button>
   </section>
   <script src="/js/app.js"></script>
+  <script src="/js/ad-banner.js" defer></script>
   <script>
   (function(){
     const panel=document.getElementById('tzChatPanel'),launch=document.getElementById('tzChatLauncher'),close=document.getElementById('tzChatClose'),form=document.getElementById('tzChatForm'),input=document.getElementById('tzChatInput'),messages=document.getElementById('tzChatMessages');
