@@ -1,0 +1,53 @@
+/* inputs everywhere (fixes the unstyled mobile-number box) */
+.auth-card input[type=tel], .auth-card input[type=number], .auth-card input[type=search] { padding: 13px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 1rem; font-weight: 400; width: 100%; background: #fff; font-family: inherit; }
+.auth-card input:focus { outline: 3px solid rgba(11,11,11,.15); border-color: var(--ink); }
+.details input[type=tel] { padding: 14px 16px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 1rem; background: #fff; font-family: inherit; }
+.hint { color: var(--muted); font-size: .85rem; }
+
+/* slots: held by someone else, and my reservation */
+.slot.held:disabled { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.slot.mine { background: var(--ink); color: #fff; border-color: var(--ink); }
+.dot.held { background: #fef3c7; border-color: #fcd34d; }
+.hold-info { margin: 10px 0 0; padding: 10px 14px; border-radius: 12px; background: #fff; border: 1.5px solid var(--ink); font-weight: 800; }
+.hold-info[hidden], .modal[hidden] { display: none; }
+.day-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.day-tab { flex: 1; padding: 11px; border-radius: 12px; border: 1.5px solid var(--ink); background: #fff; font-weight: 800; cursor: pointer; font-family: inherit; font-size: 1rem; }
+.day-tab.active { background: var(--ink); color: #fff; }
+
+/* sign-in prompt, confirmation pop-up, codes */
+.signin-box { background: #fff; border: 1.5px solid var(--ink); border-radius: 16px; padding: 16px; margin: 12px 0; display: grid; gap: 8px; }
+.signin-box p { margin: 0; }
+.signin-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.signin-actions .btn { flex: 1; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 90; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal-box { background: #fff; border-radius: 22px; padding: 22px; width: min(420px, 100%); max-height: 92vh; overflow-y: auto; display: grid; gap: 10px; text-align: center; }
+.modal-box h2 { margin: 0; }
+.modal-box p { margin: 0; }
+.modal-actions { display: grid; gap: 8px; margin: 6px 0; }
+.code-box { font-size: 3rem; font-weight: 800; letter-spacing: .35em; padding: 10px 0 10px .35em; background: var(--bg); border-radius: 16px; border: 2px dashed var(--ink); }
+.code-box.small { font-size: 1.8rem; letter-spacing: .25em; padding: 8px 0 8px .25em; margin: 10px 0; }
+.code-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+.code-row strong { font-size: 1.4rem; letter-spacing: .2em; }
+.code-form { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: end; }
+.code-form .field input { text-align: center; letter-spacing: .3em; font-weight: 800; }
+.center { text-align: center; }
+.map-wrap { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); margin-bottom: 10px; }
+.map-wrap iframe { width: 100%; height: 240px; border: 0; display: block; }
+
+/* account page */
+.info { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 8px 0 14px; }
+.info dt { color: var(--muted); font-weight: 700; font-size: .85rem; }
+.info dd { margin: 0; font-weight: 700; word-break: break-all; }
+.share-link { background: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: .85rem; word-break: break-all; margin-bottom: 10px; }
+.tile strong.small-num { font-size: 1.1rem; }
+
+/* QR poster (printable) */
+.poster { text-align: center; background: #fff; border: 2px solid var(--ink); border-radius: 24px; padding: 28px 18px; display: grid; gap: 10px; justify-items: center; }
+.poster-qr { max-width: 100%; height: auto; }
+.poster-url { font-size: .8rem; word-break: break-all; }
+@media print {
+    .no-print, .topbar, .toasts { display: none !important; }
+    body { background: #fff; }
+    .poster { border: 3px solid #000; margin: 0 auto; max-width: 520px; break-inside: avoid; }
+}
+@media (max-width: 420px) { .code-form { grid-template-columns: 1fr 1fr; } .code-form .field { grid-column: 1 / -1; } }

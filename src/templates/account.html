@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My account - Trimzee</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="stylesheet" href="/css/extra.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="container">
+        <div class="page-head"><h1>My account</h1><span class="badge confirmed">{{ current_user.role|capitalize }}</span></div>
+        {% if notice %}<p class="message {{ 'err' if error else 'ok' }}">{{ notice }}</p>{% endif %}
+
+        <div class="panel">
+            <h2>{{ current_user.name }}</h2>
+            <dl class="info">
+                <dt>Email</dt><dd>{{ current_user.email }}</dd>
+                <dt>Gender</dt><dd>{{ (current_user.gender or 'Not set')|capitalize }}</dd>
+                <dt>Member since</dt><dd>{{ current_user.joined }}</dd>
+                <dt>Phone</dt><dd>{{ current_user.phone or 'Not added yet' }}</dd>
+            </dl>
+            <form method="post" action="/account/phone" class="row-form">
+                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                <label class="field">{{ 'Change' if current_user.phone else 'Add' }} mobile number
+                    <input type="tel" name="phone" inputmode="numeric" maxlength="14" placeholder="10-digit mobile number" required></label>
+                <button class="btn small" type="submit">Save</button>
+            </form>
+        </div>
+
+        <div class="tiles">
+            <div class="tile"><span>{{ 'Bookings made' if current_user.role == 'customer' else 'Bookings received' }}</span><strong>{{ stats.bookings }}</strong></div>
+            <div class="tile"><span>Completed</span><strong>{{ stats.completed }}</strong></div>
+            <div class="tile"><span>{{ 'Reviews written' if current_user.role == 'customer' else 'Reviews received' }}</span><strong>{{ stats.reviews }}</strong></div>
+            <div class="tile"><span>Trimzee credits</span><strong>{{ ref.credits }}</strong></div>
+        </div>
+
+        <div class="panel">
+            <h2>Refer friends, earn credits</h2>
+            <p class="muted">Share your code. When a friend completes their first booking, you both get {{ reward }} Trimzee credits.</p>
+            <div class="code-box small">{{ code }}</div>
+            <div class="share-link" id="shareLink">{{ link }}</div>
+            <div class="modal-actions">
+                <button class="btn ghost" type="button" id="copyBtn">Copy link</button>
+                <a class="btn" href="https://wa.me/?text={{ share|urlencode }}" target="_blank" rel="noopener">Share on WhatsApp</a>
+            </div>
+            <p class="hint">Friends joined: <strong>{{ ref.joined }}</strong> · Rewarded: <strong>{{ ref.rewarded }}</strong>. Credits will be usable when online payments launch.</p>
+        </div>
+
+        <div class="panel">
+            <h2>Settings</h2>
+            <p class="stack">
+                <button class="btn ghost" type="button" id="enableAlerts">🔔 Turn on alerts</button>
+                {% if current_user.role == 'customer' %}<a class="btn ghost" href="/my-bookings">My bookings</a>
+                {% elif current_user.role == 'owner' %}<a class="btn ghost" href="/dashboard">Go to dashboard</a>{% endif %}
+            </p>
+            <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn danger" type="submit">Log out</button></form>
+        </div>
+    </main>
+    <script>
+        document.getElementById("copyBtn").addEventListener("click", function () {
+            var text = document.getElementById("shareLink").textContent, btn = this;
+            function done() { btn.textContent = "Copied ✓"; setTimeout(function () { btn.textContent = "Copy link"; }, 2000); }
+            if (navigator.clipboard) { navigator.clipboard.writeText(text).then(done, done); } else { done(); }
+        });
+    </script>
+</body>
+</html>

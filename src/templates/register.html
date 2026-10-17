@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign up - SalonGo</title>
+    <title>Sign up - Trimzee</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/auth.css">
-    <link rel="stylesheet" href="/css/trimzee-refresh.css">
+    <link rel="stylesheet" href="/css/extra.css">
 </head>
 <body>
     {% include "_nav.html" %}
@@ -15,11 +15,39 @@
         {% if error %}<p class="message err">{{ error }}</p>{% endif %}
         <form method="post" action="/register">
             <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <div class="gender-opts" role="radiogroup" aria-label="Your gender">
+                <label><input type="radio" name="gender" value="male" required {% if form.get('gender') == 'male' %}checked{% endif %}> Male</label>
+                <label><input type="radio" name="gender" value="female" required {% if form.get('gender') == 'female' %}checked{% endif %}> Female</label>
+            </div>
             <div class="role-options">
                 <label><input type="radio" name="role" value="customer" {% if form.get('role') != 'owner' %}checked{% endif %}> I'm a customer</label>
-                <label><input type="radio" name="role" value="owner" {% if form.get('role') == 'owner' %}checked{% endif %}> I own a salon</label>
+                <label><input type="radio" name="role" value="owner" {% if form.get('role') == 'owner' %}checked{% endif %}> <span id="ownerLabel">I own a salon</span></label>
             </div>
             <label>Your name<input type="text" name="name" value="{{ form.get('name', '') }}" maxlength="60" required autocomplete="name"></label>
-            <label id="salonField" hidden>Salon name<input type="text" name="salon_name" value="{{ form.get('salon_name', '') }}" maxlength="60"></label>
+            <label id="salonField" hidden><span id="bizLabel">Salon name</span><input type="text" name="salon_name" value="{{ form.get('salon_name', '') }}" maxlength="60"></label>
+            <label id="phoneField" hidden>Mobile number (for booking alerts)<input type="tel" name="phone" value="{{ form.get('phone', '') }}" inputmode="numeric" maxlength="14" placeholder="10-digit mobile number" autocomplete="tel"></label>
             <label>Email<input type="email" name="email" value="{{ form.get('email', '') }}" maxlength="120" required autocomplete="email"></label>
-            <label>Password (8+ characters)<input type="password" name="password" minlength="8" maxlength="128" r¶»§q«^
+            <label>Password (8+ characters)<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password"></label>
+            <label>Referral code (optional)<input type="text" name="ref" value="{{ form.get('ref', '') }}" maxlength="10" autocapitalize="characters" placeholder="e.g. K7M2QX"></label>
+            <button class="book" type="submit">Create account</button>
+            <p class="hint">We'll email you a 6-digit code to verify your address.</p>
+        </form>
+        <p class="muted">Already have an account? <a href="/login">Log in</a></p>
+    </main>
+    <script>
+        var salonField = document.getElementById("salonField"), phoneField = document.getElementById("phoneField");
+        function sync() {
+            var owner = document.querySelector("input[name=role]:checked").value === "owner";
+            var female = document.querySelector("input[name=gender]:checked");
+            var word = female && female.value === "female" ? "parlour" : "salon";
+            salonField.hidden = !owner;
+            phoneField.hidden = !owner;
+            phoneField.querySelector("input").required = owner;
+            document.getElementById("ownerLabel").textContent = "I own a " + word;
+            document.getElementById("bizLabel").textContent = word.charAt(0).toUpperCase() + word.slice(1) + " name";
+        }
+        document.querySelectorAll("input[name=role], input[name=gender]").forEach(function (r) { r.addEventListener("change", sync); });
+        sync();
+    </script>
+</body>
+</html>

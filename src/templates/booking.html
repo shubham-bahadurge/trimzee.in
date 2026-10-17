@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking #{{ b.id }} - Trimzee</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="stylesheet" href="/css/extra.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="container">
+        <a class="back" href="/my-bookings">← My bookings</a>
+        <div class="page-head"><h1>Booking #{{ b.id }}</h1>
+            <span class="badge {{ b.status }}">{{ {'pending': 'Waiting for salon', 'confirmed': 'Confirmed', 'completed': 'Completed', 'cancelled': 'Cancelled', 'rejected': 'Declined'}.get(b.status, b.status) }}</span></div>
+
+        {% if b.status in ('pending', 'confirmed') and b.code %}
+        <div class="panel center">
+            <p class="muted">Your confirmation code</p>
+            <div class="code-box">{{ b.code }}</div>
+            <p class="hint">Show this code at the salon. The owner enters it to complete your booking.</p>
+        </div>
+        {% endif %}
+
+        <div class="panel">
+            <h2>{{ b.salon }}</h2>
+            <p><strong>{{ b.when }}</strong></p>
+            <p class="muted">{{ b.service }} · ₹{{ b.price }}</p>
+            {% if b.status == 'pending' %}<p class="hint">The salon will accept your request shortly. We'll alert you.</p>{% endif %}
+        </div>
+
+        {% if directions %}
+        <div class="panel">
+            <h2>Find the salon</h2>
+            <div class="map-wrap"><iframe title="Salon location" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox={{ bbox }}&amp;layer=mapnik&amp;marker={{ marker }}"></iframe></div>
+            <div class="modal-actions">
+                <a class="btn" href="{{ directions }}" target="_blank" rel="noopener">🧭 Get directions</a>
+                {% if b.owner_wa %}<a class="btn ghost" href="https://wa.me/{{ b.owner_wa }}?text={{ ('Hi, I have booking #' ~ b.id ~ ' at ' ~ b.salon ~ ' (' ~ b.when ~ ').')|urlencode }}" target="_blank" rel="noopener">💬 WhatsApp the salon</a>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if b.can_cancel %}
+        <form method="post" action="/my-bookings/{{ b.id }}/cancel">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <button class="btn danger" type="submit">Cancel this booking</button>
+        </form>
+        {% endif %}
+    </main>
+</body>
+</html>

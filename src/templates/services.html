@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Services - SalonGo</title>
+    <title>Services - Trimzee</title>
+    <link rel="icon" href="/img/logo-mark.png">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/auth.css">
     <link rel="stylesheet" href="/css/extra.css">
@@ -11,18 +12,43 @@
 <body>
     {% include "_nav.html" %}
     <main class="container">
-        <p><a href="/dashboard">‚Üê Back to dashboard</a></p>
-        <h1>Services &amp; prices</h1>
+        <a class="back" href="/dashboard">‚Üê Back to dashboard</a>
+        <div class="page-head"><h1>Services &amp; prices</h1></div>
         {% if notice %}<p class="message {{ 'err' if error else 'ok' }}">{{ notice }}</p>{% endif %}
 
-        {% for s in services %}
-        <div class="service-row">
-            <form method="post" action="/dashboard/services/save" class="service-form">
+        <div class="stack">
+            {% for s in services %}
+            <div class="svc">
+                <form method="post" action="/dashboard/services/save" class="svc-grid">
+                    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    <input type="hidden" name="service_id" value="{{ s.id }}">
+                    <label class="field wide-field">Service name<input type="text" name="name" value="{{ s.name }}" maxlength="40" required></label>
+                    <label class="field">Category
+                        <select name="category">{% for c in categories %}<option value="{{ c }}" {% if c == s.category %}selected{% endif %}>{{ c|capitalize }}</option>{% endfor %}</select></label>
+                    <label class="field">Price (‚Çπ)<input type="number" name="price" value="{{ s.price }}" min="0" max="100000" required></label>
+                    <label class="field">Duration (min)<input type="number" name="duration" value="{{ s.duration_min }}" min="5" max="480" required></label>
+                    <div class="svc-actions"><button class="btn" type="submit">Save changes</button></div>
+                </form>
+                <form method="post" action="/dashboard/services/{{ s.id }}/delete" class="svc-actions">
+                    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    <button class="btn danger" type="submit">Delete service</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="panel">
+            <h2>Add a service</h2>
+            <form method="post" action="/dashboard/services/save" class="svc-grid">
                 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-                <input type="hidden" name="service_id" value="{{ s.id }}">
-                <input type="text" name="name" value="{{ s.name }}" maxlength="40" required aria-label="Name">
-                <select name="category" aria-label="Category">
-                    {% for c in categories %}<option value="{{ c }}" {% if c == s.category %}selected{% endif %}>{{ c|capitalize }}</option>{% endfor %}
-                </select>
-                <label>‚Çπ<input type="number" name="price" value="{{ s.price }}" min="0" max="100000" required></label>
-                <label><input type="number" name="duration" value="{{ s.duration_min }}" min="5" max="480" require∂ªßq´^
+                <label class="field wide-field">Service name<input type="text" name="name" placeholder="e.g. Head massage" maxlength="40" required></label>
+                <label class="field">Category
+                    <select name="category">{% for c in categories %}<option value="{{ c }}">{{ c|capitalize }}</option>{% endfor %}</select></label>
+                <label class="field">Price (‚Çπ)<input type="number" name="price" value="200" min="0" max="100000" required></label>
+                <label class="field">Duration (min)<input type="number" name="duration" value="30" min="5" max="480" required></label>
+                <div class="svc-actions"><button class="btn" type="submit">Add service</button></div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

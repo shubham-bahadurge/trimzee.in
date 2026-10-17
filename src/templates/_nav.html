@@ -1,220 +1,45 @@
-<!-- SalonGo navigation: layout matched to the new home-page sketch. -->
-<style>
-.sg-navbar {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 1000 !important;
-    height: 72px;
-    padding: 0 22px !important;
-    display: grid !important;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    background: rgba(255,255,255,.96) !important;
-    border-bottom: 1px solid #ececf2;
-    box-shadow: 0 4px 18px rgba(31,41,55,.07) !important;
-}
-.sg-menu-wrap,
-.sg-profile-wrap {
-    position: relative;
-}
-.sg-menu-wrap { justify-self: start; }
-.sg-profile-wrap { justify-self: end; }
-
-.sg-icon-button {
-    width: 42px;
-    height: 42px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    background: #fff;
-    color: #374151;
-    cursor: pointer;
-    text-decoration: none;
-    transition: .18s ease;
-}
-.sg-icon-button:hover {
-    border-color: #c4b5fd;
-    background: #faf8ff;
-    color: #7c3aed;
-    transform: translateY(-1px);
-}
-.sg-icon-button svg { width: 21px; height: 21px; }
-
-.sg-brand {
-    justify-self: center;
-    color: #171717 !important;
-    text-decoration: none !important;
-    font-size: 1.55rem !important;
-    font-weight: 850 !important;
-    letter-spacing: -.035em;
-}
-.sg-brand span { color: #7c3aed; }
-
-.sg-profile-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    min-height: 42px;
-    padding: 6px 11px 6px 7px;
-    border: 1px solid #e5e7eb;
-    border-radius: 13px;
-    background: #fff;
-    color: #374151;
-    font-weight: 700;
-    cursor: pointer;
-}
-.sg-profile-button:hover { border-color: #c4b5fd; background: #faf8ff; }
-.sg-avatar {
-    width: 30px;
-    height: 30px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: #ede9fe;
-    color: #6d28d9;
-    font-size: .82rem;
-    font-weight: 800;
-}
-.sg-sign-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 42px;
-    padding: 0 17px;
-    border-radius: 11px;
-    background: #7c3aed !important;
-    color: #fff !important;
-    text-decoration: none !important;
-    font-weight: 750;
-    box-shadow: 0 5px 14px rgba(124,58,237,.20);
-}
-.sg-sign-button:hover { background: #6d28d9 !important; }
-
-.sg-dropdown {
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 0;
-    width: 210px;
-    padding: 8px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    box-shadow: 0 16px 40px rgba(17,24,39,.13);
-}
-.sg-profile-wrap .sg-dropdown { left: auto; right: 0; width: 225px; }
-.sg-dropdown a,
-.sg-dropdown button {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 11px 12px;
-    border: 0;
-    border-radius: 9px;
-    background: transparent;
-    color: #374151;
-    text-decoration: none;
-    font: inherit;
-    font-weight: 650;
-    text-align: left;
-    cursor: pointer;
-}
-.sg-dropdown a:hover,
-.sg-dropdown button:hover { background: #f5f3ff; color: #6d28d9; }
-.sg-dropdown .sg-menu-title {
-    padding: 9px 12px 7px;
-    color: #9ca3af;
-    font-size: .72rem;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    font-weight: 800;
-}
-.sg-user-name {
-    padding: 10px 12px 8px;
-    border-bottom: 1px solid #f0f0f3;
-    margin-bottom: 4px;
-}
-.sg-user-name strong { display: block; color: #111827; }
-.sg-user-name small { color: #9ca3af; }
-
-.sg-menu-wrap > details > summary,
-.sg-profile-wrap > details > summary { list-style: none; }
-.sg-menu-wrap > details > summary::-webkit-details-marker,
-.sg-profile-wrap > details > summary::-webkit-details-marker { display: none; }
-
-@media (max-width: 640px) {
-    .sg-navbar { height: 64px; padding: 0 14px !important; }
-    .sg-brand { font-size: 1.3rem !important; }
-    .sg-profile-button .sg-profile-name { display: none; }
-    .sg-icon-button, .sg-profile-button, .sg-sign-button { min-height: 40px; }
-    .sg-profile-button { width: 42px; padding: 5px; justify-content: center; }
-    .sg-dropdown { width: 200px; }
-}
-</style>
-
-<header class="navbar sg-navbar">
-    <div class="sg-menu-wrap">
-        <details>
-            <summary class="sg-icon-button" aria-label="Open menu" title="Menu">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M4 7h16M4 12h16M4 17h16"></path>
-                </svg>
-            </summary>
-            <div class="sg-dropdown">
-                <div class="sg-menu-title">Menu</div>
-                <a href="/">Home</a>
-                {% if current_user %}
-                    {% if current_user.role == 'owner' %}
-                        <a href="/dashboard">Bookings</a>
-                    {% elif current_user.role == 'admin' %}
-                        <a href="/admin">Bookings</a>
-                    {% else %}
-                        <a href="/my-bookings">Bookings</a>
-                    {% endif %}
-                {% else %}
-                    <a href="/login">Bookings</a>
-                {% endif %}
-                <button type="button" onclick="alert('Subscription plans will be available soon.')">Subscription</button>
-            </div>
-        </details>
+<link rel="stylesheet" href="/css/theme.css">
+<link rel="stylesheet" href="/css/modern.css">
+<link rel="stylesheet" href="/css/modern2.css">
+<link rel="stylesheet" href="/css/modern3.css">
+<header class="topbar">
+    <div class="menu-wrap">
+        <button class="icon-btn" type="button" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="menuPanel">☰</button>
+        <nav class="pop left" id="menuPanel" hidden>
+            <a href="/">Home</a>
+            {% if current_user and current_user.role == 'owner' %}<a href="/dashboard">Dashboard</a>
+            {% elif current_user and current_user.role == 'admin' %}<a href="/admin">Admin</a>
+            {% else %}<a href="/my-bookings">My bookings</a>{% endif %}
+            {% if current_user %}<a href="/account">My account</a>{% else %}<a href="/login">Sign in</a><a href="/register">Create account</a>{% endif %}
+            <span class="soon">Subscription <small>coming soon</small></span>
+        </nav>
     </div>
 
-    <a class="sg-brand" href="/">Salon<span>Go</span></a>
+    <a class="brand" href="/" aria-label="Trimzee home">
+        <img src="/img/logo-mark.png" alt="" width="30" height="31">
+        <span>TRIMZEE</span>
+    </a>
 
-    <div class="sg-profile-wrap">
-        {% if current_user %}
-        <details>
-            <summary class="sg-profile-button" aria-label="Open user profile">
-                <span class="sg-avatar">
-                    {{ current_user.name[:1]|upper }}
-                </span>
-                <span class="sg-profile-name">{{ current_user.name }}</span>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m6 9 6 6 6-6"></path>
-                </svg>
-            </summary>
-            <div class="sg-dropdown">
-                <div class="sg-user-name">
-                    <strong>{{ current_user.name }}</strong>
-                    <small>{{ current_user.role|capitalize }}</small>
-                </div>
-                {% if current_user.role == 'owner' %}
-                    <a href="/dashboard">Dashboard</a>
-                {% elif current_user.role == 'admin' %}
-                    <a href="/admin">Admin panel</a>
-                {% else %}
-                    <a href="/my-bookings">My bookings</a>
-                {% endif %}
-                <form method="post" action="/logout" class="inline">
-                    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-                    <button type="submit">Log out</button>
-                </form>
-            </div>
-        </details>
-        {% else %}
-            <a class="sg-sign-button" href="/login">Sign in</a>
-        {% endif %}
+    <div class="menu-wrap">
+        <a class="icon-btn" href="{{ '/account' if current_user else '/login' }}" aria-label="{{ 'My account' if current_user else 'Sign in' }}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+        </a>
     </div>
 </header>
+<script>
+    (function () {
+        var btn = document.getElementById("menuBtn"), panel = document.getElementById("menuPanel");
+        function close() { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); }
+        btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            var open = panel.hidden;
+            panel.hidden = !open;
+            btn.setAttribute("aria-expanded", String(open));
+        });
+        panel.addEventListener("click", function (e) { e.stopPropagation(); });
+        document.addEventListener("click", close);
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape") { close(); } });
+    })();
+</script>
+{% if current_user %}<script>window.TZ_AUTH = true; window.TZ_ROLE = "{{ current_user.role }}";</script>
+<script src="/js/notify.js"></script>{% endif %}

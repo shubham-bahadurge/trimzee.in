@@ -1,120 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f4f0ff">
-  <title>Trimzee — India's #1 Salon Booking App</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="stylesheet" href="/css/auth.css">
-  <link rel="stylesheet" href="/css/extra.css">
-  <link rel="stylesheet" href="/css/trimzee-refresh.css">
-  <style>
-    .tz-hero{padding:38px 20px 30px;text-align:center;background:linear-gradient(180deg,#f1edff,#faf9fd)}
-    .tz-hero h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.08;letter-spacing:-.05em;color:#191821;margin:0}
-    .tz-hero h1 span{color:#7455e8}.tz-tagline{margin:12px auto 23px;color:#51466f;font-weight:800;letter-spacing:.01em}
-    .tz-search{max-width:850px;margin:auto;display:grid;grid-template-columns:170px minmax(0,1fr) auto;gap:9px;padding:9px;background:#fff;border:1px solid #e5e0f6;border-radius:18px;box-shadow:0 12px 32px #20194412}
-    .tz-search select,.tz-search input{height:49px;min-width:0;border:1px solid #e9e7f0;border-radius:12px;padding:0 13px;font:inherit;background:#fff}
-    .tz-search button{height:49px;border:0;border-radius:12px;background:#7455e8;color:#fff;padding:0 23px;font-weight:800;cursor:pointer}
-    .tz-location-row{max-width:850px;margin:12px auto 0;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;color:#777486;font-size:.85rem}
-    .tz-location-row button{background:#fff;border:1px solid #e9e7f0;border-radius:10px;padding:9px 12px;cursor:pointer;color:#51466f}
-    .tz-hidden-filters{display:none!important}
-    .tz-chat-widget{position:fixed;right:20px;bottom:20px;z-index:2000;font-family:inherit}
-    .tz-chat-launcher{border:0;border-radius:999px;background:#191821;color:#fff;padding:14px 18px;font-weight:800;box-shadow:0 10px 28px #0002;cursor:pointer}
-    .tz-chat-panel{width:min(360px,calc(100vw - 28px));height:min(470px,calc(100dvh - 100px));display:flex;flex-direction:column;overflow:hidden;background:#fff;border:1px solid #e9e7f0;border-radius:18px;box-shadow:0 20px 65px #11182730;margin-bottom:10px}
-    .tz-chat-panel[hidden]{display:none}.tz-chat-head{display:flex;align-items:center;gap:10px;background:#191821;color:#fff;padding:14px}
-    .tz-chat-avatar{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#7455e8;font-weight:900}
-    .tz-chat-title{flex:1;font-weight:850}.tz-chat-subtitle{display:block;font-size:12px;color:#d8d4e8;margin-top:3px;font-weight:500}
-    .tz-chat-close{border:0;background:transparent;color:#fff;font-size:24px;cursor:pointer}
-    .tz-chat-messages{padding:14px;flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;background:#faf9fd}
-    .tz-chat-msg{max-width:88%;padding:10px 12px;border-radius:13px;background:#fff;border:1px solid #e9e7f0;font-size:14px;line-height:1.45;white-space:pre-line;overflow-wrap:anywhere}
-    .tz-chat-msg.user{align-self:flex-end;background:#7455e8;color:#fff;border-color:#7455e8}
-    .tz-chat-quick{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;background:#fff}
-    .tz-chat-quick button{border:1px solid #e9e7f0;background:#fff;border-radius:999px;padding:7px 10px;font-size:12px;cursor:pointer}
-    .tz-chat-form{display:flex;gap:8px;padding:10px;border-top:1px solid #eee;background:#fff}
-    .tz-chat-form input{min-width:0;flex:1;border:1px solid #d1d5db;border-radius:10px;padding:10px;font:inherit}
-    .tz-chat-form button{border:0;border-radius:10px;background:#7455e8;color:#fff;padding:0 14px;font-weight:800;cursor:pointer}
-    .tz-chat-note{font-size:11px;color:#777486;padding:0 12px 10px;background:#fff}
-    @media(max-width:650px){.tz-search{grid-template-columns:1fr}.tz-search>*{width:100%}.tz-hero{padding:28px 14px 22px}.tz-chat-widget{right:14px;bottom:14px}}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trimzee - India's #1 Salon Booking App</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="stylesheet" href="/css/extra.css">
 </head>
-<body>
-  {% include "_nav.html" %}
-  <main class="home-page">
-    <section class="tz-hero">
-      <h1>Find your style. <span>Book your salon.</span></h1>
-      <p class="tz-tagline">India's #1 salon booking app · Quick · Free</p>
-      <div class="tz-search">
-        <select id="location" aria-label="Select area">
-          {% for loc in locations %}<option value="{{ loc }}">📍 {{ loc }}</option>{% endfor %}
-        </select>
-        <input id="search" type="search" placeholder="Search salons or services" aria-label="Search salons or services">
-        <button type="button" id="tzSearchButton">Search</button>
-      </div>
-      <div class="tz-location-row">
-        <button id="useLocation" type="button">📍 Find salons within 5 km</button>
-        <span id="locStatus" role="status">Choose an area or allow location access to find nearby salons.</span>
-      </div>
-      <div class="tz-hidden-filters" aria-hidden="true">
-        <select id="distance"><option value="5" selected>Within 5 km</option><option value="100000">Any distance</option></select>
-        <label><input id="onlyAvailable" type="checkbox"> Available now</label>
-      </div>
+<body class="home">
+    {% include "_nav.html" %}
+
+    <section class="hero-tag">
+        <h1>India's #1<br>Salon Booking App</h1>
+        <p>Quick. Free. Skip the wait.</p>
     </section>
-    <section class="home-content">
-      <div class="section-heading"><div><h2>Salons near you</h2><p>Find a great salon and reserve a time that works for you.</p></div></div>
-      <div class="category-row tz-hidden-filters" id="chips">
-        <button class="chip active" type="button" data-category="">All</button>
-        {% for category, icon in categories %}<button class="chip" type="button" data-category="{{ category|lower }}">{{ icon }} {{ category }}</button>{% endfor %}
-      </div>
-      <div class="salon-grid" id="grid">
-        {% for salon in salons %}
-        <article class="salon-card card" data-name="{{ salon.name|lower }}" data-services="{{ salon.services|default('', true)|lower }}" data-distance="{{ salon.distance_km|default(0, true) }}" data-status="{{ salon.status|default('available', true) }}">
-          <div class="salon-cover" aria-hidden="true">{{ salon.emoji|default('💈', true) }}</div>
-          <div class="salon-body">
-            <h3>{{ salon.name }}</h3>
-            <div class="salon-meta"><span>📍 {{ salon.address|default('Pune', true) }}</span><span>{{ salon.distance_km|default(0, true) }} km away</span></div>
-            <span class="salon-status">{{ salon.status|default('Available', true)|capitalize }}</span>
-            <div class="salon-open"><span class="rating">★ {{ salon.rating|default('New', true) }}</span><a class="book-btn" href="/salon/{{ salon.id }}">View &amp; Book</a></div>
-          </div>
-        </article>
-        {% endfor %}
-      </div>
-      <div id="empty" class="empty-state" hidden>No salons match your search within 5 km. Try another search or area.</div>
-    </section>
-  </main>
-  <section class="tz-chat-widget" aria-label="Shubhiii AI booking assistant">
-    <div class="tz-chat-panel" id="tzChatPanel" role="dialog" aria-label="Shubhiii assistant" hidden>
-      <header class="tz-chat-head"><div class="tz-chat-avatar">S</div><div class="tz-chat-title">Shubhiii ✨<span class="tz-chat-subtitle">Trimzee booking assistant</span></div><button class="tz-chat-close" id="tzChatClose" type="button" aria-label="Close chat">×</button></header>
-      <div class="tz-chat-messages" id="tzChatMessages" aria-live="polite"><div class="tz-chat-msg">Hi! I'm Shubhiii 💜 I can guide you through finding salons, choosing a service, booking, payments, cancellations, and salon-owner registration.</div></div>
-      <div class="tz-chat-quick" id="tzChatQuick"><button type="button" data-tz-chat="How do I book?">How to book</button><button type="button" data-tz-chat="Payment options">Payments</button><button type="button" data-tz-chat="Salon owner registration">I'm a salon owner</button></div>
-      <form class="tz-chat-form" id="tzChatForm"><input id="tzChatInput" name="message" autocomplete="off" maxlength="500" placeholder="Ask Shubhiii..." aria-label="Message Shubhiii" required><button type="submit">Send</button></form>
-      <div class="tz-chat-note">Automated assistant · Answers are guidance, not live support</div>
+
+    <main class="home-main">
+        {% if need_gender %}
+        <div class="notice-card">
+            <strong>Show salons made for you</strong>
+            <form method="post" action="/profile/gender">
+                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                <button class="btn small" name="gender" value="male" type="submit">I'm male</button>
+                <button class="btn small ghost" name="gender" value="female" type="submit">I'm female</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <div class="searchrow {% if my_gender %}no-filter{% endif %}">
+            {% if not my_gender %}
+            <div class="menu-wrap">
+                <button class="round-btn" type="button" id="genderBtn" aria-label="Filter: men or women" aria-expanded="false" aria-controls="genderPanel">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+                </button>
+                <div class="pop left" id="genderPanel" hidden>
+                    <button class="pop-btn gender active" type="button" data-gender="">Everyone</button>
+                    <button class="pop-btn gender" type="button" data-gender="men">Male</button>
+                    <button class="pop-btn gender" type="button" data-gender="women">Female</button>
+                </div>
+            </div>
+            {% endif %}
+            <input id="search" type="search" placeholder="Search {{ 'parlours' if my_gender == 'female' else 'salons' }} or services" aria-label="Search">
+            <button class="round-btn" type="button" id="useLocation" aria-label="Use my live location" title="Use my live location">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            </button>
+        </div>
+        {% if my_gender %}<span class="pill">{{ '👨 Salons for men' if my_gender == 'male' else '👩 Parlours for women' }}</span>{% endif %}
+        <p class="muted status-line" id="locStatus" aria-live="polite">📍 Allow location to see salons within 5 km of you.</p>
+
+        <h2 class="section-title">Nearby {{ 'parlours' if my_gender == 'female' else 'salons' }}</h2>
+        <div class="grid" id="grid">
+            {% for s in salons %}
+            <article class="card"
+                data-name="{{ s.name|lower }}"
+                data-services="{{ s.services|join(',')|lower }}"
+                data-gender="{{ s.gender }}"
+                data-distance="{{ s.distance }}"
+                data-lat="{{ s.lat if s.lat is not none else '' }}" data-lng="{{ s.lng if s.lng is not none else '' }}"
+                data-status="{{ s.status }}">
+                <div class="card-body">
+                    <div class="row">
+                        <h3>{{ s.name }}</h3>
+                        <span class="rating">★ {{ s.rating }}</span>
+                    </div>
+                    <span class="tag">{{ 'Parlour' if s.gender == 'women' else 'Salon' }}</span>
+                    <p class="muted"><span class="dist">{{ "%.1f"|format(s.distance) }}</span> km away · {{ s.services|join(', ') }}</p>
+                    <p class="price">From ₹{{ s.price }}</p>
+                    <div class="row">
+                        <span class="badge {{ s.status }}">{{ labels[s.status] }}</span>
+                        <span class="muted">Next free: {{ s.next }}</span>
+                    </div>
+                    <button class="book" data-id="{{ s.id }}" data-name="{{ s.name }}"
+                        {% if s.status in ['closed', 'full'] %}disabled{% endif %}>
+                        {% if s.status == 'closed' %}Closed{% elif s.status == 'full' %}Fully booked{% else %}Book now{% endif %}
+                    </button>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        <p id="empty" class="empty" hidden>No salons match here yet. Try another search.</p>
+    </main>
+
+    <div class="shop">
+        <section class="shop-panel" id="shopPanel" hidden aria-label="Trimzee Shop">
+            <strong>🛍️ Trimzee Shop</strong>
+            <p class="muted">Hair-care and grooming products from trusted brands, delivered to you. Coming soon!</p>
+            {% if current_user %}
+            <button class="btn small" type="button" id="shopNotify" {% if on_waitlist %}disabled{% endif %}>{{ "✓ You're on the list" if on_waitlist else "Notify me at launch" }}</button>
+            {% else %}<a class="btn small" href="/register">Sign up to get notified</a>{% endif %}
+        </section>
+        <button class="chat-btn shop-btn" type="button" id="shopBtn" aria-label="Trimzee Shop, coming soon" aria-expanded="false">🛍️</button>
     </div>
-    <button class="tz-chat-launcher" id="tzChatLauncher" type="button" aria-expanded="false" aria-controls="tzChatPanel">✦ Ask Shubhiii</button>
-  </section>
-  <script src="/js/app.js"></script>
-  <script>
-  (function(){
-    const panel=document.getElementById('tzChatPanel'),launch=document.getElementById('tzChatLauncher'),close=document.getElementById('tzChatClose'),form=document.getElementById('tzChatForm'),input=document.getElementById('tzChatInput'),messages=document.getElementById('tzChatMessages');
-    if(!panel||!launch||!form||!input||!messages)return;
-    function open(yes){panel.hidden=!yes;launch.setAttribute('aria-expanded',String(yes));if(yes)input.focus()}
-    function add(text,user){const el=document.createElement('div');el.className='tz-chat-msg'+(user?' user':'');el.textContent=text;messages.appendChild(el);messages.scrollTop=messages.scrollHeight}
-    function reply(raw){const q=raw.toLowerCase();
-      if(/\b(hi|hello|hey)\b/.test(q))return 'Hey there! 💜 I’m Shubhiii. What can I help you book today?';
-      if(/book|appointment|reserve|slot|stylist|barber/.test(q))return 'Choose a salon card, tap “View & Book”, select your service and preferred slot, then confirm the booking. Always check the final slot confirmation.';
-      if(/pay|payment|upi|cash|online/.test(q))return 'Available payment methods depend on the checkout options enabled for that salon. Please confirm the amount and method before paying.';
-      if(/cancel|reschedule/.test(q))return 'Open your bookings from the profile menu and select the booking to check available cancellation options.';
-      if(/owner|register|list my salon/.test(q))return 'Open Sign in, choose the salon-owner registration option, and submit your salon details. Your salon may need admin approval before appearing publicly.';
-      if(/near|location|distance|5 km/.test(q))return 'Tap “Find salons within 5 km” and allow browser location access. Location is used by your browser to calculate nearby results.';
-      if(/thank/.test(q))return 'You’re welcome! ✨ I’m here if you need help with booking.';
-      return 'I can guide you through salon search, booking slots, payments, cancellations, nearby salons, and owner registration. Try “How do I book?”';
-    }
-    launch.addEventListener('click',()=>open(panel.hidden));close.addEventListener('click',()=>open(false));
-    form.addEventListener('submit',e=>{e.preventDefault();const text=input.value.trim();if(!text)return;add(text,true);input.value='';add(reply(text),false);input.focus()});
-    document.getElementById('tzChatQuick').addEventListener('click',e=>{const b=e.target.closest('[data-tz-chat]');if(!b)return;add(b.dataset.tzChat,true);add(reply(b.dataset.tzChat),false)});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)open(false)});
-  })();
-  document.getElementById('tzSearchButton')?.addEventListener('click',()=>document.getElementById('grid')?.scrollIntoView({behavior:'smooth'}));
-  </script>
+
+    <div class="chat">
+        <section class="chat-panel" id="chatPanel" hidden aria-label="Trimzee assistant">
+            <div class="chat-head"><div><strong>Trimzee AI</strong><small>Ask about salons, prices &amp; booking</small></div>
+                <button type="button" id="chatClose" aria-label="Close chat">✕</button></div>
+            <div class="chat-log" id="chatLog" aria-live="polite"></div>
+            <div class="chat-suggest" id="chatSuggest">
+                <button type="button">Cheapest haircut</button><button type="button">Open now</button>
+                <button type="button">Nearest salon</button><button type="button">How do I book?</button>
+            </div>
+            <form class="chat-form" id="chatForm">
+                <input id="chatInput" type="text" maxlength="300" placeholder="Type your question…" autocomplete="off" aria-label="Your question">
+                <button type="submit">Send</button>
+            </form>
+        </section>
+        <button class="chat-btn" type="button" id="chatBtn" aria-label="Ask Trimzee AI" aria-expanded="false">✨</button>
+    </div>
+
+    <footer class="footer">© Trimzee · Book your salon. Skip the wait.</footer>
+    <script src="/js/app.js"></script>
+    <script src="/js/chat.js"></script>
+    <script src="/js/shop.js"></script>
 </body>
 </html>

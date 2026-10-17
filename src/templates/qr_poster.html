@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR poster - {{ salon.name }}</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="stylesheet" href="/css/extra.css">
+</head>
+<body>
+    <div class="no-print">{% include "_nav.html" %}</div>
+    <main class="container">
+        <div class="no-print">
+            <a class="back" href="/dashboard">← Back to dashboard</a>
+            <h1>Your QR code</h1>
+            <p class="muted">Print this poster and stick it at your {{ venue }}. Customers scan it to see your services and live queue, then book.</p>
+            <p><button class="btn" type="button" onclick="window.print()">🖨 Print poster</button></p>
+        </div>
+        <section class="poster">
+            <img class="poster-logo" src="/img/logo-mark.png" alt="" width="56">
+            <h2>{{ salon.name }}</h2>
+            <img class="poster-qr" src="/q/{{ salon.id }}/qr.svg" alt="QR code for {{ salon.name }}" width="300" height="300">
+            <p class="poster-cta"><strong>Scan to see our menu &amp; live queue</strong></p>
+            <p class="muted">Book your slot in seconds on Trimzee</p>
+            <p class="muted poster-url">{{ url }}</p>
+        </section>
+    </main>
+</body>
+</html>

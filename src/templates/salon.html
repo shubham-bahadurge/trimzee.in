@@ -3,23 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ salon.name }} - SalonGo</title>
+    <title>{{ salon.name }} - Trimzee</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/salon.css">
     <link rel="stylesheet" href="/css/auth.css">
     <link rel="stylesheet" href="/css/extra.css">
-    <link rel="stylesheet" href="/css/trimzee-refresh.css">
 </head>
-<body data-salon-id="{{ salon.id }}">
+<body data-salon-id="{{ salon.id }}" data-lat="{{ salon.lat if salon.lat is not none else '' }}" data-lng="{{ salon.lng if salon.lng is not none else '' }}" data-owner-phone="{{ owner_phone or '' }}" data-salon="{{ salon.name }}" data-auth="{{ auth }}">
     {% include "_nav.html" %}
 
     <main class="container booking">
         <div class="row">
-            <h1>{{ salon.emoji }} {{ salon.name }}</h1>
-            <span class="rating">â˜… {{ salon.rating }}{% if review_count %} <small class="muted">({{ review_count }})</small>{% endif %}</span>
+            <h1>{{ salon.name }}</h1>
+            <span class="rating">★ {{ salon.rating }}{% if review_count %} <small class="muted">({{ review_count }})</small>{% endif %}</span>
         </div>
-        <p class="muted">{{ "%.1f"|format(salon.distance_km) }} km away Â·
-            <span class="badge {{ salon.status }}">{{ labels[salon.status] }}</span></p>
+        <p class="muted">{{ "%.1f"|format(salon.distance_km) }} km away ·
+            <span class="badge {{ salon.status }}">{{ labels[salon.status] }}</span>
+            · <a href="/q/{{ salon.id }}">Live queue &amp; menu</a></p>
+
+        {% if auth == '' %}
+        <div class="signin-box">
+            <strong>Sign in to book</strong>
+            <p class="muted">Create a free account (it takes a minute) so the salon knows who is coming.</p>
+            <div class="signin-actions">
+                <a class="btn" href="/login?next=/salon/{{ salon.id }}">Sign in</a>
+                <a class="btn ghost" href="/register?next=/salon/{{ salon.id }}">Create account</a>
+            </div>
+        </div>
+        {% elif auth != 'customer' %}
+        <div class="signin-box"><strong>Booking is for customer accounts</strong><p class="muted">Sign in with a customer account to book appointments.</p></div>
+        {% endif %}
+
+        <p id="rangeInfo" class="range-info">📍 Checking your location…</p>
 
         <h2>1. Choose a service</h2>
         <div class="services">
@@ -28,10 +43,52 @@
                 <input type="radio" name="service" value="{{ s.id }}" {% if loop.first %}checked{% endif %}>
                 <span>{{ s.name }}</span>
                 <span class="muted">{{ s.duration_min }} min</span>
-                <strong>â‚¹{{ s.price }}</strong>
+                <strong>₹{{ s.price }}</strong>
             </label>
             {% endfor %}
         </div>
 
-        <h2>2. Pick a time <small class="muted">(today, updates live)</small></h2>
-        <div id="slots" class="slots">¶»§q«^
+        <h2>2. Pick a time <small class="muted">(live)</small></h2>
+        <div class="day-tabs" role="tablist">
+            {% for d in days %}<button type="button" class="day-tab {% if loop.first %}active{% endif %}" data-day="{{ d.value }}">{{ d.label }}</button>{% endfor %}
+        </div>
+        <div id="slots" class="slots"><p class="muted">Loading times…</p></div>
+        <div class="legend">
+            <span><i class="dot free"></i>Free</span>
+            <span><i class="dot held"></i>Being booked</span>
+            <span><i class="dot booked"></i>Booked</span>
+            <span><i class="dot selected"></i>Yours</span>
+        </div>
+        <p id="holdInfo" class="hold-info" hidden></p>
+        <p id="closedMsg" class="empty" hidden>This salon isn't taking bookings right now.</p>
+
+        <h2>3. Your phone number</h2>
+        <div class="details">
+            <input id="phone" type="tel" inputmode="numeric" placeholder="Phone number (digits only)" maxlength="12" autocomplete="tel" value="{{ my_phone }}">
+            <button id="confirm" class="book" disabled>Select a time to continue</button>
+        </div>
+        <p id="message" class="message" hidden></p>
+
+        <h2>Reviews</h2>
+        {% if not reviews %}<p class="muted">No reviews yet.</p>{% endif %}
+        {% for r in reviews %}
+        <div class="review"><strong>{{ r.name }}</strong> · <span class="rating">{{ '★' * r.rating }}</span>
+            {% if r.comment %}<p>{{ r.comment }}</p>{% endif %}</div>
+        {% endfor %}
+    </main>
+
+    <div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-box">
+            <h2 id="modalTitle">Booking requested ✅</h2>
+            <p class="muted" id="modalWhen"></p>
+            <p class="muted">Your confirmation code</p>
+            <div class="code-box" id="modalCode">····</div>
+            <p class="hint">Show this code to the salon when you arrive. The owner needs it to complete your booking. We'll alert you when the salon accepts.</p>
+            <div class="modal-actions" id="modalActions"></div>
+            <button type="button" class="btn ghost" id="modalClose">Close</button>
+        </div>
+    </div>
+
+    <script src="/js/salon.js"></script>
+</body>
+</html>

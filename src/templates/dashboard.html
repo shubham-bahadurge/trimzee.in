@@ -3,28 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - SalonGo</title>
+    <title>Dashboard - Trimzee</title>
+    <link rel="icon" href="/img/logo-mark.png">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/auth.css">
     <link rel="stylesheet" href="/css/extra.css">
-    <link rel="stylesheet" href="/css/trimzee-refresh.css">
 </head>
 <body>
     {% include "_nav.html" %}
     <main class="container">
-        <h1>{{ salon.name }}</h1>
-        <p class="muted">Today's bookings: <strong>{{ bookings|length }}</strong> Â·
-            Current status: <span class="badge {{ salon.status }}">{{ labels[salon.status] }}</span></p>
-        {% if salon.approved == 0 %}<p class="message warn">â³ Your salon is waiting for admin approval. Customers can't see it yet.</p>
-        {% elif salon.approved == 2 %}<p class="message err">Your salon registration was not approved.</p>{% endif %}
-        {% if notice %}<p class="message ok">{{ notice }}</p>{% endif %}
-        <p><a class="small-btn" href="/dashboard/services">âœï¸ Edit services &amp; prices</a></p>
+        <div class="page-head"><h1>{{ salon.name }}</h1><span class="badge {{ live }}">{{ labels[live] }}</span></div>
+        {% if salon.approved == 0 %}<p class="message warn">⏳ Your {{ venue }} is waiting for admin approval. Customers can't see it yet.</p>
+        {% elif salon.approved == 2 %}<p class="message err">Your {{ venue }} registration was not approved.</p>{% endif %}
+        {% if notice %}<p class="message {{ 'err' if error else 'ok' }}">{{ notice }}</p>{% endif %}
 
-        <form method="post" action="/dashboard/status" class="status-form">
+        {% set is_on = salon.status != 'closed' %}
+        <form method="post" action="/dashboard/toggle" class="power {{ 'on' if is_on else 'off' }}">
             <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-            <label>Booking status
-                <select name="status">
-                    {% for key, label in labels.items() %}
-                    <option value="{{ key }}" {% if key == salon.status %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-            ¶»§q«^
+            <input type="hidden" name="state" value="{{ 'off' if is_on else 'on' }}">
+            <div><strong>{{ venue|capitalize }} is {{ 'ON' if is_on else 'OFF' }}</strong>
+                <span class="sub">{% if is_on %}Taking bookings · next free slot: {{ next_label }}{% else %}New bookings are paused{% endif %}</span></div>
+            <button class="switch" type="submit" aria-label="{{ 'Turn salon off' if is_on else 'Turn salon on' }}"></button>
+        </form>
+        <p class="hint" style="margin-top:-4px">Stays ON until you switch it off. The status updates by itself: Busy while a booked slot is running, Available 30 minutes later, Fully booked when every slot is taken.</p>
+
+        <div class="tiles">
+            <div class="tile"><span>Today's revenue</span><strong>₹{{ rev.today_earned }}</strong><small>{{ rev.today_done }} completed</small></div>
+            <div class="tile"><span>Still to come today</span><strong>₹{{ rev.today_expected }}</strong><small>{{ rev.today_upcoming }} booked</small></div>
+            <div class="tile"><span>This month</span><strong>₹{{ rev.month_earned }}</strong><small>{{ rev.month_done }} completed</small></div>
+            <div class="tile"><span>Today's bookings</span><strong>{{ days[0].rows|length }}</strong><small>all statuses</small></div>
+        </div>
+
+        {% for day in days %}
+        <h2 class="section-title">{{ day.label }}'s bookings</h2>
+        {% if not day.rows %}
+            <div class="panel empty-card">No bookings {{ day.label|lower }}. New requests appear here with an alert.</div>
+        {% else %}
+        <div class="stack">
+            {% for b in day.rows %}
+            <article class="bk">
+                <div class="bk-top">
+                    <div class="bk-time">{{ b.slot_start|pretty_time }}</div>
+                    <span class="badge {{ b.status }}">{{ {'pending': 'New request', 'confirmed': 'Confirmed', 'completed': 'Completed', 'cancelled': 'Cancelled', 'rejected': 'Declined'}.get(b.status, b.status) }}</span>
+                </div>
+                <div><div class="bk-title">{{ b.customer_name }}</div>
+                    <div class="bk-meta"><span>{{ b.service_name }}</span><span>₹{{ b.price }}</span>
+                        {% if b.contact_phone %}<a href="tel:{{ b.contact_phone }}">📞 {{ b.contact_phone }}</a>{% endif %}</div></div>
+                {% if b.status == 'pending' %}
+                <form method="post" action="/dashboard/bookings/{{ b.id }}" class="bk-actions">
+                    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    <button class="btn small" name="action" value="accept" type="submit">✓ Accept</button>
+                    <button class="btn danger small" name="action" value="reject" type="submit">Reject</button>
+                </form>
+                {% elif b.status == 'confirmed' %}
+                <form method="post" action="/dashboard/bookings/{{ b.id }}" class="code-form">
+                    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    <label class="field">Customer's 4-digit code
+                        <input type="text" name="code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="····" autocomplete="off" required></label>
+                    <button class="btn small" name="action" value="complete" type="submit">Complete order</button>
+                    <button class="btn danger small" name="action" value="reject" type="submit" formnovalidate>Cancel</button>
+                </form>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        <h2 class="section-title">{{ venue|capitalize }} settings</h2>
+        <div class="panel">
+            <form method="post" action="/dashboard/gender" class="row-form">
+                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                <label class="field">This {{ venue }} is for
+                    <select name="gender">
+                        {% for key, label in [('unisex', 'Everyone (unisex)'), ('men', 'Men'), ('women', 'Women')] %}
+                        <option value="{{ key }}" {% if key == gender %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <button class="btn small" type="submit">Save</button>
+            </form>
+        </div>
+        <div class="panel">
+            <form method="post" action="/dashboard/location" id="locForm">
+                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                <input type="hidden" name="lat" id="lat"><input type="hidden" name="lng" id="lng">
+                <button class="btn ghost small" type="button" id="locBtn">📍 {% if salon.lat is not none %}Update{% else %}Set{% endif %} {{ venue }} location from this device</button>
+                <p class="hint" id="locMsg">{% if salon.lat is none %}Customers can only book once your location is set (they must be within 5 km).{% else %}Location saved. Customers within 5 km can book.{% endif %}</p>
+            </form>
+            <script>
+                document.getElementById("locBtn").addEventListener("click", function () {
+                    var msg = document.getElementById("locMsg");
+                    if (!navigator.geolocation) { msg.textContent = "Location isn't supported on this device."; return; }
+                    msg.textContent = "Finding location…";
+                    navigator.geolocation.getCurrentPosition(function (p) {
+                        document.getElementById("lat").value = p.coords.latitude;
+                        document.getElementById("lng").value = p.coords.longitude;
+                        document.getElementById("locForm").submit();
+                    }, function () { msg.textContent = "Couldn't get your location. Please allow location access."; }, { timeout: 10000 });
+                });
+            </script>
+        </div>
+        <p class="stack"><a class="btn ghost" href="/dashboard/qr">🔳 QR code &amp; print poster</a><a class="btn ghost" href="/dashboard/services">✏️ Edit services &amp; prices</a></p>
+    </main>
+</body>
+</html>

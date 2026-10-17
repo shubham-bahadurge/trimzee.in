@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - SalonGo</title>
+    <title>Admin - Trimzee</title>
+    <link rel="icon" href="/img/logo-mark.png">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/auth.css">
     <link rel="stylesheet" href="/css/extra.css">
-    <link rel="stylesheet" href="/css/trimzee-refresh.css">
 </head>
 <body>
     {% include "_nav.html" %}
-    <main class="container">
+    <main class="container wide">
         <h1>Admin</h1>
         {% if notice %}<p class="message ok">{{ notice }}</p>{% endif %}
         <div class="stats">
@@ -20,13 +20,88 @@
             <div><strong>{{ stats.salons }}</strong><span>Live salons</span></div>
             <div><strong>{{ stats.pending }}</strong><span>Awaiting approval</span></div>
             <div><strong>{{ stats.bookings }}</strong><span>Bookings</span></div>
-            <div><strong>â‚¹{{ stats.revenue }}</strong><span>Completed value</span></div>
+            <div><strong>₹{{ stats.revenue }}</strong><span>Completed value</span></div>
             <div><strong>{{ stats.reviews }}</strong><span>Reviews</span></div>
+            <div><strong>{{ waitlist }}</strong><span>Shop waiting list</span></div>
         </div>
 
-        <h2>Salons awaiting approval</h2>
-        {% if not lists.pending %}<p class="empty">Nothing waiting.</p>{% else %}
+        <div class="section-head"><h2>Salons awaiting approval</h2></div>
+        {% if not lists.pending %}<p class="panel empty-card">Nothing waiting.</p>{% else %}
         <div class="table-wrap"><table class="table">
             <tr><th>Salon</th><th>Owner</th><th>Email</th><th></th></tr>
             {% for s in lists.pending %}
-            <tr><td>{{ s.name }}</td><td>{{ s.owner_name }}</td><td>{{ s.e¶»§q«^
+            <tr><td>{{ s.name }}</td><td>{{ s.owner_name }}</td><td>{{ s.email }}</td>
+                <td><form method="post" class="inline">
+                    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    <button class="small-btn" formaction="/admin/salons/{{ s.id }}/approve">Approve</button>
+                    <button class="small-btn danger" formaction="/admin/salons/{{ s.id }}/reject">Reject</button>
+                </form></td></tr>
+            {% endfor %}
+        </table></div>{% endif %}
+
+        <div class="section-head"><h2>Customers ({{ customers|length }})</h2>
+            <a class="btn small" href="/admin/export/customers.pdf">⬇ Download PDF</a></div>
+        <div class="table-wrap"><table class="table">
+            <tr><th>Name</th><th>Email</th><th>Gender</th><th>Joined</th><th>Bookings</th><th>Account</th><th></th></tr>
+            {% for u in customers %}
+            <tr><td>{{ u.name }}</td><td>{{ u.email }}</td><td>{{ (u.gender or '-')|capitalize }}</td><td>{{ u.joined }}</td><td>{{ u.bookings }}</td>
+                <td>{{ 'Active' if u.is_active else 'Suspended' }}</td>
+                <td><form method="post" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    {% if u.is_active %}<button class="small-btn danger" formaction="/admin/users/{{ u.id }}/suspend">Suspend</button>
+                    {% else %}<button class="small-btn" formaction="/admin/users/{{ u.id }}/activate">Reactivate</button>{% endif %}</form></td></tr>
+            {% else %}<tr><td colspan="7" class="muted">No customers yet.</td></tr>
+            {% endfor %}
+        </table></div>
+
+        <div class="section-head"><h2>Salon owners ({{ owners|length }})</h2>
+            <a class="btn small" href="/admin/export/owners.pdf">⬇ Download PDF</a></div>
+        <div class="table-wrap"><table class="table">
+            <tr><th>Name</th><th>Email</th><th>Phone</th><th>Gender</th><th>Business</th><th>Approval</th><th>Joined</th><th>Account</th><th></th></tr>
+            {% for u in owners %}
+            <tr><td>{{ u.name }}</td><td>{{ u.email }}</td><td>{{ u.phone }}</td><td>{{ (u.gender or '-')|capitalize }}</td><td>{{ u.salon or '-' }}</td>
+                <td>{{ {0: 'Pending', 1: 'Approved', 2: 'Rejected'}.get(u.approved, '-') }}</td><td>{{ u.joined }}</td>
+                <td>{{ 'Active' if u.is_active else 'Suspended' }}</td>
+                <td><form method="post" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    {% if u.is_active %}<button class="small-btn danger" formaction="/admin/users/{{ u.id }}/suspend">Suspend</button>
+                    {% else %}<button class="small-btn" formaction="/admin/users/{{ u.id }}/activate">Reactivate</button>{% endif %}</form></td></tr>
+            {% else %}<tr><td colspan="9" class="muted">No owners yet.</td></tr>
+            {% endfor %}
+        </table></div>
+
+        <div class="section-head"><h2>All salons</h2></div>
+        <div class="table-wrap"><table class="table">
+            <tr><th>Salon</th><th>Owner</th><th>Approval</th><th></th></tr>
+            {% for s in lists.salons %}
+            <tr><td>{{ s.name }}</td><td>{{ s.email }}</td>
+                <td>{{ {0: 'Pending', 1: 'Approved', 2: 'Rejected'}[s.approved] }}</td>
+                <td><form method="post" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    {% if s.approved != 1 %}<button class="small-btn" formaction="/admin/salons/{{ s.id }}/approve">Approve</button>{% endif %}
+                    {% if s.approved != 2 %}<button class="small-btn danger" formaction="/admin/salons/{{ s.id }}/reject">Reject</button>{% endif %}
+                </form></td></tr>
+            {% endfor %}
+        </table></div>
+
+        <div class="section-head"><h2>Recent bookings</h2></div>
+        <div class="table-wrap"><table class="table">
+            <tr><th>#</th><th>When</th><th>Salon</th><th>Customer</th><th>Status</th></tr>
+            {% for b in lists.bookings %}
+            <tr><td>{{ b.id }}</td><td>{{ b.slot_start[:10] }} · {{ b.slot_start|pretty_time }}</td><td>{{ b.salon_name }}</td>
+                <td>{{ b.customer_name }}</td><td><span class="badge {{ b.status }}">{{ b.status|capitalize }}</span></td></tr>
+            {% endfor %}
+        </table></div>
+
+        <div class="section-head"><h2>Reviews</h2></div>
+        {% if not lists.reviews %}<p class="panel empty-card">No reviews yet.</p>{% else %}
+        <div class="table-wrap"><table class="table">
+            <tr><th>Salon</th><th>Customer</th><th>Rating</th><th>Comment</th><th></th></tr>
+            {% for r in lists.reviews %}
+            <tr><td>{{ r.salon_name }}</td><td>{{ r.customer_name }}</td><td>{{ '★' * r.rating }}</td>
+                <td class="wrap">{{ r.comment or '-' }}</td>
+                <td><form method="post" action="/admin/reviews/{{ r.id }}/delete" class="inline">
+                    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    <button class="small-btn danger" type="submit">Remove</button></form></td></tr>
+            {% endfor %}
+        </table></div>{% endif %}
+    </main>
+</body>
+</html>

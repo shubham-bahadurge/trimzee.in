@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ info.name }} - live queue - Trimzee</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="stylesheet" href="/css/extra.css">
+</head>
+<body data-salon-id="{{ salon_id }}">
+    {% include "_nav.html" %}
+    <main class="container">
+        <div class="page-head"><h1>{{ info.name }}</h1><span class="badge {{ info.status }}" id="qStatus">{{ labels[info.status] }}</span></div>
+        <p class="muted">Live queue, updates automatically.</p>
+        <div class="tiles">
+            <div class="tile"><span>In the queue today</span><strong id="qAhead">{{ info.ahead }}</strong><small>bookings ahead</small></div>
+            <div class="tile"><span>Next free slot</span><strong id="qNext" class="small-num">{{ info.next_free }}</strong><small id="qServing">{{ 'Serving a customer now' if info.serving else 'No one in the chair right now' }}</small></div>
+        </div>
+        <p><a class="btn" href="/salon/{{ salon_id }}">Book a slot</a></p>
+
+        <h2 class="section-title">Service menu</h2>
+        <div class="stack">
+            {% for s in services %}
+            <div class="bk"><div class="bk-top"><div class="bk-title">{{ s.name }}</div><strong>₹{{ s.price }}</strong></div>
+                <div class="bk-meta"><span>{{ s.duration_min }} min</span></div></div>
+            {% endfor %}
+        </div>
+    </main>
+    <script>
+        (function () {
+            var id = document.body.dataset.salonId, labels = {available: "Available", busy: "Busy", closed: "Closed", full: "Fully booked"};
+            async function refresh() {
+                if (document.hidden) { return; }
+                try {
+                    var res = await fetch("/api/salons/" + id + "/queue");
+                    if (!res.ok) { return; }
+                    var d = await res.json();
+                    var s = document.getElementById("qStatus");
+                    s.textContent = labels[d.status] || d.status;
+                    s.className = "badge " + d.status;
+                    document.getElementById("qAhead").textContent = d.ahead;
+                    document.getElementById("qNext").textContent = d.next_free;
+                    document.getElementById("qServing").textContent = d.serving ? "Serving a customer now" : "No one in the chair right now";
+                } catch (e) { /* keep the last numbers */ }
+            }
+            setInterval(refresh, 8000);
+            document.addEventListener("visibilitychange", refresh);
+        })();
+    </script>
+</body>
+</html>
