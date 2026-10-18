@@ -14,6 +14,7 @@ import accounts  # noqa: E402
 import boot  # noqa: E402
 import chatbot  # noqa: E402
 import growth  # noqa: E402
+import googleauth  # noqa: E402
 import safety  # noqa: E402
 import mailer  # noqa: E402
 import meta  # noqa: E402
@@ -66,7 +67,7 @@ app.jinja_env.globals["csrf_token"] = csrf_token
 
 @app.context_processor
 def inject_user():
-    return {"current_user": current_user()}
+    return {"current_user": current_user(), "google_enabled": googleauth.configured()}
 
 
 @app.template_filter("pretty_time")
@@ -298,6 +299,70 @@ def reset_password():
             return redirect("/login?reset=1")
         return render_template("reset.html", email=mask_email(email), error=message), 400
     return render_template("reset.html", email=mask_email(email), error=None)
+
+
+@app.route("/auth/google")
+def google_login():
+    if current_user():
+        return redirect(home_for(current_user()["role"]))
+    if not googleauth.configured():
+        abort(404)
+    ref = (request.args.get("ref") or "").strip().upper()
+    if not (ref and accounts.find_referrer(ref)):
+        ref = session.get("ref") or ""
+    nxt = safe_next(request.args.get("next")) or safe_next(session.get("next"))
+    state = secrets.token_urlsafe(24)
+    session["g_state"], session["g_next"], session["g_ref"] = state, nxt, ref
+    return redirect(googleauth.login_url(public_base() + "/auth/google/callback", state))
+
+
+@app.route("/auth/google/callback")
+def google_callback():
+    if not googleauth.configured():
+        abort(404)
+    state = session.pop("g_state", "")
+    nxt, ref = session.pop("g_next", ""), session.pop("g_ref", "")
+
+    def fail(message):
+        return render_template("login.html", error=message, email="", next=nxt), 400
+
+    sent = request.args.get("state", "")
+    if not state or not sent or not secrets.compare_digest(state, sent):
+        return fail("Sign-in expired. Please try again.")
+    if request.args.get("error") or not request.args.get("code"):
+        return fail("Google sign-in was cancelled.")
+    profile, error = googleauth.profile_from_code(
+        request.args["code"], public_base() + "/auth/google/callback")
+    if error:
+        return fail(error)
+    conn = db.get_db()
+    try:
+        row = conn.execute("SELECT id, role, is_active FROM users WHERE email = ?",
+                           (profile["email"],)).fetchone()
+    finally:
+        conn.close()
+    if row:
+        if not row["is_active"]:
+            return fail("This account has been suspended.")
+        if row["role"] == "admin":
+            return fail("Admin accounts sign in with a password.")
+        uid, role = row["id"], row["role"]
+    else:
+        from werkzeug.security import generate_password_hash
+        name = (profile["name"] or profile["email"].split("@")[0]).strip()[:60]
+        if len(name) < 2:
+            name = "Trimzee user"
+        uid, error = growth.create_member({
+            "name": name, "email": profile["email"], "role": "customer", "salon_name": "",
+            "pw_hash": generate_password_hash(secrets.token_urlsafe(32)), "gender": None, "phone": None})
+        if not uid:
+            return fail(error or "Could not create your account. Please try again.")
+        accounts.ensure_code(uid)
+        if ref and accounts.find_referrer(ref):
+            accounts.apply_referral(uid, ref)
+        role = "customer"
+    start_session(uid)
+    return redirect(safe_next(nxt) or home_for(role))
 
 
 @app.route("/logout", methods=["POST"])
