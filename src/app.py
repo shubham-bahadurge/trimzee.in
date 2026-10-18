@@ -605,7 +605,8 @@ def owner_view(notice=None, error=False):
         abort(404)
     live, next_label = slots.salon_live(salon["id"])
     gender = meta.owner_gender(current_user()["id"])
-    days = [{"label": t["label"], "rows": slots.bookings_for(salon["id"], t["value"])} for t in slots.day_tabs()]
+    days = [{"label": t["label"], "rows": slots.bookings_for(salon["id"], t["value"])}
+            for t in slots.day_tabs()[:1]]
     return render_template("dashboard.html", salon=salon, labels=STATUS_LABELS, notice=notice, error=error,
                            gender=gender, venue=growth.venue_word(gender), live=live, next_label=next_label,
                            rev=meta.revenue(salon["id"]), days=days)
