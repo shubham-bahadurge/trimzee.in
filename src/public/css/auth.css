@@ -6,6 +6,9 @@
 .auth-card label { display: grid; gap: 6px; font-weight: 600; font-size: .95rem; }
 .auth-card label[hidden] { display: none; }
 .auth-card input[type=text], .auth-card input[type=email], .auth-card input[type=password] { padding: 13px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 1rem; font-weight: 400; }
+.verify-card { width: min(420px, calc(100% - 32px)); min-width: 0; }
+.verify-card form, .verify-card label { width: 100%; min-width: 0; }
+.verify-card input[type=text], .verify-card button { width: 100%; min-width: 0; }
 .role-options { display: flex; gap: 16px; flex-wrap: wrap; }
 .role-options label { display: flex; gap: 6px; align-items: center; font-weight: 600; }
 .status-form { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin: 18px 0 6px; }
