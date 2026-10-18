@@ -52,7 +52,7 @@ function post(url, body) {
 function updateButton() {
     if (auth !== "customer") {
         confirmBtn.disabled = true;
-        confirmBtn.textContent = auth === "" ? "Sign in to book" : "Customer account needed";
+        confirmBtn.textContent = "Customer account needed";
     } else if (!nearOk) {
         confirmBtn.disabled = true;
         confirmBtn.textContent = "Turn on location to book";

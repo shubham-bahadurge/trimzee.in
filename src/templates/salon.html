@@ -21,16 +21,7 @@
             <span class="badge {{ salon.status }}">{{ labels[salon.status] }}</span>
             · <a href="/q/{{ salon.id }}">Live queue &amp; menu</a></p>
 
-        {% if auth == '' %}
-        <div class="signin-box">
-            <strong>Sign in to book</strong>
-            <p class="muted">Create a free account (it takes a minute) so the salon knows who is coming.</p>
-            <div class="signin-actions">
-                <a class="btn" href="/login?next=/salon/{{ salon.id }}">Sign in</a>
-                <a class="btn ghost" href="/register?next=/salon/{{ salon.id }}">Create account</a>
-            </div>
-        </div>
-        {% elif auth != 'customer' %}
+        {% if auth != 'customer' %}
         <div class="signin-box"><strong>Booking is for customer accounts</strong><p class="muted">Sign in with a customer account to book appointments.</p></div>
         {% endif %}
 

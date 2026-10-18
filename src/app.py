@@ -145,9 +145,13 @@ def home():
 @app.route("/salon/<int:salon_id>")
 def salon_page(salon_id):
     data = slots.get_salon(salon_id)
-    if not data or not meta.gender_allows(salon_id, viewer_gender())[0]:
+    if not data:
         abort(404)
     user = current_user()
+    if not user:
+        return redirect(f"/login?next=/salon/{salon_id}")
+    if not meta.gender_allows(salon_id, viewer_gender())[0]:
+        abort(404)
     return render_template("salon.html", salon=data["salon"], services=data["services"], labels=STATUS_LABELS,
                            reviews=data["reviews"], review_count=data["review_count"],
                            owner_phone=growth.salon_owner_phone(salon_id), days=slots.day_tabs(),
