@@ -13,7 +13,7 @@ import meta
 import billing
 
 OPEN, CLOSE, DAYS = 10, 20, 2          # slots every 30 min, 10:00-19:30, today and tomorrow
-HOLD_SECONDS = 180                     # a slot someone is booking stays reserved for 3 minutes
+HOLD_SECONDS = 60                     # a slot someone is booking stays reserved for 3 minutes
 MAX_CODE_TRIES = 5
 
 
