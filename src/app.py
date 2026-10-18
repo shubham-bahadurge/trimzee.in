@@ -395,6 +395,8 @@ def bill_banner(response):
     try:
         if request.method != "GET" or response.status_code != 200 or response.mimetype != "text/html":
             return response
+        if request.path.startswith(("/dashboard", "/admin")):
+            return response
         snippet = billing.banner_html(request.path, current_user())
         if not snippet:
             return response
