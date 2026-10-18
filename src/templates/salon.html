@@ -18,8 +18,7 @@
             <span class="rating">★ {{ salon.rating }}{% if review_count %} <small class="muted">({{ review_count }})</small>{% endif %}</span>
         </div>
         <p class="muted">{{ "%.1f"|format(salon.distance_km) }} km away ·
-            <span class="badge {{ salon.status }}">{{ labels[salon.status] }}</span>
-            · <a href="/q/{{ salon.id }}">Live queue &amp; menu</a></p>
+            <span class="badge {{ salon.status }}">{{ labels[salon.status] }}</span></p>
 
         {% if auth != 'customer' %}
         <div class="signin-box"><strong>Booking is for customer accounts</strong><p class="muted">Sign in with a customer account to book appointments.</p></div>

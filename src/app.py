@@ -154,7 +154,7 @@ def salon_page(salon_id):
         abort(404)
     return render_template("salon.html", salon=data["salon"], services=data["services"], labels=STATUS_LABELS,
                            reviews=data["reviews"], review_count=data["review_count"],
-                           owner_phone=growth.salon_owner_phone(salon_id), days=slots.day_tabs(),
+                           owner_phone=growth.salon_owner_phone(salon_id), days=slots.day_tabs()[:1],
                            auth=user["role"] if user else "", my_phone=(user or {}).get("phone") or "")
 
 

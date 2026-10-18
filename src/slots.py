@@ -188,8 +188,9 @@ def get_slots(salon_id, day, viewer_id=None):
         salon = conn.execute("SELECT status FROM salons s WHERE s.id = ? AND s.approved = 1", (salon_id,)).fetchone()
         if not salon:
             return None
-        if day not in day_strings():
-            day = day_strings()[0]
+        today = day_strings()[0]
+        if day != today:
+            day = today
         is_open = salon["status"] != "closed" and billing.salon_can_book(conn, salon_id)
         out, mine = _states(conn, salon_id, day, viewer_id, is_open)
         full = billing.has_full_view(conn, viewer_id)
@@ -220,7 +221,7 @@ PLUS_MESSAGE = "The free plan can book only the next free time. Get Trimzee Plus
 
 def hold(user_id, salon_id, slot):
     """Reserve a slot for this user for HOLD_SECONDS. Returns (http_status, message, seconds)."""
-    if slot not in set(window_slots()):
+    if slot[:10] != day_strings()[0] or slot not in set(window_slots()):
         return 400, "That time isn't available.", 0
     if slot <= _now().strftime("%Y-%m-%d %H:%M"):
         return 409, "That time has already passed.", 0
@@ -271,7 +272,7 @@ def book(user_id, salon_id, service_id, slot, phone):
     phone = re.sub(r"\D", "", phone or "")
     if not 10 <= len(phone) <= 12:
         return 400, "Please enter a valid phone number (10-12 digits).", None, None
-    if slot not in set(window_slots()):
+    if slot[:10] != day_strings()[0] or slot not in set(window_slots()):
         return 400, "That time slot is not available.", None, None
     if slot <= _now().strftime("%Y-%m-%d %H:%M"):
         return 409, "That time has already passed. Pick a later slot.", None, None
