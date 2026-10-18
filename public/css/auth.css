@@ -1,0 +1,30 @@
+.inline { display: inline; }
+.link-btn { background: none; border: 0; color: #374151; font-weight: 600; font-size: 1rem; cursor: pointer; font-family: inherit; }
+.link-btn:hover { color: #7c3aed; }
+.auth-card { max-width: 420px; margin: 40px auto; padding: 28px 24px; background: #fff; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); display: grid; gap: 14px; }
+.auth-card form { display: grid; gap: 14px; }
+.auth-card label { display: grid; gap: 6px; font-weight: 600; font-size: .95rem; }
+.auth-card label[hidden] { display: none; }
+.auth-card input[type=text], .auth-card input[type=email], .auth-card input[type=password] { padding: 13px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 1rem; font-weight: 400; }
+.role-options { display: flex; gap: 16px; flex-wrap: wrap; }
+.role-options label { display: flex; gap: 6px; align-items: center; font-weight: 600; }
+.status-form { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin: 18px 0 6px; }
+.status-form label { display: grid; gap: 6px; font-weight: 600; }
+.status-form select { padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 1rem; background: #fff; }
+.status-form .book { margin: 0; }
+.container h1 { margin-bottom: 6px; }
+.container h2 { margin-top: 24px; }
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+.table th, .table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #f3f4f6; white-space: nowrap; }
+.table th { background: #faf5ff; font-size: .85rem; color: #6b7280; }
+.badge.confirmed { background: #dcfce7; color: #166534; }
+.badge.pending { background: #fef3c7; color: #92400e; }
+.badge.completed { background: #e0e7ff; color: #3730a3; }
+.badge.cancelled, .badge.rejected { background: #fee2e2; color: #991b1b; }
+.small-btn { padding: 7px 12px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: .9rem; font-weight: 600; }
+.small-btn:hover { border-color: #7c3aed; }
+.small-btn.danger { color: #991b1b; border-color: #fca5a5; }
+.message { margin: 10px 0; padding: 12px 16px; border-radius: 10px; font-weight: 600; }
+.message.ok { background: #dcfce7; color: #166534; }
+.message.err { background: #fee2e2; color: #991b1b; }
