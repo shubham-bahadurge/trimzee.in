@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barbers - Trimzee</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#f6f6f7;color:#111}
+.wrap{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:1.4rem;margin:8px 0 14px}
+h2{font-size:1.05rem;margin:0 0 10px}
+.card{background:#fff;border-radius:14px;padding:18px;margin:0 0 14px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
+p{color:#444;line-height:1.45;margin:.4em 0}
+small,.muted{color:#777}
+label{display:block;font-size:.82rem;margin:10px 0 4px;color:#333}
+input,select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ccc;border-radius:9px;font-size:1rem;background:#fff}
+button{padding:10px 14px;border:0;border-radius:9px;background:#111;color:#fff;font-size:.95rem;cursor:pointer}
+button[disabled]{background:#bbb;cursor:not-allowed}
+button.alt{background:#fff;color:#111;border:1px solid #bbb}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eee}
+.row:first-of-type{border-top:0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.inline input{width:auto;flex:1;min-width:120px}
+.err{background:#fdecec;color:#a11;padding:10px 12px;border-radius:9px;margin:0 0 14px}
+.ok{background:#e9f7ee;color:#165a2b;padding:10px 12px;border-radius:9px;margin:0 0 14px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;background:#eee;color:#444}
+.pill.on{background:#e9f7ee;color:#165a2b}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:7px 6px;border-top:1px solid #eee;vertical-align:top}
+a{color:#111}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p><a href="/dashboard">&larr; Back to dashboard</a></p>
+<h1>Barbers at {{ salon }}</h1>
+{% if notice %}<div class="{{ 'err' if error else 'ok' }}">{{ notice }}</div>{% endif %}
+<div class="card">
+<p><b>{{ working }}</b> barber{{ '' if working == 1 else 's' }} working. Each barber can take one booking per time slot, so customers can book {{ working }} {{ 'person' if working == 1 else 'people' }} at the same time. A free barber is assigned automatically.</p>
+<p class="muted">Plan: {% if status.active %}active until {{ status.ends_pretty }}{% else %}not active{% endif %} &middot; <a href="/plans">plan and coupons</a></p>
+</div>
+<div class="card">
+<h2>Your barbers</h2>
+{% for b in barbers %}
+<div class="row" style="align-items:flex-start;flex-wrap:wrap">
+<div style="flex:1;min-width:220px">
+<form method="post" action="/dashboard/barbers/{{ b.id }}/rename" class="inline">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<input name="name" value="{{ b.name }}" maxlength="40" required>
+<button class="alt" type="submit">Save name</button>
+</form>
+<small>{{ b.today|length }} booking{{ '' if b.today|length == 1 else 's' }} today</small>
+{% for t in b.today %}<small><br>{{ t.time }} &middot; {{ t.customer }} &middot; {{ t.service }} &middot; {{ t.status }}</small>{% endfor %}
+</div>
+<form method="post" action="/dashboard/barbers/{{ b.id }}/toggle">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<input type="hidden" name="active" value="{{ 0 if b.active else 1 }}">
+<span class="pill {{ 'on' if b.active else '' }}">{{ 'Working' if b.active else 'Off' }}</span>
+<button class="alt" type="submit">{{ 'Set off' if b.active else 'Set working' }}</button>
+</form>
+</div>
+{% endfor %}
+</div>
+<div class="card">
+<h2>Add a barber</h2>
+<form method="post" action="/dashboard/barbers/add" class="inline">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<input name="name" placeholder="Barber name" maxlength="40" required>
+<button type="submit">Add</button>
+</form>
+</div>
+</div>
+</body>
+</html>

@@ -14,6 +14,7 @@ import accounts  # noqa: E402
 import boot  # noqa: E402
 import chatbot  # noqa: E402
 import growth  # noqa: E402
+import billing  # noqa: E402
 import googleauth  # noqa: E402
 import safety  # noqa: E402
 import mailer  # noqa: E402
@@ -363,6 +364,157 @@ def google_callback():
         role = "customer"
     start_session(uid)
     return redirect(safe_next(nxt) or home_for(role))
+
+
+def _bill_user(role=None):
+    user = current_user()
+    if not user:
+        return None, redirect("/login?next=" + request.path)
+    if role and user["role"] != role:
+        abort(403)
+    return user, None
+
+
+def _bill_done(message, error=False, to="/plans"):
+    session["bill_flash"] = [message, bool(error)]
+    return redirect(to)
+
+
+def _bill_flash():
+    data = session.pop("bill_flash", None)
+    return (data[0], bool(data[1])) if data else (None, False)
+
+
+@app.after_request
+def bill_banner(response):
+    """Adds a slim bar with the right plan / barber / coupon links to a few pages."""
+    try:
+        if request.method != "GET" or response.status_code != 200 or response.mimetype != "text/html":
+            return response
+        snippet = billing.banner_html(request.path, current_user())
+        if not snippet:
+            return response
+        body = response.get_data(as_text=True)
+        start = body.find("<body")
+        end = body.find(">", start) if start >= 0 else -1
+        if end < 0:
+            return response
+        response.set_data(body[:end + 1] + snippet + body[end + 1:])
+    except Exception:
+        pass
+    return response
+
+
+@app.route("/plans")
+def bill_plans():
+    user, resp = _bill_user()
+    if resp:
+        return resp
+    if user["role"] == "admin":
+        return redirect("/admin/billing")
+    notice, error = _bill_flash()
+    return render_template("plans.html", notice=notice, error=error, **billing.plans_context(user))
+
+
+@app.route("/plans/redeem", methods=["POST"])
+def bill_redeem():
+    user, resp = _bill_user()
+    if resp:
+        return resp
+    if not safety.hit(client_ip(), "coupon", 20):
+        return _bill_done("Too many tries from this network. Please wait a while and try again.", True)
+    ok, message = billing.redeem(user["id"], user["role"], request.form.get("code"))
+    return _bill_done(message, not ok)
+
+
+def _bill_barber_action(fn, *args):
+    user, resp = _bill_user("owner")
+    if resp:
+        return resp
+    salon_id = billing.owner_salon_id(user["id"])
+    if not salon_id:
+        return _bill_done("You don't have a salon yet.", True, "/dashboard")
+    ok, message = fn(salon_id, *args)
+    return _bill_done(message, not ok, "/dashboard/barbers")
+
+
+@app.route("/dashboard/barbers")
+def bill_barbers():
+    user, resp = _bill_user("owner")
+    if resp:
+        return resp
+    context = billing.barbers_context(user["id"])
+    if not context:
+        return redirect("/dashboard")
+    notice, error = _bill_flash()
+    return render_template("barbers.html", notice=notice, error=error, **context)
+
+
+@app.route("/dashboard/barbers/add", methods=["POST"])
+def bill_barber_add():
+    return _bill_barber_action(billing.add_barber, request.form.get("name"))
+
+
+@app.route("/dashboard/barbers/<int:barber_id>/toggle", methods=["POST"])
+def bill_barber_toggle(barber_id):
+    return _bill_barber_action(billing.set_barber_active, barber_id, request.form.get("active") == "1")
+
+
+@app.route("/dashboard/barbers/<int:barber_id>/rename", methods=["POST"])
+def bill_barber_rename(barber_id):
+    return _bill_barber_action(billing.rename_barber, barber_id, request.form.get("name"))
+
+
+@app.route("/admin/billing")
+def bill_admin():
+    user, resp = _bill_user("admin")
+    if resp:
+        return resp
+    notice, error = _bill_flash()
+    return render_template("admin_billing.html", notice=notice, error=error, **billing.admin_context())
+
+
+def _bill_admin_done(result):
+    ok, message = result
+    return _bill_done(message, not ok, "/admin/billing")
+
+
+@app.route("/admin/billing/plan", methods=["POST"])
+def bill_admin_plan():
+    user, resp = _bill_user("admin")
+    if resp:
+        return resp
+    return _bill_admin_done(billing.set_plan(request.form.get("code"), request.form.get("price"),
+                                             request.form.get("active") == "1"))
+
+
+@app.route("/admin/billing/coupon", methods=["POST"])
+def bill_admin_coupon():
+    user, resp = _bill_user("admin")
+    if resp:
+        return resp
+    f = request.form
+    return _bill_admin_done(billing.create_coupon(f.get("code"), f.get("audience"), f.get("kind"), f.get("value"),
+                                                  f.get("max_uses"), f.get("once_per_user") == "1",
+                                                  f.get("expires"), f.get("note")))
+
+
+@app.route("/admin/billing/coupon/<int:coupon_id>/toggle", methods=["POST"])
+def bill_admin_coupon_toggle(coupon_id):
+    user, resp = _bill_user("admin")
+    if resp:
+        return resp
+    billing.toggle_coupon(coupon_id)
+    return _bill_done("Coupon updated.", False, "/admin/billing")
+
+
+@app.route("/admin/billing/grant", methods=["POST"])
+def bill_admin_grant():
+    user, resp = _bill_user("admin")
+    if resp:
+        return resp
+    return _bill_admin_done(billing.grant(request.form.get("email"), request.form.get("days"),
+                                          request.form.get("note")))
 
 
 @app.route("/logout", methods=["POST"])

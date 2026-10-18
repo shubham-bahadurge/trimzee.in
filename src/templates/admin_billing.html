@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Billing - Trimzee admin</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#f6f6f7;color:#111}
+.wrap{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:1.4rem;margin:8px 0 14px}
+h2{font-size:1.05rem;margin:0 0 10px}
+.card{background:#fff;border-radius:14px;padding:18px;margin:0 0 14px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
+p{color:#444;line-height:1.45;margin:.4em 0}
+small,.muted{color:#777}
+label{display:block;font-size:.82rem;margin:10px 0 4px;color:#333}
+input,select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ccc;border-radius:9px;font-size:1rem;background:#fff}
+button{padding:10px 14px;border:0;border-radius:9px;background:#111;color:#fff;font-size:.95rem;cursor:pointer}
+button[disabled]{background:#bbb;cursor:not-allowed}
+button.alt{background:#fff;color:#111;border:1px solid #bbb}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eee}
+.row:first-of-type{border-top:0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.inline input{width:auto;flex:1;min-width:120px}
+.err{background:#fdecec;color:#a11;padding:10px 12px;border-radius:9px;margin:0 0 14px}
+.ok{background:#e9f7ee;color:#165a2b;padding:10px 12px;border-radius:9px;margin:0 0 14px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;background:#eee;color:#444}
+.pill.on{background:#e9f7ee;color:#165a2b}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:7px 6px;border-top:1px solid #eee;vertical-align:top}
+a{color:#111}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p><a href="/admin">&larr; Back to admin</a></p>
+<h1>Plans and coupons</h1>
+{% if notice %}<div class="{{ 'err' if error else 'ok' }}">{{ notice }}</div>{% endif %}
+<div class="card">
+<p>Active customer plans: <b>{{ totals.customer }}</b> &middot; Active salon plans: <b>{{ totals.owner }}</b></p>
+<p class="muted">Plans limit things only when the setting BILLING_ENFORCE is 1 in Vercel. Right now: <b>{{ 'ON' if enforce else 'off' }}</b>.</p>
+</div>
+<div class="card">
+<h2>Plan prices</h2>
+{% for p in plans %}
+<form method="post" action="/admin/billing/plan" class="row">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<input type="hidden" name="code" value="{{ p.code }}">
+<span style="flex:1">{{ p.name }}<br><small>{{ p.kind }} &middot; {{ p.days }} days</small></span>
+<span>&#8377;</span><input name="price" value="{{ p.price }}" style="width:90px" inputmode="numeric">
+<label style="margin:0"><input type="checkbox" name="active" value="1" style="width:auto" {{ 'checked' if p.active else '' }}> on</label>
+<button class="alt" type="submit">Save</button>
+</form>
+{% endfor %}
+</div>
+<div class="card">
+<h2>Create a coupon</h2>
+<form method="post" action="/admin/billing/coupon">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<label>Code (leave empty to make one)</label><input name="code" maxlength="32" placeholder="e.g. WELCOME30">
+<label>Who can use it</label>
+<select name="audience"><option value="customer">Customers</option><option value="owner">Salon owners</option><option value="both">Both</option></select>
+<label>Type</label>
+<select name="kind"><option value="free_days">Free days (free plan access)</option><option value="percent">Percent off (applies when paying)</option><option value="flat">Rupees off (applies when paying)</option></select>
+<label>Value (days, percent or rupees)</label><input name="value" inputmode="numeric" required>
+<label>Total uses allowed (0 = no limit, 1 = a single-use code)</label><input name="max_uses" value="0" inputmode="numeric">
+<label><input type="checkbox" name="once_per_user" value="1" checked style="width:auto"> Each person can use it only once</label>
+<label>Expires on (optional, like 2026-12-31)</label><input name="expires" placeholder="YYYY-MM-DD">
+<label>Note (optional)</label><input name="note" maxlength="200">
+<p><button type="submit">Create coupon</button></p>
+</form>
+</div>
+<div class="card">
+<h2>Coupons</h2>
+<div class="scroll"><table>
+<tr><th>Code</th><th>For</th><th>Gives</th><th>Used</th><th>Expires</th><th></th></tr>
+{% for c in coupons %}
+<tr><td><b>{{ c.code }}</b>{% if c.note %}<br><small>{{ c.note }}</small>{% endif %}</td><td>{{ c.audience }}</td><td>{{ c.what }}</td>
+<td>{{ c.uses }} / {{ c.limit }}{% if c.once_per_user %}<br><small>once per person</small>{% endif %}</td><td>{{ c.expires or '-' }}</td>
+<td><form method="post" action="/admin/billing/coupon/{{ c.id }}/toggle"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="alt" type="submit">{{ 'Turn off' if c.active else 'Turn on' }}</button></form></td></tr>
+{% else %}<tr><td colspan="6" class="muted">No coupons yet.</td></tr>{% endfor %}
+</table></div>
+</div>
+<div class="card">
+<h2>Give free days to someone</h2>
+<form method="post" action="/admin/billing/grant">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<label>Their e-mail</label><input name="email" type="email" required>
+<label>Days</label><input name="days" value="30" inputmode="numeric" required>
+<label>Note (optional, for your records)</label><input name="note" maxlength="200">
+<p><button type="submit">Give access</button></p>
+</form>
+</div>
+<div class="card">
+<h2>Recent coupon uses</h2>
+<div class="scroll"><table>
+{% for r in redemptions %}<tr><td>{{ r.redeemed_at }}</td><td>{{ r.code }}</td><td>{{ r.email }}</td><td>{{ r.detail }}</td></tr>
+{% else %}<tr><td class="muted">Nothing yet.</td></tr>{% endfor %}
+</table></div>
+</div>
+</div>
+</body>
+</html>

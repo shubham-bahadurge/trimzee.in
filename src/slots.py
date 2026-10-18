@@ -10,6 +10,7 @@ import db
 import growth
 import mailer
 import meta
+import billing
 
 OPEN, CLOSE, DAYS = 10, 20, 2          # slots every 30 min, 10:00-19:30, today and tomorrow
 HOLD_SECONDS = 180                     # a slot someone is booking stays reserved for 3 minutes
@@ -53,7 +54,6 @@ def init_slots():
         conn.execute(f"CREATE TABLE IF NOT EXISTS slot_holds (id {meta.ID}, "
                      "salon_id INTEGER NOT NULL REFERENCES salons(id) ON DELETE CASCADE, slot_start TEXT NOT NULL, "
                      f"user_id INTEGER NOT NULL REFERENCES users(id), expires {meta.REAL} NOT NULL)")
-        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS one_hold_per_slot ON slot_holds (salon_id, slot_start)")
         conn.commit()
     finally:
         conn.close()
@@ -61,12 +61,17 @@ def init_slots():
 
 # ----------------------------- live status ---------------------------------
 def _taken(conn):
-    """{salon_id: set(slot)} for pending/confirmed bookings from today on."""
+    """{salon_id: set(slot)} of slots with no free barber left (pending/confirmed bookings from today on)."""
     start = _now().strftime("%Y-%m-%d") + " 00:00"
+    counts = {}
+    for r in conn.execute("SELECT salon_id, slot_start, COUNT(*) AS n FROM bookings WHERE status IN ('pending', 'confirmed') "
+                          "AND slot_start >= ? GROUP BY salon_id, slot_start", (start,)):
+        counts[(r["salon_id"], r["slot_start"])] = r["n"]
+    capacity = billing.capacities(conn)
     out = {}
-    for r in conn.execute("SELECT salon_id, slot_start FROM bookings WHERE status IN ('pending', 'confirmed') "
-                          "AND slot_start >= ?", (start,)):
-        out.setdefault(r["salon_id"], set()).add(r["slot_start"])
+    for (salon_id, slot), n in counts.items():
+        if n >= capacity.get(salon_id, 1):
+            out.setdefault(salon_id, set()).add(slot)
     return out
 
 
@@ -102,10 +107,15 @@ def get_salons(user_gender=None):
     """Home-page list in 3 queries (salons, all service names, all taken slots)."""
     conn = db.get_db()
     try:
+        extra, params = "", ()
+        if billing.enforce():  # salons whose free month / plan ended are hidden
+            billing.grant_pending_trials(conn)
+            extra = " AND o.id IN (SELECT user_id FROM subscriptions WHERE kind = 'owner' AND ends > ?)"
+            params = (billing.now_str(),)
         rows = conn.execute(
             "SELECT s.id, s.name, s.distance_km, s.rating, s.status, s.gender, s.lat, s.lng, MIN(sv.price) AS price "
             "FROM salons s JOIN users o ON o.id = s.owner_id JOIN services sv ON sv.salon_id = s.id "
-            "WHERE s.approved = 1 AND o.is_active = 1 GROUP BY s.id ORDER BY s.distance_km").fetchall()
+            "WHERE s.approved = 1 AND o.is_active = 1" + extra + " GROUP BY s.id ORDER BY s.distance_km", params).fetchall()
         names = {}
         for r in conn.execute("SELECT salon_id, name FROM services ORDER BY id"):
             names.setdefault(r["salon_id"], []).append(r["name"])
@@ -133,6 +143,45 @@ def get_salon(salon_id):
 
 
 # ----------------------------- slots + holds -------------------------------
+def _states(conn, salon_id, day, viewer_id, is_open):
+    """One day of slots. A slot is booked once every working barber is taken."""
+    barbers = billing.barber_count(conn, salon_id)
+    booked = {r["slot_start"]: r["n"] for r in conn.execute(
+        "SELECT slot_start, COUNT(*) AS n FROM bookings WHERE salon_id = ? AND status IN ('pending', 'confirmed') "
+        "AND slot_start LIKE ? GROUP BY slot_start", (salon_id, day + "%"))}
+    now = time.time()
+    holds = {}
+    for r in conn.execute("SELECT slot_start, user_id FROM slot_holds WHERE salon_id = ? AND slot_start LIKE ? "
+                          "AND expires > ?", (salon_id, day + "%", now)):
+        holds.setdefault(r["slot_start"], []).append(r["user_id"])
+    mine = None
+    if viewer_id:
+        row = conn.execute("SELECT slot_start, expires FROM slot_holds WHERE user_id = ? AND salon_id = ? "
+                           "AND expires > ?", (viewer_id, salon_id, now)).fetchone()
+        if row:
+            mine = {"slot": row["slot_start"], "seconds": int(row["expires"] - now)}
+    hm = _now().strftime("%Y-%m-%d %H:%M")
+    out = []
+    for t in slots_of(day):
+        used = booked.get(t, 0)
+        holders = holds.get(t, [])
+        others = sum(1 for u in holders if u != viewer_id)
+        if not is_open:
+            state = "closed"
+        elif used >= barbers:
+            state = "booked"
+        elif t <= hm:
+            state = "past"
+        elif viewer_id is not None and viewer_id in holders:
+            state = "mine"
+        elif used + others >= barbers:
+            state = "held"
+        else:
+            state = "free"
+        out.append({"slot": t, "time": t[11:], "state": state})
+    return out, mine
+
+
 def get_slots(salon_id, day, viewer_id=None):
     conn = db.get_db()
     try:
@@ -141,37 +190,32 @@ def get_slots(salon_id, day, viewer_id=None):
             return None
         if day not in day_strings():
             day = day_strings()[0]
-        is_open = salon["status"] != "closed"
-        taken = {r["slot_start"] for r in conn.execute(
-            "SELECT slot_start FROM bookings WHERE salon_id = ? AND status IN ('pending', 'confirmed') "
-            "AND slot_start LIKE ?", (salon_id, day + "%"))}
-        now = time.time()
-        holds = {r["slot_start"]: r for r in conn.execute(
-            "SELECT slot_start, user_id, expires FROM slot_holds WHERE salon_id = ? AND slot_start LIKE ? "
-            "AND expires > ?", (salon_id, day + "%", now))}
-        mine = None
-        if viewer_id:
-            row = conn.execute("SELECT slot_start, expires FROM slot_holds WHERE user_id = ? AND salon_id = ? "
-                               "AND expires > ?", (viewer_id, salon_id, now)).fetchone()
-            if row:
-                mine = {"slot": row["slot_start"], "seconds": int(row["expires"] - now)}
-        hm = _now().strftime("%Y-%m-%d %H:%M")
-        out = []
-        for t in slots_of(day):
-            if not is_open:
-                state = "closed"
-            elif t in taken:
-                state = "booked"
-            elif t <= hm:
-                state = "past"
-            elif t in holds:
-                state = "mine" if holds[t]["user_id"] == viewer_id else "held"
-            else:
-                state = "free"
-            out.append({"slot": t, "time": t[11:], "state": state})
-        return {"open": is_open, "day": day, "slots": out, "my_hold": mine, "hold_seconds": HOLD_SECONDS}
+        is_open = salon["status"] != "closed" and billing.salon_can_book(conn, salon_id)
+        out, mine = _states(conn, salon_id, day, viewer_id, is_open)
+        full = billing.has_full_view(conn, viewer_id)
+        locked = False
+        if not full:  # free plan: only the next free time is shown as available
+            first = next((s for s in out if s["state"] == "free"), None)
+            for s in out:
+                if s["state"] == "free" and s is not first:
+                    s["state"], s["locked"] = "booked", True
+                    locked = True
+        return {"open": is_open, "day": day, "slots": out, "my_hold": mine, "hold_seconds": HOLD_SECONDS,
+                "limited": not full, "locked": locked}
     finally:
         conn.close()
+
+
+def _allowed_for(conn, user_id, salon_id, slot):
+    """The free plan may only take the next free time of a day (or the slot it already holds)."""
+    if billing.has_full_view(conn, user_id):
+        return True
+    out, _ = _states(conn, salon_id, slot[:10], user_id, True)
+    first = next((s["slot"] for s in out if s["state"] == "free"), None)
+    return slot == first or any(s["slot"] == slot and s["state"] == "mine" for s in out)
+
+
+PLUS_MESSAGE = "The free plan can book only the next free time. Get Trimzee Plus to pick any time."
 
 
 def hold(user_id, salon_id, slot):
@@ -183,16 +227,21 @@ def hold(user_id, salon_id, slot):
     conn = db.get_db()
     try:
         salon = conn.execute("SELECT status FROM salons WHERE id = ? AND approved = 1", (salon_id,)).fetchone()
-        if not salon or salon["status"] == "closed":
+        if not salon or salon["status"] == "closed" or not billing.salon_can_book(conn, salon_id):
             return 409, "This salon isn't taking bookings right now.", 0
-        if conn.execute("SELECT 1 FROM bookings WHERE salon_id = ? AND slot_start = ? AND status IN ('pending', 'confirmed')",
-                        (salon_id, slot)).fetchone():
+        barbers = billing.barber_count(conn, salon_id)
+        used = conn.execute("SELECT COUNT(*) FROM bookings WHERE salon_id = ? AND slot_start = ? "
+                            "AND status IN ('pending', 'confirmed')", (salon_id, slot)).fetchone()[0]
+        if used >= barbers:
             return 409, "Sorry, that slot was just booked.", 0
+        if not _allowed_for(conn, user_id, salon_id, slot):
+            return 403, PLUS_MESSAGE, 0
         now = time.time()
         conn.execute("DELETE FROM slot_holds WHERE expires <= ?", (now,))
-        conn.execute("DELETE FROM slot_holds WHERE user_id = ?", (user_id,))      # one reservation per person
-        other = conn.execute("SELECT user_id FROM slot_holds WHERE salon_id = ? AND slot_start = ?", (salon_id, slot)).fetchone()
-        if other:
+        conn.execute("DELETE FROM slot_holds WHERE user_id = ?", (user_id,))  # one reservation per person
+        others = conn.execute("SELECT COUNT(*) FROM slot_holds WHERE salon_id = ? AND slot_start = ?",
+                              (salon_id, slot)).fetchone()[0]
+        if used + others >= barbers:
             conn.commit()
             return 409, "Someone else is booking this slot right now. Try another time.", 0
         try:
@@ -231,24 +280,37 @@ def book(user_id, salon_id, service_id, slot, phone):
         salon = conn.execute("SELECT status FROM salons WHERE id = ? AND approved = 1", (salon_id,)).fetchone()
         if not salon:
             return 404, "Salon not found.", None, None
-        if salon["status"] == "closed":
+        if salon["status"] == "closed" or not billing.salon_can_book(conn, salon_id):
             return 409, "This salon is not taking bookings right now.", None, None
         if not conn.execute("SELECT 1 FROM services WHERE id = ? AND salon_id = ?", (service_id, salon_id)).fetchone():
             return 400, "Please choose a service.", None, None
-        h = conn.execute("SELECT user_id, expires FROM slot_holds WHERE salon_id = ? AND slot_start = ?", (salon_id, slot)).fetchone()
-        if h and h["expires"] > time.time() and h["user_id"] != user_id:
-            return 409, "Someone else is booking this slot right now. Please pick another time.", None, None
-        code = f"{secrets.randbelow(10000):04d}"
-        try:
-            booking_id = conn.execute(
-                "INSERT INTO bookings (customer_id, salon_id, service_id, slot_start, status, contact_phone, code) "
-                "VALUES (?, ?, ?, ?, 'pending', ?, ?)", (user_id, salon_id, service_id, slot, phone, code)).lastrowid
-            conn.execute("DELETE FROM slot_holds WHERE user_id = ?", (user_id,))
-            conn.commit()
-            return 201, "Booking requested.", booking_id, code
-        except db.sqlite3.IntegrityError:
-            conn.rollback()
+        barbers = billing.barber_count(conn, salon_id)
+        used = conn.execute("SELECT COUNT(*) FROM bookings WHERE salon_id = ? AND slot_start = ? "
+                            "AND status IN ('pending', 'confirmed')", (salon_id, slot)).fetchone()[0]
+        if used >= barbers:
             return 409, "Sorry, someone just booked that slot. Please pick another.", None, None
+        mine = conn.execute("SELECT 1 FROM slot_holds WHERE salon_id = ? AND slot_start = ? AND user_id = ? "
+                            "AND expires > ?", (salon_id, slot, user_id, time.time())).fetchone()
+        if not mine:
+            others = conn.execute("SELECT COUNT(*) FROM slot_holds WHERE salon_id = ? AND slot_start = ? "
+                                  "AND user_id != ? AND expires > ?", (salon_id, slot, user_id, time.time())).fetchone()[0]
+            if used + others >= barbers:
+                return 409, "Someone else is booking this slot right now. Please pick another time.", None, None
+        if not _allowed_for(conn, user_id, salon_id, slot):
+            return 403, PLUS_MESSAGE, None, None
+        code = f"{secrets.randbelow(10000):04d}"
+        for barber_id in billing.free_barbers(conn, salon_id, slot):
+            try:
+                booking_id = conn.execute(
+                    "INSERT INTO bookings (customer_id, salon_id, service_id, slot_start, status, contact_phone, code, "
+                    "barber_id) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)",
+                    (user_id, salon_id, service_id, slot, phone, code, barber_id)).lastrowid
+                conn.execute("DELETE FROM slot_holds WHERE user_id = ?", (user_id,))
+                conn.commit()
+                return 201, "Booking requested.", booking_id, code
+            except db.sqlite3.IntegrityError:
+                conn.rollback()  # another customer just took this barber: try the next one
+        return 409, "Sorry, someone just booked that slot. Please pick another.", None, None
     finally:
         conn.close()
 
