@@ -15,3 +15,15 @@ a.small-btn { display: inline-block; text-decoration: none; color: #374151; }
 .stats span { color: #6b7280; font-size: .85rem; }
 .table td.wrap { white-space: normal; max-width: 280px; }
 .filters .small-btn { padding: 9px 14px; }
+
+.info-page { max-width: 760px; margin: 32px auto; padding: 0 20px; line-height: 1.65; }
+.info-page h1 { margin: 0 0 18px; font-size: 2rem; }
+.info-page h2 { margin: 24px 0 8px; font-size: 1.2rem; }
+.info-page p { margin: 0 0 14px; }
+.info-page ul { margin: 0 0 14px 22px; }
+.info-page li { margin: 0 0 8px; }
+.info-page a { color: #6d28d9; }
+.info-page .info-note { color: #6b7280; font-size: .9rem; }
+.info-page .info-back { margin-top: 28px; }
+.footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px 22px; margin-top: 12px; }
+.footer-links a { color: #6b7280; }
