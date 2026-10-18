@@ -142,21 +142,6 @@ def home():
                            on_waitlist=bool(user and growth.on_waitlist(user["id"])))
 
 
-@app.route("/about")
-@app.route("/contact")
-@app.route("/privacy-policy")
-@app.route("/refund-policy")
-def public_info_page():
-    pages = {
-        "/about": "about",
-        "/contact": "contact",
-        "/privacy-policy": "privacy",
-        "/refund-policy": "refund",
-    }
-    page = pages[request.path]
-    return render_template("info.html", page=page)
-
-
 @app.route("/salon/<int:salon_id>")
 def salon_page(salon_id):
     data = slots.get_salon(salon_id)
