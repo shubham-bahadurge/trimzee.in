@@ -14,6 +14,7 @@ import accounts  # noqa: E402
 import boot  # noqa: E402
 import chatbot  # noqa: E402
 import growth  # noqa: E402
+import legal  # noqa: E402
 import billing  # noqa: E402
 import googleauth  # noqa: E402
 import safety  # noqa: E402
@@ -521,6 +522,50 @@ def bill_admin_grant():
         return resp
     return _bill_admin_done(billing.grant(request.form.get("email"), request.form.get("days"),
                                           request.form.get("note")))
+
+
+@app.route("/terms")
+def legal_terms():
+    return render_template("terms.html", b=legal.BUSINESS, updated=legal.UPDATED)
+
+
+@app.route("/privacy")
+def legal_privacy():
+    return render_template("privacy.html", b=legal.BUSINESS, updated=legal.UPDATED)
+
+
+@app.route("/refund-policy")
+def legal_refunds():
+    return render_template("refund_policy.html", b=legal.BUSINESS, updated=legal.UPDATED)
+
+
+@app.route("/contact")
+def legal_contact():
+    return render_template("contact.html", b=legal.BUSINESS, updated=legal.UPDATED)
+
+
+@app.after_request
+def legal_footer(response):
+    """Terms, privacy, refund and contact links at the bottom of public pages."""
+    try:
+        if request.method != "GET" or response.status_code != 200 or response.mimetype != "text/html":
+            return response
+        path = request.path
+        if path in ("/terms", "/privacy", "/refund-policy", "/contact") or path.startswith(
+                ("/dashboard", "/admin", "/pay", "/plans")):
+            return response
+        body = response.get_data(as_text=True)
+        end = body.rfind("</body>")
+        if end < 0 or "/refund-policy" in body:
+            return response
+        links = ('<div style="text-align:center;font:13px system-ui,-apple-system,sans-serif;color:#777;padding:18px 12px">'
+                 '<a style="color:#777" href="/terms">Terms</a> &middot; <a style="color:#777" href="/privacy">Privacy</a> '
+                 '&middot; <a style="color:#777" href="/refund-policy">Refunds</a> &middot; '
+                 '<a style="color:#777" href="/contact">Contact</a></div>')
+        response.set_data(body[:end] + links + body[end:])
+    except Exception:
+        pass
+    return response
 
 
 @app.route("/logout", methods=["POST"])

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy - {{ b.name }}</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#f6f6f7;color:#111}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:1.4rem;margin:8px 0 14px}
+h2{font-size:1.05rem;margin:0 0 10px}
+.card{background:#fff;border-radius:14px;padding:18px;margin:0 0 14px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
+p{color:#444;line-height:1.45;margin:.4em 0}
+small,.muted{color:#777}
+label{display:block;font-size:.82rem;margin:10px 0 4px;color:#333}
+input,select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ccc;border-radius:9px;font-size:1rem;background:#fff}
+button{padding:10px 14px;border:0;border-radius:9px;background:#111;color:#fff;font-size:.95rem;cursor:pointer}
+button[disabled]{background:#bbb;cursor:not-allowed}
+button.alt{background:#fff;color:#111;border:1px solid #bbb}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eee}
+.row:first-of-type{border-top:0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.inline input{width:auto;flex:1;min-width:120px}
+.err{background:#fdecec;color:#a11;padding:10px 12px;border-radius:9px;margin:0 0 14px}
+.ok{background:#e9f7ee;color:#165a2b;padding:10px 12px;border-radius:9px;margin:0 0 14px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;background:#eee;color:#444}
+.pill.on{background:#e9f7ee;color:#165a2b}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:7px 6px;border-top:1px solid #eee;vertical-align:top}
+a{color:#111}
+.scroll{overflow-x:auto}
+</style>
+<style>h2{margin:22px 0 6px}ul{color:#444;line-height:1.5;padding-left:20px}li{margin:3px 0}.foot{text-align:center;font-size:.85rem;color:#777;margin-top:28px}</style>
+</head>
+<body>
+<div class="wrap">
+<p><a href="/">&larr; {{ b.name }}</a></p>
+<h1>Privacy Policy</h1>
+<p class="muted">Last updated: {{ updated }}</p>
+
+<p>This policy explains what information {{ b.name }} collects through {{ b.site }}, why, and the choices you have.</p>
+<h2>Information we collect</h2>
+<ul><li><b>Account details:</b> name, email address, phone number and gender (used to show suitable salons), and a password that we store only in scrambled (hashed) form.</li>
+<li><b>Google sign-in:</b> if you choose it, we receive your name and verified email address from Google. We do not get your Google password.</li>
+<li><b>Bookings:</b> the salon, service, time, status and visit code of your bookings, and reviews you write.</li>
+<li><b>Location:</b> only when you allow your browser to share it, to show salons near you. Salon owners can save their salon's location.</li>
+<li><b>Payments:</b> processed by Razorpay. We receive the payment status, amount and reference numbers, never your card, UPI or bank details.</li>
+<li><b>Technical data:</b> basic log information such as IP address and browser type, used for security and to keep the site running.</li></ul>
+<h2>How we use it</h2>
+<ul><li>To create your account, show salons and slots, and handle bookings and plans.</li>
+<li>To send one-time codes and booking messages by email (and in-site notifications).</li>
+<li>To prevent misuse, fix problems and improve the service.</li>
+<li>To meet legal requirements.</li></ul>
+<h2>Who we share it with</h2>
+<ul><li><b>The salon you book:</b> your name, phone number and booking details, so they can serve you.</li>
+<li><b>Service providers</b> that help us run the site: hosting (Vercel), database (Neon), email delivery, Google (sign-in) and Razorpay (payments). They may only use the data to provide their service.</li>
+<li><b>Authorities</b> when the law requires it.</li></ul>
+<p>We do not sell your personal information.</p>
+<h2>Cookies</h2>
+<p>We use a session cookie to keep you signed in and to protect forms. We may use analytics tools to understand how the site is used.</p>
+<h2>How long we keep it</h2>
+<p>We keep your information while your account is active and as long as needed for bookings, payments records and legal obligations.</p>
+<h2>Your choices</h2>
+<p>You can ask us to see, correct or delete your information, or to close your account, by writing to <a href="mailto:{{ b.email }}">{{ b.email }}</a>. We will reply within a reasonable time. You can turn off location sharing in your browser at any time.</p>
+<h2>Security</h2>
+<p>We use encrypted connections, hashed passwords and access controls. No system is completely secure, so please use a strong password and keep it private.</p>
+<h2>Children</h2>
+<p>{{ b.name }} is not meant for children under 18 using it on their own.</p>
+<h2>Grievance officer</h2>
+<p>{{ b.owner }}, {{ b.name }}<br>Email: <a href="mailto:{{ b.email }}">{{ b.email }}</a> &middot; Phone: {{ b.phone }}<br>{{ b.address }}</p>
+<h2>Changes</h2>
+<p>If we change this policy, we will update the date above.</p>
+
+<p class="foot"><a href="/terms">Terms</a> &middot; <a href="/privacy">Privacy</a> &middot; <a href="/refund-policy">Refunds and cancellation</a> &middot; <a href="/contact">Contact</a></p>
+</div>
+</body>
+</html>
