@@ -16,6 +16,7 @@ import chatbot  # noqa: E402
 import growth  # noqa: E402
 import legal  # noqa: E402
 import billing  # noqa: E402
+import payments  # noqa: E402
 import googleauth  # noqa: E402
 import safety  # noqa: E402
 import mailer  # noqa: E402
@@ -566,6 +567,58 @@ def legal_footer(response):
     except Exception:
         pass
     return response
+
+
+@app.route("/pay")
+def pay_page():
+    user, resp = _bill_user()
+    if resp:
+        return resp
+    if user["role"] == "admin":
+        return redirect("/admin/payments")
+    notice, error = _bill_flash()
+    return render_template("pay.html", notice=notice, error=error, configured=payments.configured(),
+                           test_mode=payments.test_mode(), **billing.plans_context(user))
+
+
+@app.route("/plans/buy", methods=["POST"])
+def pay_buy():
+    user, resp = _bill_user()
+    if resp:
+        return resp
+    if not safety.hit(client_ip(), "pay", 30):
+        return _bill_done("Too many tries from this network. Please wait a while and try again.", True, "/pay")
+    result = payments.create_order(user, request.form.get("plan"), request.form.get("coupon"))
+    if not result["ok"]:
+        return _bill_done(result["error"], True, "/pay")
+    if result["free"]:
+        return _bill_done(result["message"], False, "/plans")
+    return render_template("checkout.html", user=user, **result)
+
+
+@app.route("/plans/paid", methods=["POST"])
+def pay_done():
+    user, resp = _bill_user()
+    if resp:
+        return resp
+    f = request.form
+    ok, message = payments.confirm(user["id"], f.get("razorpay_order_id"), f.get("razorpay_payment_id"),
+                                   f.get("razorpay_signature"))
+    return _bill_done(message, not ok, "/plans")
+
+
+@app.route("/api/razorpay/webhook", methods=["POST"])
+def pay_webhook():
+    status, text = payments.webhook(request.get_data(), request.headers.get("X-Razorpay-Signature", ""))
+    return text, status
+
+
+@app.route("/admin/payments")
+def pay_admin():
+    user, resp = _bill_user("admin")
+    if resp:
+        return resp
+    return render_template("admin_payments.html", **payments.admin_context())
 
 
 @app.route("/logout", methods=["POST"])
