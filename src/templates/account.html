@@ -18,7 +18,6 @@
         <div class="panel">
             <div class="profile-heading">
                 <h2>{{ current_user.name }}</h2>
-                <button class="btn ghost small" type="button" id="editProfileBtn" aria-expanded="false" aria-controls="profileForm">Edit profile</button>
             </div>
             <dl class="info">
                 <dt>Email</dt><dd>{{ current_user.email }}</dd>
@@ -26,6 +25,7 @@
                 <dt>Member since</dt><dd>{{ current_user.joined }}</dd>
                 <dt>Phone</dt><dd>{{ current_user.phone or 'Not added yet' }}</dd>
             </dl>
+            <button class="btn ghost small" type="button" id="editProfileBtn" aria-expanded="false" aria-controls="profileForm">Edit profile</button>
             <form method="post" action="/account/profile" class="profile-form" id="profileForm" hidden>
                 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
                 <label class="field">Name
