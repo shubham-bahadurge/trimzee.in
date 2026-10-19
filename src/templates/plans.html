@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ "Salon plan" if is_owner else "Trimzee Plus" }} - Trimzee</title>
+<title>Salon plan - Trimzee</title>
 <style>
 .plans-wrap{max-width:760px;margin:0 auto;padding:6px 16px 70px}
 .hero{background:var(--ink);color:#fff;border-radius:22px;padding:22px 20px;margin:12px 0}
@@ -45,10 +45,9 @@ details.coupon summary{cursor:pointer;font-weight:700;font-size:.92rem}
 <body>
 {% include "_nav.html" %}
 <main class="plans-wrap">
-<a class="back" href="{{ home }}">&larr; Back</a>
+<a class="back" href="/dashboard">&larr; Back</a>
 
 <section class="hero">
-{% if is_owner %}
 <span class="tag">Salon plan</span>
 <h1>Get found. Get booked.</h1>
 <p>Customers near you find your salon and book a time that works. The first month is free.</p>
@@ -57,26 +56,14 @@ details.coupon summary{cursor:pointer;font-weight:700;font-size:.92rem}
 <li>Add barbers: every barber takes one booking per time slot</li>
 <li>Live queue and a QR poster for your shop</li>
 </ul>
-{% else %}
-<span class="tag">Trimzee Plus</span>
-<h1>Book any time you like</h1>
-<p>See every free time at every salon and pick the one that suits you, instead of only the next one.</p>
-<ul class="perks">
-<li>See all free time slots, not just the next free time</li>
-<li>Book the time you want at any salon on Trimzee</li>
-<li>Pay once for the period you choose, no auto-renewal</li>
-</ul>
-{% endif %}
 </section>
 
 {% if notice %}<div class="msg {{ 'err' if error else 'ok' }}">{{ notice }}</div>{% endif %}
 
 {% if status.active %}
 <div class="status on">Your plan is active until <b>{{ status.ends_pretty }}</b> ({{ status.days_left }} day{{ '' if status.days_left == 1 else 's' }} left){% if status.source == 'trial' %} - free first month{% elif status.source == 'coupon' %} - from a coupon{% endif %}. A new purchase adds days after this.</div>
-{% elif is_owner %}
-<div class="status off">Your salon plan is not active yet. Choose a plan below.</div>
 {% else %}
-<div class="status off">You are on the free plan: you can book the next free time at each salon.</div>
+<div class="status off">Your salon plan is not active yet. Choose a plan below.</div>
 {% endif %}
 {% if not enforce %}<div class="status off">Plans are starting soon. Until then every free time is open for everyone, and what you buy now is kept for you.</div>{% endif %}
 

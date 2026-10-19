@@ -98,9 +98,9 @@ def _coupon_error(conn, row, kind, user_id):
 
 
 def quote(user, plan_code, coupon_code=""):
-    kind = {"owner": "owner", "customer": "customer"}.get(user["role"])
-    if not kind:
-        return {"ok": False, "error": "Only customers and salon owners can buy a plan."}
+    if user["role"] != "owner":
+        return {"ok": False, "error": "Only salon owners can buy a plan."}
+    kind = "owner"
     _ensure()
     conn = db.get_db()
     try:
@@ -133,7 +133,7 @@ def _activate(conn, pay, payment_id, record_coupon=True):
         conn.rollback()
         return False
     plan = conn.execute("SELECT code, kind, days FROM plans WHERE code = ?", (pay["plan_code"],)).fetchone()
-    if not plan:
+    if not plan or plan["kind"] != "owner":
         conn.rollback()
         return False
     coupon = pay["coupon_code"]
@@ -203,16 +203,19 @@ def confirm(user_id, order_id, payment_id, signature):
     _ensure()
     conn = db.get_db()
     try:
-        pay = conn.execute("SELECT * FROM payments WHERE order_id = ? AND user_id = ?", (order_id, user_id)).fetchone()
-        if not pay:
+        pay = conn.execute("SELECT p.*, u.role AS user_role FROM payments p JOIN users u ON u.id = p.user_id "
+                           "WHERE p.order_id = ? AND p.user_id = ?", (order_id, user_id)).fetchone()
+        if not pay or pay["user_role"] != "owner":
+            return False, "Payment could not be verified."
+        plan = conn.execute("SELECT kind FROM plans WHERE code = ?", (pay["plan_code"],)).fetchone()
+        if not plan or plan["kind"] != "owner":
             return False, "Payment could not be verified."
         if not _signature_ok(f"{order_id}|{payment_id}".encode(), signature, _secret()):
             return False, "Payment could not be verified. If money was deducted, it will be matched automatically."
         _activate(conn, pay, payment_id)   # False here just means the webhook was faster: the plan is active
-        kind = conn.execute("SELECT kind FROM plans WHERE code = ?", (pay["plan_code"],)).fetchone()["kind"]
     finally:
         conn.close()
-    ends = billing.status(user_id, kind)["ends_pretty"]
+    ends = billing.status(user_id, "owner")["ends_pretty"]
     return True, f"Payment received. Your plan is active until {ends}."
 
 
@@ -234,8 +237,9 @@ def webhook(raw_body, signature):
     _ensure()
     conn = db.get_db()
     try:
-        pay = conn.execute("SELECT * FROM payments WHERE order_id = ?", (order_id,)).fetchone()
-        if pay:
+        pay = conn.execute("SELECT p.*, u.role AS user_role FROM payments p JOIN users u ON u.id = p.user_id "
+                           "WHERE p.order_id = ?", (order_id,)).fetchone()
+        if pay and pay["user_role"] == "owner":
             _activate(conn, pay, payment_id)
     finally:
         conn.close()

@@ -19,9 +19,6 @@ MAX_BARBERS = 12
 ACTIVE_SQL = "status IN ('pending', 'confirmed')"
 PLAN_DEFAULTS = [
     ("owner_month", "owner", "Salon plan", 299, 30),
-    ("cust_month", "customer", "Plus - 1 month", 49, 30),
-    ("cust_3months", "customer", "Plus - 3 months", 129, 90),
-    ("cust_year", "customer", "Plus - 1 year", 449, 365),
 ]
 CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 _ready = False
@@ -116,6 +113,7 @@ def init_billing():
             if not conn.execute("SELECT 1 FROM plans WHERE code = ?", (code,)).fetchone():
                 conn.execute("INSERT INTO plans (code, kind, name, price, days, active) VALUES (?, ?, ?, ?, ?, 1)",
                              (code, kind, name, price, days))
+        conn.execute("UPDATE plans SET active = 0 WHERE kind = 'customer'")
         for r in conn.execute("SELECT s.id FROM salons s WHERE NOT EXISTS "
                               "(SELECT 1 FROM barbers b WHERE b.salon_id = s.id)").fetchall():
             conn.execute("INSERT INTO barbers (salon_id, name, active, created_at) VALUES (?, 'Barber 1', 1, ?)",
@@ -331,20 +329,6 @@ def salon_can_book(conn, salon_id):
     return bool(end and end > now_str())
 
 
-def has_full_view(conn, user_id):
-    """Plus customers (and owners/admins) see every free time; the free plan sees the next one."""
-    if not enforce():
-        return True
-    if not user_id:
-        return False
-    _ensure()
-    row = conn.execute("SELECT role FROM users WHERE id = ?", (user_id,)).fetchone()
-    if not row or row["role"] != "customer":
-        return True
-    end = _latest_end(conn, user_id, "customer")
-    return bool(end and end > now_str())
-
-
 # ----------------------------------------------------------------- coupons
 def normalize_code(text):
     return "".join(ch for ch in (text or "").upper() if ch.isalnum() or ch in "-_")[:32]
@@ -363,8 +347,8 @@ def create_coupon(code, audience, kind, value, max_uses=0, once_per_user=True, e
     code = normalize_code(code) or "TRZ-" + "".join(secrets.choice(CODE_CHARS) for _ in range(6))
     if len(code) < 3:
         return False, "The code must be at least 3 characters."
-    if audience not in ("customer", "owner", "both"):
-        return False, "Choose who can use this coupon."
+    if audience != "owner":
+        return False, "Coupons can only be created for salon owners."
     if kind not in ("free_days", "percent", "flat"):
         return False, "Choose a coupon type."
     try:
@@ -403,9 +387,9 @@ def redeem(user_id, role, code):
     code = normalize_code(code)
     if not code:
         return False, "Please enter a coupon code."
-    kind = {"owner": "owner", "customer": "customer"}.get(role)
-    if not kind:
-        return False, "Coupons are for salon owners and customers."
+    if role != "owner":
+        return False, "Only salon owners can redeem plan coupons."
+    kind = "owner"
     _ensure()
     conn = db.get_db()
     try:
@@ -453,7 +437,7 @@ def toggle_coupon(coupon_id):
 
 
 def grant(email, days, note=""):
-    """Admin: add free days to a customer or salon owner by e-mail."""
+    """Admin: add free days to a salon owner's plan."""
     try:
         days = int(days)
     except (TypeError, ValueError):
@@ -464,8 +448,8 @@ def grant(email, days, note=""):
     conn = db.get_db()
     try:
         user = conn.execute("SELECT id, role, name FROM users WHERE email = ?", ((email or "").strip().lower(),)).fetchone()
-        if not user or user["role"] not in ("customer", "owner"):
-            return False, "No customer or salon owner has that e-mail."
+        if not user or user["role"] != "owner":
+            return False, "No salon owner has that e-mail."
         ends = add_days(conn, user["id"], user["role"], days, "grant", "admin", note=(note or "").strip()[:200] or None)
         conn.commit()
         return True, f"{user['name']} now has access until {pretty_date(ends)}."
@@ -483,7 +467,8 @@ def set_plan(code, price, active):
     _ensure()
     conn = db.get_db()
     try:
-        cur = conn.execute("UPDATE plans SET price = ?, active = ? WHERE code = ?", (price, 1 if active else 0, code))
+        cur = conn.execute("UPDATE plans SET price = ?, active = ? WHERE code = ? AND kind = 'owner'",
+                           (price, 1 if active else 0, code))
         conn.commit()
         return (True, "Plan saved.") if cur.rowcount else (False, "Plan not found.")
     finally:
@@ -491,7 +476,7 @@ def set_plan(code, price, active):
 
 
 def plans_context(user):
-    kind = "owner" if user["role"] == "owner" else "customer"
+    kind = "owner"
     _ensure()
     conn = db.get_db()
     try:
@@ -509,7 +494,8 @@ def admin_context():
     _ensure()
     conn = db.get_db()
     try:
-        plans = [dict(r) for r in conn.execute("SELECT code, kind, name, price, days, active FROM plans ORDER BY kind, days")]
+        plans = [dict(r) for r in conn.execute(
+            "SELECT code, kind, name, price, days, active FROM plans WHERE kind = 'owner' ORDER BY days")]
         coupons = []
         for r in conn.execute("SELECT * FROM coupons ORDER BY id DESC LIMIT 100"):
             d = dict(r)
@@ -520,8 +506,9 @@ def admin_context():
             "SELECT c.code, u.email, r.detail, r.redeemed_at FROM coupon_redemptions r "
             "JOIN coupons c ON c.id = r.coupon_id JOIN users u ON u.id = r.user_id ORDER BY r.id DESC LIMIT 20")]
         now = now_str()
-        totals = {k: conn.execute("SELECT COUNT(DISTINCT user_id) FROM subscriptions WHERE kind = ? AND ends > ?",
-                                  (k, now)).fetchone()[0] for k in ("customer", "owner")}
+        totals = {"owner": conn.execute(
+            "SELECT COUNT(DISTINCT user_id) FROM subscriptions WHERE kind = 'owner' AND ends > ?",
+            (now,)).fetchone()[0]}
     finally:
         conn.close()
     return {"plans": plans, "coupons": coupons, "redemptions": redemptions, "totals": totals, "enforce": enforce()}
@@ -563,15 +550,4 @@ def banner_html(path, user):
             plan = "Plans start soon"
         return _bar(f"{n} barber{'s' if n != 1 else ''} working. {plan}.",
                     ("Manage barbers", "/dashboard/barbers"), ("Plan and coupons", "/plans"))
-    if role == "customer" and enforce() and (path in ("/", "/my-bookings") or path.startswith("/salon/")):
-        if status(uid, "customer")["active"]:
-            return ""
-        _ensure()
-        conn = db.get_db()
-        try:
-            row = conn.execute("SELECT MIN(price) AS p FROM plans WHERE kind = 'customer' AND active = 1").fetchone()
-        finally:
-            conn.close()
-        price = f" from Rs {row['p']}/month" if row and row["p"] else ""
-        return _bar("Free plan: you can book the next free time at each salon.", (f"Get Trimzee Plus{price}", "/plans"))
     return ""

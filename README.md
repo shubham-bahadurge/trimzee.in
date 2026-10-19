@@ -1,8 +1,10 @@
 # Trimzee
 
 Trimzee is a Flask web application for finding salons, viewing their services and
-availability, and requesting appointments. Salon owners manage their salon and
-bookings; administrators manage accounts, subscriptions, and payments.
+availability, and requesting appointments. Customers can browse and book without
+a customer subscription. Salon eligibility is still controlled by the salon
+owner's plan when billing enforcement is enabled. Salon owners manage their salon
+and bookings; administrators manage accounts, owner subscriptions, and payments.
 
 This guide is written for someone new to the project. It explains how to start
 the app and where to look when changing a feature.
@@ -49,8 +51,8 @@ and upgraded automatically when the app starts.
 - `src/boot.py` runs database setup and upgrades when the stored schema version changes.
 - `src/extras.py` contains salon administration, reviews, and service management.
 - `src/slots.py` calculates live availability and creates or updates bookings.
-- `src/billing.py` manages plans, coupons, subscriptions, and salon barbers.
-- `src/payments.py` creates and verifies Razorpay payments.
+- `src/billing.py` manages salon-owner plans, coupons, subscriptions, and barbers.
+- `src/payments.py` creates and verifies Razorpay payments for salon-owner plans.
 - `src/accounts.py` loads accounts and handles profile and referral features.
 - `src/signup.py` validates registration and verifies email codes.
 - `src/googleauth.py` handles Google sign-in.
@@ -78,7 +80,7 @@ and upgraded automatically when the app starts.
 2. The customer chooses a service and an available time. Choosing a time only selects it in the browser; it does not reserve the time.
 3. When the customer confirms, the page sends the request to `/api/book`.
 4. The server checks the salon, service, time, customer, and booking rules, then saves a pending booking.
-5. The database's unique active-booking index is the final protection against two requests taking the same barber and time. If another request wins first, the customer is asked to choose a different time.
+5. The database's unique active-booking index is the final protection against two requests taking the same barber and time. If another request wins first, the customer is asked to choose a different time. Customers can browse every available time without buying a plan; only salon owners have subscriptions.
 6. The salon owner can accept or reject the pending request from the dashboard.
 
 The main browser code is in `src/public/js/salon.js`; the route is in

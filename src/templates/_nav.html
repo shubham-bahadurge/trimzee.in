@@ -12,7 +12,8 @@
             {% elif current_user and current_user.role == 'admin' %}<a href="/admin">Admin</a>
             {% else %}<a href="/my-bookings">My bookings</a>{% endif %}
             {% if current_user %}<a href="/account">My account</a>{% else %}<a href="/login">Sign in</a><a href="/register">Create account</a>{% endif %}
-            <a href="{{ '/admin/billing' if current_user and current_user.role == 'admin' else '/plans' if current_user else '/login?next=/plans' }}">Subscription</a>
+            {% if current_user and current_user.role == 'owner' %}<a href="/plans">Salon subscription</a>
+            {% elif current_user and current_user.role == 'admin' %}<a href="/admin/billing">Billing</a>{% endif %}
         </nav>
     </div>
 

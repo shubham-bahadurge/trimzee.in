@@ -19,7 +19,7 @@
 <body>
 {% include "_nav.html" %}
 <main class="co-wrap" id="checkout" data-checkout-config="{{ {'key': key_id, 'amount': amount_paise, 'description': quote.plan.name, 'order_id': order_id, 'name': user.name or '', 'email': user.email or ''}|tojson|forceescape }}">
-<a class="back" href="/plans">&larr; Change plan</a>
+<a class="back" href="/plans">&larr; Change salon plan</a>
 <h1>Checkout</h1>
 {% if test_mode %}<div class="co-test">Test mode: no real money is taken.</div>{% endif %}
 <section class="panel">

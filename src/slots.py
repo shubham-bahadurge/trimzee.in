@@ -173,29 +173,9 @@ def get_slots(salon_id, day, viewer_id=None):
             day = today
         is_open = salon["status"] != "closed" and billing.salon_can_book(conn, salon_id)
         out = _states(conn, salon_id, day, is_open)
-        full = billing.has_full_view(conn, viewer_id)
-        locked = False
-        if not full:  # free plan: only the next free time is shown as available
-            first = next((s for s in out if s["state"] == "free"), None)
-            for s in out:
-                if s["state"] == "free" and s is not first:
-                    s["state"], s["locked"] = "booked", True
-                    locked = True
-        return {"open": is_open, "day": day, "slots": out, "limited": not full, "locked": locked}
+        return {"open": is_open, "day": day, "slots": out, "limited": False, "locked": False}
     finally:
         conn.close()
-
-
-def _allowed_for(conn, user_id, salon_id, slot):
-    """The free plan may only take the next free time of a day."""
-    if billing.has_full_view(conn, user_id):
-        return True
-    out = _states(conn, salon_id, slot[:10], True)
-    first = next((s["slot"] for s in out if s["state"] == "free"), None)
-    return slot == first
-
-
-PLUS_MESSAGE = "The free plan can book only the next free time. Get Trimzee Plus to pick any time."
 
 
 # ----------------------------- booking -------------------------------------
@@ -222,8 +202,6 @@ def book(user_id, salon_id, service_id, slot, phone):
                             "AND status IN ('pending', 'confirmed')", (salon_id, slot)).fetchone()[0]
         if used >= barbers:
             return 409, "Sorry, someone just booked that slot. Please pick another.", None, None
-        if not _allowed_for(conn, user_id, salon_id, slot):
-            return 403, PLUS_MESSAGE, None, None
         code = f"{secrets.randbelow(10000):04d}"
         for barber_id in billing.free_barbers(conn, salon_id, slot):
             try:

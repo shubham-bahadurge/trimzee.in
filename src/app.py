@@ -421,13 +421,15 @@ def bill_plans():
         return resp
     if user["role"] == "admin":
         return redirect("/admin/billing")
+    if user["role"] != "owner":
+        return redirect("/")
     notice, error = _bill_flash()
     return render_template("plans.html", notice=notice, error=error, **billing.plans_context(user))
 
 
 @app.route("/plans/redeem", methods=["POST"])
 def bill_redeem():
-    user, resp = _bill_user()
+    user, resp = _bill_user("owner")
     if resp:
         return resp
     if not safety.hit(client_ip(), "coupon", 20):
@@ -577,7 +579,7 @@ def pay_page():
 
 @app.route("/plans/buy", methods=["POST"])
 def pay_buy():
-    user, resp = _bill_user()
+    user, resp = _bill_user("owner")
     if resp:
         return resp
     if not safety.hit(client_ip(), "pay", 30):
@@ -592,7 +594,7 @@ def pay_buy():
 
 @app.route("/plans/paid", methods=["POST"])
 def pay_done():
-    user, resp = _bill_user()
+    user, resp = _bill_user("owner")
     if resp:
         return resp
     f = request.form

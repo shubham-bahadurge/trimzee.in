@@ -38,7 +38,7 @@ a{color:#111}
 <h1>Plans and coupons</h1>
 {% if notice %}<div class="{{ 'err' if error else 'ok' }}">{{ notice }}</div>{% endif %}
 <div class="card">
-<p>Active customer plans: <b>{{ totals.customer }}</b> &middot; Active salon plans: <b>{{ totals.owner }}</b></p>
+<p>Active salon plans: <b>{{ totals.owner }}</b></p>
 <p class="muted">Plans limit things only when the setting BILLING_ENFORCE is 1 in Vercel. Right now: <b>{{ 'ON' if enforce else 'off' }}</b>.</p>
 </div>
 <div class="card">
@@ -60,9 +60,9 @@ a{color:#111}
 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
 <label>Code (leave empty to make one)</label><input name="code" maxlength="32" placeholder="e.g. WELCOME30">
 <label>Who can use it</label>
-<select name="audience"><option value="customer">Customers</option><option value="owner">Salon owners</option><option value="both">Both</option></select>
+<select name="audience"><option value="owner">Salon owners</option></select>
 <label>Type</label>
-<select name="kind"><option value="free_days">Free days (free plan access)</option><option value="percent">Percent off (applies when paying)</option><option value="flat">Rupees off (applies when paying)</option></select>
+<select name="kind"><option value="free_days">Free days for a salon plan</option><option value="percent">Percent off a salon plan</option><option value="flat">Rupees off a salon plan</option></select>
 <label>Value (days, percent or rupees)</label><input name="value" inputmode="numeric" required>
 <label>Total uses allowed (0 = no limit, 1 = a single-use code)</label><input name="max_uses" value="0" inputmode="numeric">
 <label><input type="checkbox" name="once_per_user" value="1" checked style="width:auto"> Each person can use it only once</label>
@@ -86,7 +86,7 @@ a{color:#111}
 <h2>Give free days to someone</h2>
 <form method="post" action="/admin/billing/grant">
 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-<label>Their e-mail</label><input name="email" type="email" required>
+<label>Salon owner's e-mail</label><input name="email" type="email" required>
 <label>Days</label><input name="days" value="30" inputmode="numeric" required>
 <label>Note (optional, for your records)</label><input name="note" maxlength="200">
 <p><button type="submit">Give access</button></p>
