@@ -1,2 +1,3 @@
+# Flask runs the web app; psycopg enables the optional PostgreSQL backend.
 Flask>=3.0
 psycopg[binary]>=3.1

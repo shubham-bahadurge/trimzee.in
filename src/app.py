@@ -1,3 +1,4 @@
+"""Flask application: routes connect browser requests to Trimzee's feature modules."""
 import os
 import secrets
 

@@ -1,3 +1,4 @@
+/* Shared modern layout, panels, and status colors used across the pages. */
 :root { --ok: #166534; --okbg: #dcfce7; --warn: #92400e; --warnbg: #fef3c7; --bad: #991b1b; --badbg: #fee2e2; }
 .container, .home-main { max-width: 760px; }
 .wide { max-width: 1100px; }

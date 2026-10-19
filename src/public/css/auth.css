@@ -1,3 +1,4 @@
+/* Login, registration, and other account-form layout. */
 .inline { display: inline; }
 .link-btn { background: none; border: 0; color: #374151; font-weight: 600; font-size: 1rem; cursor: pointer; font-family: inherit; }
 .link-btn:hover { color: #7c3aed; }

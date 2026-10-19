@@ -1,3 +1,4 @@
+"""Local entry point that loads the Flask application and its static assets from src/."""
 import os
 import sys
 

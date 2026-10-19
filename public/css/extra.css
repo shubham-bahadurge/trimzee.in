@@ -1,3 +1,4 @@
+/* Small shared components such as messages, service rows, and action links. */
 .message.warn { background: #fef3c7; color: #92400e; }
 a.small-btn { display: inline-block; text-decoration: none; color: #374151; }
 .service-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }

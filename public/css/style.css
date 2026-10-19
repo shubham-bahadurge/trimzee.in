@@ -1,3 +1,4 @@
+/* Base reset and shared page styles used before the more specific stylesheets. */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {

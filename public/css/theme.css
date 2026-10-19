@@ -1,3 +1,4 @@
+/* Site-wide colors, typography, and reusable theme styles. */
 :root { --ink: #0b0b0b; --paper: #fff; --bg: #eef2f3; --line: #d8dfe1; --muted: #5d6a70; }
 body { background: var(--bg); color: var(--ink);
     font-family: "Montserrat", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
