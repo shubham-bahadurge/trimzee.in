@@ -5,66 +5,121 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ "Salon plan" if is_owner else "Trimzee Plus" }} - Trimzee</title>
 <style>
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#f6f6f7;color:#111}
-.wrap{max-width:720px;margin:0 auto;padding:18px 16px 60px}
-h1{font-size:1.4rem;margin:8px 0 14px}
-h2{font-size:1.05rem;margin:0 0 10px}
-.card{background:#fff;border-radius:14px;padding:18px;margin:0 0 14px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
-p{color:#444;line-height:1.45;margin:.4em 0}
-small,.muted{color:#777}
-label{display:block;font-size:.82rem;margin:10px 0 4px;color:#333}
-input,select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ccc;border-radius:9px;font-size:1rem;background:#fff}
-button{padding:10px 14px;border:0;border-radius:9px;background:#111;color:#fff;font-size:.95rem;cursor:pointer}
-button[disabled]{background:#bbb;cursor:not-allowed}
-button.alt{background:#fff;color:#111;border:1px solid #bbb}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eee}
-.row:first-of-type{border-top:0}
-.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.inline input{width:auto;flex:1;min-width:120px}
-.err{background:#fdecec;color:#a11;padding:10px 12px;border-radius:9px;margin:0 0 14px}
-.ok{background:#e9f7ee;color:#165a2b;padding:10px 12px;border-radius:9px;margin:0 0 14px}
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;background:#eee;color:#444}
-.pill.on{background:#e9f7ee;color:#165a2b}
-table{width:100%;border-collapse:collapse;font-size:.88rem}
-th,td{text-align:left;padding:7px 6px;border-top:1px solid #eee;vertical-align:top}
-a{color:#111}
-.scroll{overflow-x:auto}
+.plans-wrap{max-width:760px;margin:0 auto;padding:6px 16px 70px}
+.hero{background:var(--ink);color:#fff;border-radius:22px;padding:22px 20px;margin:12px 0}
+.hero .tag{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:#fff;color:var(--ink);border-radius:99px;padding:4px 10px;margin-bottom:10px}
+.hero h1{margin:0 0 6px;font-size:1.6rem;color:#fff}
+.hero p{margin:0;color:#d5dbde;font-size:.95rem;line-height:1.5}
+.perks{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:9px}
+.perks li{position:relative;padding-left:26px;font-size:.92rem;line-height:1.4;color:#fff}
+.perks li::before{content:"";position:absolute;left:3px;top:3px;width:6px;height:11px;border:solid #86efac;border-width:0 2.5px 2.5px 0;transform:rotate(40deg)}
+.status{border-radius:16px;padding:14px 16px;margin:12px 0;font-weight:600;font-size:.92rem;line-height:1.45}
+.status.on{background:var(--okbg);color:var(--ok)}
+.status.off{background:var(--paper);border:1px solid var(--line);color:var(--muted)}
+.msg{border-radius:14px;padding:12px 14px;margin:12px 0;font-weight:600;font-size:.92rem}
+.msg.ok{background:var(--okbg);color:var(--ok)}
+.msg.err{background:var(--badbg);color:var(--bad)}
+.plans-wrap h2{font-size:1.05rem;margin:22px 0 4px}
+.plan-grid{display:grid;gap:12px;margin:14px 0}
+.plan{position:relative;display:block;cursor:pointer}
+.plan input{position:absolute;opacity:0;pointer-events:none}
+.plan .box{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--paper);border:2px solid var(--line);border-radius:18px;padding:16px;transition:border-color .15s,box-shadow .15s}
+.plan input:checked + .box{border-color:var(--ink);box-shadow:0 6px 20px rgba(0,0,0,.10)}
+.plan input:focus-visible + .box{outline:3px solid rgba(11,11,11,.25)}
+.plan .name{display:block;font-weight:800;font-size:1rem}
+.plan .sub{display:block;color:var(--muted);font-size:.82rem;margin-top:3px}
+.plan .price{font-weight:800;font-size:1.5rem;white-space:nowrap}
+.plan .badge{position:absolute;top:-10px;right:14px;background:var(--ink);color:#fff;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border-radius:99px;padding:3px 10px}
+.save{color:var(--ok);font-weight:700}
+details.coupon{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:13px 15px;margin:14px 0}
+details.coupon summary{cursor:pointer;font-weight:700;font-size:.92rem}
+.cp-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.cp-row input{flex:1;min-width:150px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font:inherit;text-transform:uppercase}
+.cp-note{color:var(--muted);font-size:.8rem;margin:10px 0 0;line-height:1.4}
+.cta{display:block;width:100%;margin-top:14px;padding:15px 18px}
+.cta[disabled]{opacity:.5;cursor:not-allowed}
+.fine{color:var(--muted);font-size:.8rem;text-align:center;margin:14px 0;line-height:1.5}
 </style>
 </head>
 <body>
-<div class="wrap">
-<p><a href="{{ home }}">&larr; Back</a></p>
-<h1>{{ "Salon plan" if is_owner else "Trimzee Plus" }}</h1>
-{% if notice %}<div class="{{ 'err' if error else 'ok' }}">{{ notice }}</div>{% endif %}
-<div class="card">
-<h2>Your plan</h2>
-{% if status.active %}
-<p><span class="pill on">Active</span> until <b>{{ status.ends_pretty }}</b> ({{ status.days_left }} day{{ '' if status.days_left == 1 else 's' }} left){% if status.source == 'trial' %} &middot; free first month{% elif status.source == 'coupon' %} &middot; from a coupon{% endif %}</p>
-{% else %}
-<p><span class="pill">{{ "Not active" if is_owner else "Free plan" }}</span></p>
-{% endif %}
+{% include "_nav.html" %}
+<main class="plans-wrap">
+<a class="back" href="{{ home }}">&larr; Back</a>
+
+<section class="hero">
 {% if is_owner %}
-<p class="muted">Your first month is free. After that, customers can book you while your plan is active. Every barber you add lets one more customer book the same time.</p>
+<span class="tag">Salon plan</span>
+<h1>Get found. Get booked.</h1>
+<p>Customers near you find your salon and book a time that works. The first month is free.</p>
+<ul class="perks">
+<li>Your salon is shown to customers and can take bookings</li>
+<li>Add barbers: every barber takes one booking per time slot</li>
+<li>Live queue and a QR poster for your shop</li>
+</ul>
 {% else %}
-<p class="muted">The free plan shows the next free time at each salon. Plus shows every free time, so you can pick the one you like.</p>
+<span class="tag">Trimzee Plus</span>
+<h1>Book any time you like</h1>
+<p>See every free time at every salon and pick the one that suits you, instead of only the next one.</p>
+<ul class="perks">
+<li>See all free time slots, not just the next free time</li>
+<li>Book the time you want at any salon on Trimzee</li>
+<li>Pay once for the period you choose, no auto-renewal</li>
+</ul>
 {% endif %}
-{% if not enforce %}<p class="muted">Plans start soon. Until then everything works as usual, and you can already redeem a coupon.</p>{% endif %}
-</div>
-<div class="card">
-<h2>Plans</h2>
-{% for p in plans %}
-<div class="row"><span>{{ p.name }}<br><small>{{ p.period }}</small></span><b>&#8377;{{ p.price }}</b></div>
-{% endfor %}
-<p><a href="/pay" style="display:inline-block;padding:10px 14px;border-radius:9px;background:#111;color:#fff;text-decoration:none">Pay online</a></p>
-</div>
-<div class="card">
-<h2>Have a coupon?</h2>
-<form method="post" action="/plans/redeem" class="inline">
+</section>
+
+{% if notice %}<div class="msg {{ 'err' if error else 'ok' }}">{{ notice }}</div>{% endif %}
+
+{% if status.active %}
+<div class="status on">Your plan is active until <b>{{ status.ends_pretty }}</b> ({{ status.days_left }} day{{ '' if status.days_left == 1 else 's' }} left){% if status.source == 'trial' %} - free first month{% elif status.source == 'coupon' %} - from a coupon{% endif %}. A new purchase adds days after this.</div>
+{% elif is_owner %}
+<div class="status off">Your salon plan is not active yet. Choose a plan below.</div>
+{% else %}
+<div class="status off">You are on the free plan: you can book the next free time at each salon.</div>
+{% endif %}
+{% if not enforce %}<div class="status off">Plans are starting soon. Until then every free time is open for everyone, and what you buy now is kept for you.</div>{% endif %}
+
+<h2>Choose your plan</h2>
+<form method="post" action="/plans/buy" id="buyform">
 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-<input name="code" placeholder="Coupon code" autocomplete="off" maxlength="32" required>
-<button type="submit">Redeem</button>
+<input type="hidden" name="code" id="cpcode">
+{% set base = plans[0].price * 30 / plans[0].days if plans else 0 %}
+<div class="plan-grid">
+{% for p in plans %}
+{% set pct = ((1 - (p.price * 30 / p.days) / base) * 100)|round|int if base else 0 %}
+<label class="plan">
+{% if loop.last and plans|length > 1 %}<span class="badge">Best value</span>{% endif %}
+<input type="radio" name="plan" value="{{ p.code }}" {{ 'checked' if loop.index == (2 if plans|length > 2 else 1) else '' }}>
+<span class="box"><span><span class="name">{{ p.name }}</span><span class="sub">{{ p.period }}{% if pct > 0 %} &middot; <span class="save">save {{ pct }}%</span>{% endif %}</span></span><span class="price">&#8377;{{ p.price }}</span></span>
+</label>
+{% endfor %}
+</div>
+
+<details class="coupon" {{ 'open' if error and notice and 'oupon' in notice else '' }}>
+<summary>Have a coupon code?</summary>
+<div class="cp-row">
+<input name="coupon" id="cp" maxlength="32" placeholder="ENTER CODE" autocomplete="off">
+<button class="btn ghost" type="submit" formaction="/plans/redeem">Redeem free days</button>
+</div>
+<p class="cp-note">Free-day codes are redeemed here. Discount codes are applied when you continue to payment.</p>
+</details>
+
+<button class="btn cta" type="submit">Continue to payment</button>
 </form>
-</div>
-</div>
+<p class="fine">Secure payment by Razorpay: UPI, cards and netbanking.<br>Prices include all taxes. <a href="/refund-policy">Refund policy</a></p>
+</main>
+<script>
+(function () {
+  var cp = document.getElementById("cp"), code = document.getElementById("cpcode");
+  function sync() { code.value = cp.value; }
+  cp.addEventListener("input", sync);
+  document.getElementById("buyform").addEventListener("submit", sync);
+  var b = document.getElementById("menuBtn"), p = document.getElementById("menuPanel");
+  if (b && p) {
+    b.addEventListener("click", function (e) { e.stopPropagation(); var h = p.hidden; p.hidden = !h; b.setAttribute("aria-expanded", h ? "true" : "false"); });
+    document.addEventListener("click", function () { p.hidden = true; });
+  }
+})();
+</script>
 </body>
 </html>

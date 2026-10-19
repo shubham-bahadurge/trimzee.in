@@ -25,17 +25,17 @@ def build_pdf(title, subtitle, headers, rows, widths):
                        for i, c in enumerate(cells))
 
     pages, ops, y = [], "", 0
-    def new_page(first):
+    def new_page():
         nonlocal ops, y
         ops = "BT /F2 16 Tf %d %d Td (%s) Tj ET\n" % (margin, page_h - margin, _esc(title))
         ops += "BT /F1 9 Tf %d %d Td (%s) Tj ET\n" % (margin, page_h - margin - 16, _esc(subtitle))
         y = page_h - margin - 42
         ops += f"0.93 g {margin} {y - 4:.1f} {usable} {lead} re f 0 g\n" + row_ops(y, headers, True)
         y -= lead
-    new_page(True)
+    new_page()
     for r in rows:
         if y < margin + lead:
-            pages.append(ops); new_page(False)
+            pages.append(ops); new_page()
         ops += row_ops(y, r, False)
         y -= lead
         ops += f"0.85 G {margin} {y + lead - 3:.1f} m {margin + usable} {y + lead - 3:.1f} l S 0 G\n"

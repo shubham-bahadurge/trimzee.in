@@ -46,7 +46,7 @@ boot.run(pgdb.init_lock)
 
 # ----------------------------- helpers -------------------------------------
 @app.teardown_request
-def end_of_request(_exc):
+def end_of_request(_):
     pgdb.release()           # hand the shared database connection back clean
 
 
@@ -475,7 +475,7 @@ def bill_barber_rename(barber_id):
 
 @app.route("/admin/billing")
 def bill_admin():
-    user, resp = _bill_user("admin")
+    _, resp = _bill_user("admin")
     if resp:
         return resp
     notice, error = _bill_flash()
@@ -489,7 +489,7 @@ def _bill_admin_done(result):
 
 @app.route("/admin/billing/plan", methods=["POST"])
 def bill_admin_plan():
-    user, resp = _bill_user("admin")
+    _, resp = _bill_user("admin")
     if resp:
         return resp
     return _bill_admin_done(billing.set_plan(request.form.get("code"), request.form.get("price"),
@@ -498,7 +498,7 @@ def bill_admin_plan():
 
 @app.route("/admin/billing/coupon", methods=["POST"])
 def bill_admin_coupon():
-    user, resp = _bill_user("admin")
+    _, resp = _bill_user("admin")
     if resp:
         return resp
     f = request.form
@@ -509,7 +509,7 @@ def bill_admin_coupon():
 
 @app.route("/admin/billing/coupon/<int:coupon_id>/toggle", methods=["POST"])
 def bill_admin_coupon_toggle(coupon_id):
-    user, resp = _bill_user("admin")
+    _, resp = _bill_user("admin")
     if resp:
         return resp
     billing.toggle_coupon(coupon_id)
@@ -518,7 +518,7 @@ def bill_admin_coupon_toggle(coupon_id):
 
 @app.route("/admin/billing/grant", methods=["POST"])
 def bill_admin_grant():
-    user, resp = _bill_user("admin")
+    _, resp = _bill_user("admin")
     if resp:
         return resp
     return _bill_admin_done(billing.grant(request.form.get("email"), request.form.get("days"),
@@ -571,14 +571,7 @@ def legal_footer(response):
 
 @app.route("/pay")
 def pay_page():
-    user, resp = _bill_user()
-    if resp:
-        return resp
-    if user["role"] == "admin":
-        return redirect("/admin/payments")
-    notice, error = _bill_flash()
-    return render_template("pay.html", notice=notice, error=error, configured=payments.configured(),
-                           test_mode=payments.test_mode(), **billing.plans_context(user))
+    return redirect("/plans")
 
 
 @app.route("/plans/buy", methods=["POST"])
@@ -615,7 +608,7 @@ def pay_webhook():
 
 @app.route("/admin/payments")
 def pay_admin():
-    user, resp = _bill_user("admin")
+    _, resp = _bill_user("admin")
     if resp:
         return resp
     return render_template("admin_payments.html", **payments.admin_context())

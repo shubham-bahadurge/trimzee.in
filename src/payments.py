@@ -115,7 +115,7 @@ def quote(user, plan_code, coupon_code=""):
             if error:
                 return {"ok": False, "error": error}
             if row["kind"] == "free_days":
-                return {"ok": False, "error": "This code gives free days. Redeem it on the Plans page instead."}
+                return {"ok": False, "error": "This code gives free days. Use the Redeem free days button next to the code."}
             final = discounted(row, price)
             discount = price - final
         return {"ok": True, "plan": dict(plan), "price": price, "discount": discount, "final": final,

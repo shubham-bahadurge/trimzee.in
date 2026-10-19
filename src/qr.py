@@ -125,7 +125,7 @@ def _build(data):
                     i += 1
         right -= 2
 
-    masks = [lambda x, y: (x + y) % 2 == 0, lambda x, y: y % 2 == 0, lambda x, y: x % 3 == 0,
+    masks = [lambda x, y: (x + y) % 2 == 0, lambda _, y: y % 2 == 0, lambda x, _: x % 3 == 0,
              lambda x, y: (x + y) % 3 == 0, lambda x, y: (x // 3 + y // 2) % 2 == 0,
              lambda x, y: x * y % 2 + x * y % 3 == 0, lambda x, y: (x * y % 2 + x * y % 3) % 2 == 0,
              lambda x, y: ((x + y) % 2 + x * y % 3) % 2 == 0]

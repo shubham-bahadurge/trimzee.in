@@ -5,58 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Checkout - Trimzee</title>
 <style>
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#f6f6f7;color:#111}
-.wrap{max-width:720px;margin:0 auto;padding:18px 16px 60px}
-h1{font-size:1.4rem;margin:8px 0 14px}
-h2{font-size:1.05rem;margin:0 0 10px}
-.card{background:#fff;border-radius:14px;padding:18px;margin:0 0 14px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
-p{color:#444;line-height:1.45;margin:.4em 0}
-small,.muted{color:#777}
-label{display:block;font-size:.82rem;margin:10px 0 4px;color:#333}
-input,select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ccc;border-radius:9px;font-size:1rem;background:#fff}
-button{padding:10px 14px;border:0;border-radius:9px;background:#111;color:#fff;font-size:.95rem;cursor:pointer}
-button[disabled]{background:#bbb;cursor:not-allowed}
-button.alt{background:#fff;color:#111;border:1px solid #bbb}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eee}
-.row:first-of-type{border-top:0}
-.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.inline input{width:auto;flex:1;min-width:120px}
-.err{background:#fdecec;color:#a11;padding:10px 12px;border-radius:9px;margin:0 0 14px}
-.ok{background:#e9f7ee;color:#165a2b;padding:10px 12px;border-radius:9px;margin:0 0 14px}
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;background:#eee;color:#444}
-.pill.on{background:#e9f7ee;color:#165a2b}
-table{width:100%;border-collapse:collapse;font-size:.88rem}
-th,td{text-align:left;padding:7px 6px;border-top:1px solid #eee;vertical-align:top}
-a{color:#111}
-.scroll{overflow-x:auto}
+.co-wrap{max-width:560px;margin:0 auto;padding:6px 16px 70px}
+.co-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);font-size:.95rem}
+.co-row:first-of-type{border-top:0}
+.co-total{font-size:1.15rem;font-weight:800}
+.co-test{background:var(--warnbg);color:var(--warn);border-radius:14px;padding:12px 14px;margin:12px 0;font-weight:600;font-size:.9rem}
+.co-pay{display:block;width:100%;padding:16px 18px;margin-top:6px}
+.co-msg{color:var(--muted);font-size:.85rem;text-align:center;margin:12px 0;min-height:1.2em}
+.co-secure{color:var(--muted);font-size:.8rem;text-align:center;line-height:1.5}
 </style>
 </head>
 <body>
-<div class="wrap">
-<p><a href="/pay">&larr; Change plan</a></p>
+{% include "_nav.html" %}
+<main class="co-wrap">
+<a class="back" href="/plans">&larr; Change plan</a>
 <h1>Checkout</h1>
-{% if test_mode %}<div class="err">TEST MODE: no real money is taken.</div>{% endif %}
-<div class="card">
-<div class="row"><span>{{ quote.plan.name }}</span><b>&#8377;{{ quote.price }}</b></div>
-{% if quote.discount %}<div class="row"><span>Coupon {{ quote.coupon }}</span><b>- &#8377;{{ quote.discount }}</b></div>{% endif %}
-<div class="row"><span><b>You pay</b></span><b>&#8377;{{ quote.final }}</b></div>
-<p><button id="pay" type="button">Pay &#8377;{{ quote.final }}</button></p>
-<p id="msg" class="muted"></p>
-</div>
+{% if test_mode %}<div class="co-test">Test mode: no real money is taken.</div>{% endif %}
+<section class="panel">
+<div class="co-row"><span>{{ quote.plan.name }}</span><b>&#8377;{{ quote.price }}</b></div>
+{% if quote.discount %}<div class="co-row"><span>Coupon {{ quote.coupon }}</span><b>- &#8377;{{ quote.discount }}</b></div>{% endif %}
+<div class="co-row co-total"><span>You pay</span><span>&#8377;{{ quote.final }}</span></div>
+<button id="pay" class="btn co-pay" type="button">Pay &#8377;{{ quote.final }}</button>
+<p id="msg" class="co-msg"></p>
+</section>
+<p class="co-secure">Secure payment by Razorpay: UPI, cards and netbanking.<br>Your plan starts as soon as the payment is confirmed.</p>
 <form id="done" method="post" action="/plans/paid">
 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
 <input type="hidden" name="razorpay_order_id" id="o">
 <input type="hidden" name="razorpay_payment_id" id="p">
 <input type="hidden" name="razorpay_signature" id="s">
 </form>
-</div>
+</main>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 var options = {
   key: {{ key_id|tojson }}, amount: {{ amount_paise }}, currency: "INR", name: "Trimzee",
   description: {{ quote.plan.name|tojson }}, order_id: {{ order_id|tojson }},
   prefill: {name: {{ (user.name or "")|tojson }}, email: {{ (user.email or "")|tojson }}},
-  theme: {color: "#111111"},
+  theme: {color: "#0b0b0b"},
   handler: function (r) {
     document.getElementById("o").value = r.razorpay_order_id;
     document.getElementById("p").value = r.razorpay_payment_id;
@@ -67,6 +53,13 @@ var options = {
   modal: {ondismiss: function () { document.getElementById("msg").textContent = "Payment not completed. You can try again."; }}
 };
 document.getElementById("pay").onclick = function () { new Razorpay(options).open(); };
+(function () {
+  var b = document.getElementById("menuBtn"), p = document.getElementById("menuPanel");
+  if (b && p) {
+    b.addEventListener("click", function (e) { e.stopPropagation(); var h = p.hidden; p.hidden = !h; b.setAttribute("aria-expanded", h ? "true" : "false"); });
+    document.addEventListener("click", function () { p.hidden = true; });
+  }
+})();
 </script>
 </body>
 </html>

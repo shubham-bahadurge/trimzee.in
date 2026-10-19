@@ -27,13 +27,12 @@ def _line(s):
     return f"{s['name']} · from ₹{s['price']} · {s['status'].replace('full', 'fully booked')} · {s['distance']:.1f} km"
 
 
-def _pick(salons, ids_text=None, limit=3):
+def _pick(salons, limit=3):
     return [{"id": s["id"], "name": s["name"], "line": _line(s)} for s in salons[:limit]]
 
 
 def rule_reply(message, salons):
     m = re.sub(r"[^a-z0-9₹ ]", " ", message.lower())
-    words = set(m.split())
     service = next((k for k, v in SERVICE_WORDS.items() if any(w in m for w in v)), None)
     pool = [s for s in salons if not service or any(service.split()[0] in x.lower() for x in s["services"])]
     live = [s for s in pool if s["status"] in ("available", "busy")]
