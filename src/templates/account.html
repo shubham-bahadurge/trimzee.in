@@ -16,18 +16,32 @@
         {% if notice %}<p class="message {{ 'err' if error else 'ok' }}">{{ notice }}</p>{% endif %}
 
         <div class="panel">
-            <h2>{{ current_user.name }}</h2>
+            <div class="profile-heading">
+                <h2>{{ current_user.name }}</h2>
+                <button class="btn ghost small" type="button" id="editProfileBtn" aria-expanded="false" aria-controls="profileForm">Edit profile</button>
+            </div>
             <dl class="info">
                 <dt>Email</dt><dd>{{ current_user.email }}</dd>
                 <dt>Gender</dt><dd>{{ (current_user.gender or 'Not set')|capitalize }}</dd>
                 <dt>Member since</dt><dd>{{ current_user.joined }}</dd>
                 <dt>Phone</dt><dd>{{ current_user.phone or 'Not added yet' }}</dd>
             </dl>
-            <form method="post" action="/account/phone" class="row-form">
+            <form method="post" action="/account/profile" class="profile-form" id="profileForm" hidden>
                 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-                <label class="field">{{ 'Change' if current_user.phone else 'Add' }} mobile number
-                    <input type="tel" name="phone" inputmode="numeric" maxlength="14" placeholder="10-digit mobile number" required></label>
-                <button class="btn small" type="submit">Save</button>
+                <label class="field">Name
+                    <input type="text" name="name" minlength="2" maxlength="60" value="{{ current_user.name }}" required></label>
+                <label class="field">Gender
+                    <select name="gender">
+                        <option value="" {% if not current_user.gender %}selected{% endif %}>Not set</option>
+                        <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>Male</option>
+                        <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>Female</option>
+                    </select></label>
+                <label class="field">Mobile number
+                    <input type="tel" name="phone" inputmode="numeric" maxlength="14" placeholder="10-digit mobile number" value="{{ current_user.phone or '' }}" {% if current_user.role == 'owner' %}required{% endif %}></label>
+                <div class="profile-actions">
+                    <button class="btn small" type="submit">Save profile</button>
+                    <button class="btn ghost small" type="button" id="cancelProfileBtn">Cancel</button>
+                </div>
             </form>
         </div>
 
@@ -50,13 +64,7 @@
             <p class="hint">Friends joined: <strong>{{ ref.joined }}</strong> · Rewarded: <strong>{{ ref.rewarded }}</strong>. Credits will be usable when online payments launch.</p>
         </div>
 
-        <div class="panel">
-            <h2>Settings</h2>
-            <p class="stack">
-                <button class="btn ghost" type="button" id="enableAlerts">🔔 Turn on alerts</button>
-                {% if current_user.role == 'customer' %}<a class="btn ghost" href="/my-bookings">My bookings</a>
-                {% elif current_user.role == 'owner' %}<a class="btn ghost" href="/dashboard">Go to dashboard</a>{% endif %}
-            </p>
+        <div class="account-logout">
             <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn danger" type="submit">Log out</button></form>
         </div>
     </main>
@@ -65,6 +73,21 @@
             var text = document.getElementById("shareLink").textContent, btn = this;
             function done() { btn.textContent = "Copied ✓"; setTimeout(function () { btn.textContent = "Copy link"; }, 2000); }
             if (navigator.clipboard) { navigator.clipboard.writeText(text).then(done, done); } else { done(); }
+        });
+    </script>
+    <script>
+        var editProfileBtn = document.getElementById("editProfileBtn");
+        var cancelProfileBtn = document.getElementById("cancelProfileBtn");
+        var profileForm = document.getElementById("profileForm");
+        editProfileBtn.addEventListener("click", function () {
+            profileForm.hidden = false;
+            editProfileBtn.hidden = true;
+            editProfileBtn.setAttribute("aria-expanded", "true");
+        });
+        cancelProfileBtn.addEventListener("click", function () {
+            profileForm.hidden = true;
+            editProfileBtn.hidden = false;
+            editProfileBtn.setAttribute("aria-expanded", "false");
         });
     </script>
 </body>

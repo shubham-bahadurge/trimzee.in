@@ -591,13 +591,15 @@ def account():
     return account_view()
 
 
-@app.route("/account/phone", methods=["POST"])
-def account_phone():
+@app.route("/account/profile", methods=["POST"])
+def account_profile():
     if not current_user():
         return redirect("/login")
-    ok = accounts.update_phone(current_user()["id"], request.form.get("phone"))
+    user = current_user()
+    ok, message = accounts.update_profile(user["id"], user["role"], request.form.get("name"),
+                                          request.form.get("gender"), request.form.get("phone"))
     g.pop("user", None)
-    return account_view("Phone number saved." if ok else "Please enter a valid 10-digit mobile number.", error=not ok)
+    return account_view(message, error=not ok)
 
 
 # ----------------------------- customer ------------------------------------

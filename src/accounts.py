@@ -52,6 +52,30 @@ def update_phone(user_id, raw):
         conn.close()
 
 
+def update_profile(user_id, role, name, gender, raw_phone):
+    import growth
+    name = (name or "").strip()
+    gender = (gender or "").strip()
+    phone_input = (raw_phone or "").strip()
+    phone = growth.clean_mobile(phone_input) if phone_input else None
+    if not 2 <= len(name) <= 60:
+        return False, "Please enter your name (2-60 characters)."
+    if gender and gender not in meta.USER_GENDERS:
+        return False, "Please choose a valid gender."
+    if phone_input and not phone:
+        return False, "Please enter a valid 10-digit mobile number."
+    if role == "owner" and not phone:
+        return False, "Please enter a valid 10-digit mobile number."
+    conn = db.get_db()
+    try:
+        conn.execute("UPDATE users SET name = ?, gender = ?, phone = ? WHERE id = ?",
+                     (name, gender or None, phone, user_id))
+        conn.commit()
+        return True, "Profile updated."
+    finally:
+        conn.close()
+
+
 # ----------------------------- referrals -----------------------------------
 def ensure_code(user_id):
     conn = db.get_db()

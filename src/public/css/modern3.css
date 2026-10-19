@@ -38,6 +38,15 @@
 .info { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 8px 0 14px; }
 .info dt { color: var(--muted); font-weight: 700; font-size: .85rem; }
 .info dd { margin: 0; font-weight: 700; word-break: break-all; }
+.profile-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.profile-heading h2 { min-width: 0; overflow-wrap: anywhere; }
+.profile-form { display: grid; gap: 10px; }
+.profile-form[hidden] { display: none; }
+.profile-form .field { min-width: 0; }
+.profile-form .field input, .profile-form .field select { width: 100%; box-sizing: border-box; }
+.profile-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.account-logout { display: flex; justify-content: center; margin: 20px 0 32px; }
+.account-logout .btn { min-width: 160px; }
 .share-link { background: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: .85rem; word-break: break-all; margin-bottom: 10px; }
 .tile strong.small-num { font-size: 1.1rem; }
 
