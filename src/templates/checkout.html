@@ -17,7 +17,7 @@
 </head>
 <body>
 {% include "_nav.html" %}
-<main class="co-wrap">
+<main class="co-wrap" id="checkout" data-checkout-config="{{ {'key': key_id, 'amount': amount_paise, 'description': quote.plan.name, 'order_id': order_id, 'name': user.name or '', 'email': user.email or ''}|tojson|forceescape }}">
 <a class="back" href="/plans">&larr; Change plan</a>
 <h1>Checkout</h1>
 {% if test_mode %}<div class="co-test">Test mode: no real money is taken.</div>{% endif %}
@@ -38,10 +38,11 @@
 </main>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
+var checkoutConfig = JSON.parse(document.getElementById("checkout").dataset.checkoutConfig);
 var options = {
-  key: {{ key_id|tojson }}, amount: {{ amount_paise }}, currency: "INR", name: "Trimzee",
-  description: {{ quote.plan.name|tojson }}, order_id: {{ order_id|tojson }},
-  prefill: {name: {{ (user.name or "")|tojson }}, email: {{ (user.email or "")|tojson }}},
+  key: checkoutConfig.key, amount: checkoutConfig.amount, currency: "INR", name: "Trimzee",
+  description: checkoutConfig.description, order_id: checkoutConfig.order_id,
+  prefill: {name: checkoutConfig.name, email: checkoutConfig.email},
   theme: {color: "#0b0b0b"},
   handler: function (r) {
     document.getElementById("o").value = r.razorpay_order_id;
@@ -52,14 +53,23 @@ var options = {
   },
   modal: {ondismiss: function () { document.getElementById("msg").textContent = "Payment not completed. You can try again."; }}
 };
-document.getElementById("pay").onclick = function () { new Razorpay(options).open(); };
-(function () {
-  var b = document.getElementById("menuBtn"), p = document.getElementById("menuPanel");
-  if (b && p) {
-    b.addEventListener("click", function (e) { e.stopPropagation(); var h = p.hidden; p.hidden = !h; b.setAttribute("aria-expanded", h ? "true" : "false"); });
-    document.addEventListener("click", function () { p.hidden = true; });
+document.getElementById("pay").addEventListener("click", function () {
+  var msg = document.getElementById("msg");
+  if (typeof window.Razorpay !== "function") {
+    msg.textContent = "Payment service is unavailable. Please refresh and try again.";
+    return;
   }
-})();
+  try {
+    var checkout = new window.Razorpay(options);
+    checkout.on("payment.failed", function () {
+      msg.textContent = "Payment failed. Please try again.";
+    });
+    checkout.open();
+  } catch (error) {
+    console.error("Unable to open Razorpay checkout.", error);
+    msg.textContent = "Unable to start payment. Please try again.";
+  }
+});
 </script>
 </body>
 </html>

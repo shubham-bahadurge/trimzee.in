@@ -915,28 +915,6 @@ def booking_guard(salon_id):
     return user, None
 
 
-@app.route("/api/hold", methods=["POST"])
-def api_hold():
-    body = request.get_json(silent=True) or {}
-    try:
-        salon_id = int(body.get("salon_id"))
-    except (TypeError, ValueError):
-        return jsonify({"error": "Please choose a time."}), 400
-    user, err = booking_guard(salon_id)
-    if err:
-        return err
-    code, message, seconds = slots.hold(user["id"], salon_id, str(body.get("slot", "")))
-    return (jsonify({"message": message, "seconds": seconds}), 200) if code == 200 else (jsonify({"error": message}), code)
-
-
-@app.route("/api/release", methods=["POST"])
-def api_release():
-    user = current_user()
-    if user and user["role"] == "customer":
-        slots.release(user["id"])
-    return jsonify({"ok": True})
-
-
 @app.route("/api/book", methods=["POST"])
 def api_book():
     body = request.get_json(silent=True) or {}

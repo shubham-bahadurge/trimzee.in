@@ -10,7 +10,7 @@ import slots
 import billing
 import payments
 
-SCHEMA_VERSION = "2026-10-v8-billing-pay"
+SCHEMA_VERSION = "2026-10-v9-no-slot-holds"
 
 
 def _wanted():

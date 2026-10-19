@@ -4,12 +4,7 @@
 .details input[type=tel] { padding: 14px 16px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 1rem; background: #fff; font-family: inherit; }
 .hint { color: var(--muted); font-size: .85rem; }
 
-/* slots: held by someone else, and my reservation */
-.slot.held:disabled { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
-.slot.mine { background: var(--ink); color: #fff; border-color: var(--ink); }
-.dot.held { background: #fef3c7; border-color: #fcd34d; }
-.hold-info { margin: 10px 0 0; padding: 10px 14px; border-radius: 12px; background: #fff; border: 1.5px solid var(--ink); font-weight: 800; }
-.hold-info[hidden], .modal[hidden] { display: none; }
+.modal[hidden] { display: none; }
 .day-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
 .day-tab { flex: 1; padding: 11px; border-radius: 12px; border: 1.5px solid var(--ink); background: #fff; font-weight: 800; cursor: pointer; font-family: inherit; font-size: 1rem; }
 .day-tab.active { background: var(--ink); color: #fff; }

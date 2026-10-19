@@ -1,4 +1,4 @@
-// Trimzee salon page: live slots, 3-minute slot reservation, 5 km live-location check, booking + confirmation code
+// Trimzee salon page: live slots, 5 km live-location check, booking + confirmation code
 const MAX_KM = 5;
 const POLL_MS = 5000;
 const info = document.body.dataset;
@@ -11,14 +11,11 @@ const confirmBtn = document.getElementById("confirm");
 const message = document.getElementById("message");
 const closedMsg = document.getElementById("closedMsg");
 const rangeInfo = document.getElementById("rangeInfo");
-const holdInfo = document.getElementById("holdInfo");
 const tabs = Array.from(document.querySelectorAll(".day-tab"));
 const modal = document.getElementById("modal");
 
 let day = tabs.length ? tabs[0].dataset.day : "";
 let selected = null;
-let holdUntil = 0;
-let holdTimer = null;
 let here = null;
 let nearOk = false;
 let lastData = null;
@@ -94,87 +91,38 @@ function watchLocation() {
         { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 });
 }
 
-// ---- reservation timer -------------------------------------------------
-function stopTimer() {
-    if (holdTimer) { clearInterval(holdTimer); holdTimer = null; }
-    holdInfo.hidden = true;
-}
-
-function startTimer() {
-    stopTimer();
-    function tick() {
-        const left = Math.round((holdUntil - Date.now()) / 1000);
-        if (left <= 0) {
-            selected = null;
-            stopTimer();
-            showMessage("Your reservation expired. Please pick the time again.", false);
-            updateButton();
-            loadSlots();
-            return;
-        }
-        holdInfo.hidden = false;
-        holdInfo.textContent = "⏱ Reserved for you · " + Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0");
-    }
-    tick();
-    if (selected) { holdTimer = setInterval(tick, 1000); }
-}
-
-function releaseHold() {
-    if (selected) { post("/api/release").catch(function () { /* the hold expires by itself */ }); }
-    selected = null;
-    stopTimer();
-}
-
-async function selectSlot(slot) {
+// ---- slot selection -----------------------------------------------------
+function selectSlot(slot) {
     if (auth !== "customer") {
         showMessage(auth === "" ? "Please sign in to book." : "Please use a customer account to book.", false);
         return;
     }
-    try {
-        const res = await post("/api/hold", { salon_id: salonId, slot: slot });
-        const data = await res.json();
-        if (res.ok) {
-            selected = slot;
-            holdUntil = Date.now() + data.seconds * 1000;
-            message.hidden = true;
-            startTimer();
-        } else {
-            selected = null;
-            stopTimer();
-            showMessage(data.error || "Couldn't reserve that time.", false);
-        }
-    } catch (e) {
-        showMessage("Network problem. Please try again.", false);
-    }
+    selected = slot;
+    message.hidden = true;
     updateButton();
-    loadSlots();
+    if (lastData) { render(lastData); }
 }
 
 // ---- slots ---------------------------------------------------------------
 function render(data) {
     lastData = data;
     closedMsg.hidden = data.open;
-    if (data.my_hold && !selected && data.my_hold.slot.slice(0, 10) === day) {     // came back to the page: restore
-        selected = data.my_hold.slot;
-        holdUntil = Date.now() + data.my_hold.seconds * 1000;
-        startTimer();
-    }
     if (selected && selected.slice(0, 10) === data.day) {
         const cur = data.slots.find(function (s) { return s.slot === selected; });
-        if (!cur || cur.state !== "mine") {
+        if (!cur || cur.state !== "free") {
             selected = null;
-            stopTimer();
-            showMessage("That time is no longer reserved for you. Please choose another.", false);
+            showMessage("That time is no longer available. Please choose another.", false);
         }
     }
     grid.innerHTML = "";
     data.slots.forEach(function (s) {
         const b = document.createElement("button");
         b.type = "button";
-        b.className = "slot " + s.state + (s.state === "mine" ? " selected" : "");
+        const isSelected = s.slot === selected;
+        b.className = "slot " + (isSelected ? "selected" : s.state);
         b.textContent = pretty(s.time);
-        b.disabled = s.state !== "free" && s.state !== "mine";
-        b.title = s.state === "held" ? "Someone is booking this time right now" : "";
+        b.disabled = s.state !== "free";
+        b.setAttribute("aria-pressed", isSelected ? "true" : "false");
         if (s.state === "free") { b.addEventListener("click", function () { selectSlot(s.slot); }); }
         grid.appendChild(b);
     });
@@ -192,7 +140,8 @@ async function loadSlots() {
 tabs.forEach(function (tab) {
     tab.addEventListener("click", function () {
         if (tab.dataset.day === day) { return; }
-        if (selected) { releaseHold(); updateButton(); }
+        selected = null;
+        updateButton();
         day = tab.dataset.day;
         tabs.forEach(function (t) { t.classList.toggle("active", t === tab); });
         message.hidden = true;
@@ -252,7 +201,6 @@ confirmBtn.addEventListener("click", async function () {
         const data = await res.json();
         if (res.status === 201) {
             selected = null;
-            stopTimer();
             message.hidden = true;
             openModal(data);
         } else {
@@ -265,9 +213,6 @@ confirmBtn.addEventListener("click", async function () {
     loadSlots();
 });
 
-window.addEventListener("pagehide", function () {
-    if (selected && navigator.sendBeacon) { navigator.sendBeacon("/api/release"); }
-});
 document.addEventListener("visibilitychange", function () { if (!document.hidden) { loadSlots(); } });
 
 watchLocation();

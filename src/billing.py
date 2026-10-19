@@ -125,11 +125,8 @@ def init_billing():
         conn.commit()
         # A slot may now take one booking per barber, so the old one-per-slot rules must go.
         _drop_unique(conn, "bookings", "salon_id, slot_start")
-        _drop_unique(conn, "slot_holds", "salon_id, slot_start")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS one_active_booking_per_barber_slot "
                      "ON bookings (salon_id, slot_start, barber_id) WHERE status IN ('pending', 'confirmed')")
-        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS one_hold_per_user_slot "
-                     "ON slot_holds (salon_id, slot_start, user_id)")
         conn.commit()
         _ready = True
     finally:
