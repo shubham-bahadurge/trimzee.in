@@ -5,19 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Billing - Trimzee admin</title>
 <style>
-body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#f6f6f7;color:#111}
-.wrap{max-width:720px;margin:0 auto;padding:18px 16px 60px}
-h1{font-size:1.4rem;margin:8px 0 14px}
-h2{font-size:1.05rem;margin:0 0 10px}
-.card{background:#fff;border-radius:14px;padding:18px;margin:0 0 14px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#f6f6f7;color:#111;font-size:14px}
+.wrap{max-width:580px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:1.25rem;margin:8px 0 10px}
+h2{font-size:1rem;margin:0 0 10px}
+.card{background:#fff;border-radius:14px;padding:15px;margin:0 0 11px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
 p{color:#444;line-height:1.45;margin:.4em 0}
 small,.muted{color:#777}
-label{display:block;font-size:.82rem;margin:10px 0 4px;color:#333}
-input,select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ccc;border-radius:9px;font-size:1rem;background:#fff}
-button{padding:10px 14px;border:0;border-radius:9px;background:#111;color:#fff;font-size:.95rem;cursor:pointer}
+label{display:block;font-size:.78rem;margin:8px 0 3px;color:#333}
+input,select{width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #ccc;border-radius:8px;font-size:.9rem;background:#fff}
+input[type="checkbox"]{width:auto;padding:0;accent-color:#ff4d91}
+button{padding:7px 11px;border:1px solid #ccc;border-radius:9px;background:#fff;color:#111;font-size:.9rem;cursor:pointer}
 button[disabled]{background:#bbb;cursor:not-allowed}
-button.alt{background:#fff;color:#111;border:1px solid #bbb}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eee}
+button.alt{background:#fff;color:#111;border:1px solid #ccc}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #eee}
 .row:first-of-type{border-top:0}
 .inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .inline input{width:auto;flex:1;min-width:120px}
@@ -29,6 +30,7 @@ table{width:100%;border-collapse:collapse;font-size:.88rem}
 th,td{text-align:left;padding:7px 6px;border-top:1px solid #eee;vertical-align:top}
 a{color:#111}
 .scroll{overflow-x:auto}
+@media(max-width:480px){.wrap{padding:14px 12px 40px}.card{padding:13px}.row{gap:6px}.row>span:first-of-type{min-width:100%}}
 </style>
 </head>
 <body>
