@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Payments - Trimzee admin</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#f6f6f7;color:#111}
+.wrap{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:1.4rem;margin:8px 0 14px}
+h2{font-size:1.05rem;margin:0 0 10px}
+.card{background:#fff;border-radius:14px;padding:18px;margin:0 0 14px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
+p{color:#444;line-height:1.45;margin:.4em 0}
+small,.muted{color:#777}
+label{display:block;font-size:.82rem;margin:10px 0 4px;color:#333}
+input,select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ccc;border-radius:9px;font-size:1rem;background:#fff}
+button{padding:10px 14px;border:0;border-radius:9px;background:#111;color:#fff;font-size:.95rem;cursor:pointer}
+button[disabled]{background:#bbb;cursor:not-allowed}
+button.alt{background:#fff;color:#111;border:1px solid #bbb}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eee}
+.row:first-of-type{border-top:0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.inline input{width:auto;flex:1;min-width:120px}
+.err{background:#fdecec;color:#a11;padding:10px 12px;border-radius:9px;margin:0 0 14px}
+.ok{background:#e9f7ee;color:#165a2b;padding:10px 12px;border-radius:9px;margin:0 0 14px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;background:#eee;color:#444}
+.pill.on{background:#e9f7ee;color:#165a2b}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:7px 6px;border-top:1px solid #eee;vertical-align:top}
+a{color:#111}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p><a href="/admin/billing">&larr; Back to billing</a></p>
+<h1>Payments</h1>
+{% if test_mode %}<div class="err">Razorpay is in TEST MODE.</div>{% endif %}
+{% if not configured %}<div class="err">Razorpay keys are not set.</div>{% endif %}
+<div class="card"><p>Total paid: <b>&#8377;{{ total }}</b></p>
+<div class="scroll"><table>
+<tr><th>When</th><th>Who</th><th>Plan</th><th>&#8377;</th><th>Status</th></tr>
+{% for p in payments %}<tr><td>{{ p.paid_at or p.created_at }}</td><td>{{ p.email }}</td><td>{{ p.plan_code }}{% if p.coupon_code %}<br><small>{{ p.coupon_code }}</small>{% endif %}</td><td>{{ p.rupees }}</td><td>{{ p.status }}<br><small>{{ p.payment_id or '' }}</small></td></tr>
+{% else %}<tr><td colspan="5" class="muted">No payments yet.</td></tr>{% endfor %}
+</table></div></div>
+</div>
+</body>
+</html>

@@ -8,8 +8,9 @@ import growth
 import meta
 import slots
 import billing
+import payments
 
-SCHEMA_VERSION = "2026-10-v8-billing"
+SCHEMA_VERSION = "2026-10-v8-billing-pay"
 
 
 def _wanted():
@@ -53,4 +54,5 @@ def run(lock):
         accounts.init_accounts()
         slots.init_slots()
         billing.init_billing()
+        payments.init_payments()
         _mark()

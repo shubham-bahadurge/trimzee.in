@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pay for a plan - Trimzee</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;margin:0;background:#f6f6f7;color:#111}
+.wrap{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:1.4rem;margin:8px 0 14px}
+h2{font-size:1.05rem;margin:0 0 10px}
+.card{background:#fff;border-radius:14px;padding:18px;margin:0 0 14px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
+p{color:#444;line-height:1.45;margin:.4em 0}
+small,.muted{color:#777}
+label{display:block;font-size:.82rem;margin:10px 0 4px;color:#333}
+input,select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ccc;border-radius:9px;font-size:1rem;background:#fff}
+button{padding:10px 14px;border:0;border-radius:9px;background:#111;color:#fff;font-size:.95rem;cursor:pointer}
+button[disabled]{background:#bbb;cursor:not-allowed}
+button.alt{background:#fff;color:#111;border:1px solid #bbb}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eee}
+.row:first-of-type{border-top:0}
+.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.inline input{width:auto;flex:1;min-width:120px}
+.err{background:#fdecec;color:#a11;padding:10px 12px;border-radius:9px;margin:0 0 14px}
+.ok{background:#e9f7ee;color:#165a2b;padding:10px 12px;border-radius:9px;margin:0 0 14px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;background:#eee;color:#444}
+.pill.on{background:#e9f7ee;color:#165a2b}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:7px 6px;border-top:1px solid #eee;vertical-align:top}
+a{color:#111}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p><a href="/plans">&larr; Back to plans</a></p>
+<h1>Pay for a plan</h1>
+{% if test_mode %}<div class="err">TEST MODE: no real money is taken. Use Razorpay's test card or test UPI.</div>{% endif %}
+{% if notice %}<div class="{{ 'err' if error else 'ok' }}">{{ notice }}</div>{% endif %}
+{% if status.active %}<p class="muted">Your plan is active until {{ status.ends_pretty }}. A new payment adds days after that.</p>{% endif %}
+<form method="post" action="/plans/buy" class="card">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<h2>Choose a plan</h2>
+{% for p in plans %}
+<label class="row" style="cursor:pointer;margin:0">
+<span><input type="radio" name="plan" value="{{ p.code }}" style="width:auto" {{ 'checked' if loop.first else '' }}> {{ p.name }}<br><small>&nbsp;&nbsp;&nbsp;&nbsp;{{ p.period }}</small></span><b>&#8377;{{ p.price }}</b>
+</label>
+{% endfor %}
+<label>Coupon code (optional)</label>
+<input name="coupon" maxlength="32" autocomplete="off" placeholder="Discount coupon">
+<p class="muted">Prices include all taxes. Free-day coupons are redeemed on the Plans page.</p>
+<p><button type="submit" {{ '' if configured else 'disabled' }}>Continue</button>{% if not configured %} <small>Online payments are not set up yet.</small>{% endif %}</p>
+</form>
+</div>
+</body>
+</html>
