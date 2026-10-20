@@ -1,6 +1,7 @@
 """Flask application: routes connect browser requests to Trimzee's feature modules."""
 import os
 import secrets
+from datetime import timedelta
 
 from flask import (Flask, Response, abort, g, jsonify, redirect, render_template, request,
                    session)
@@ -30,10 +31,13 @@ import slots  # noqa: E402
 # "public" is where Vercel serves static files from.
 app = Flask(__name__, static_folder="public", static_url_path="")
 
+secret_key = os.environ.get("SECRET_KEY")
+if os.environ.get("VERCEL") and not secret_key:
+    raise RuntimeError("Set a stable SECRET_KEY in the Vercel project settings.")
+
 app.config.update(
-    # On Vercel set SECRET_KEY in the project settings so logins survive restarts.
-    SECRET_KEY=os.environ.get("SECRET_KEY") or (
-        secrets.token_hex(32) if os.environ.get("VERCEL") else "dev-only-secret-change-me"),
+    SECRET_KEY=secret_key or "dev-only-secret-change-me",
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=bool(os.environ.get("VERCEL")),
@@ -103,7 +107,7 @@ def require_role(role):
 def start_session(user_id):
     session.clear()
     session["user_id"] = user_id
-    session.permanent = False
+    session.permanent = True
 
 
 def home_for(role):

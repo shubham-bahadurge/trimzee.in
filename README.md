@@ -108,6 +108,9 @@ environment variables in your shell or hosting provider when you enable them:
 | `BILLING_ENFORCE` | Set to `1` to enforce the subscription checks used by billing features. |
 
 Never put real credentials in source files or commit them to Git.
+Signed-in browser sessions persist for 30 days. On Vercel, configure a stable,
+private `SECRET_KEY` in the project settings before deploying; the app refuses
+to start there without one because a changing key invalidates saved sessions.
 
 ## Making a change
 
