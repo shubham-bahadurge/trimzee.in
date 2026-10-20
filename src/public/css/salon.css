@@ -4,9 +4,18 @@
 .salon-image { display: block; width: 100%; max-height: 340px; object-fit: cover; border-radius: 16px; margin-bottom: 20px; }
 .booking h2 { margin: 26px 0 12px; font-size: 1.1rem; }
 .services { display: grid; gap: 8px; }
-.barber-choice { display: grid; gap: 6px; }
-.barber-choice label { color: #6b7280; font-size: .9rem; }
-.barber-choice select { width: 100%; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; font: inherit; }
+.barber-choice { display: grid; gap: 9px; padding: 14px; border: 1px solid var(--line, #d8dfe1); border-radius: 14px; background: var(--paper, #fff); }
+.barber-choice label { color: var(--muted, #5d6a70); font-size: .88rem; font-weight: 700; }
+.barber-choice select {
+    appearance: none; width: 100%; min-height: 48px; padding: 12px 42px 12px 14px;
+    border: 1.5px solid var(--line, #d8dfe1); border-radius: 11px; background-color: var(--bg, #eef2f3);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%235d6a70' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; color: var(--ink, #0b0b0b);
+    font: inherit; font-weight: 700; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.barber-choice select:hover { border-color: #9aa5a9; }
+.barber-choice select:focus-visible { outline: none; border-color: var(--ink, #0b0b0b); background-color: var(--paper, #fff); box-shadow: 0 0 0 3px rgba(11, 11, 11, .12); }
+.barber-choice select option { background: #fff; color: #0b0b0b; }
 .service {
     display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center;
     background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px 14px; cursor: pointer;
