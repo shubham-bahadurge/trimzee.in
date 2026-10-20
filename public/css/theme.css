@@ -6,10 +6,10 @@ body { background: var(--bg); color: var(--ink);
 h1, h2, h3 { letter-spacing: -.01em; }
 .muted { color: var(--muted); }
 
-.topbar { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: 1fr auto;
+.topbar { position: sticky; top: 0; z-index: 30; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px;
     align-items: center; padding: 10px 14px; background: var(--paper); border-bottom: 1px solid var(--line); }
 .topbar .menu-wrap:last-child { justify-self: end; }
-.brand { justify-self: start; display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+.brand { justify-self: center; display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
 .brand span { font-weight: 800; font-size: 1.35rem; letter-spacing: .12em; }
 .brand img { display: block; }
 .menu-wrap { position: relative; }
