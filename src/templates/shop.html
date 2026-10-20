@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop launch information and waitlist sign-up. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trimzee Shop</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="stylesheet" href="/css/extra.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="container shop-page">
+        <section class="panel shop-card" aria-labelledby="shopTitle">
+            <span class="pill">Coming soon</span>
+            <h1 id="shopTitle">Trimzee Shop</h1>
+            <p class="muted">Hair-care and grooming products from trusted brands, delivered to you.</p>
+            {% if current_user %}
+            <button class="btn small" type="button" id="shopNotify" {% if on_waitlist %}disabled{% endif %}>
+                {{ "✓ You're on the list" if on_waitlist else "Notify me at launch" }}
+            </button>
+            <p class="hint" id="shopStatus" aria-live="polite"></p>
+            {% else %}
+            <a class="btn small" href="/register?next=/shop">Sign up to get notified</a>
+            {% endif %}
+        </section>
+    </main>
+    {% if current_user %}<script src="/js/shop.js"></script>{% endif %}
+</body>
+</html>

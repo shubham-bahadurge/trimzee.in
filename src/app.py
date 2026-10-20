@@ -147,8 +147,13 @@ def home():
     return render_template("index.html", salons=slots.get_salons(None if saved_view else gender),
                            labels=STATUS_LABELS, saved_view=saved_view,
                            need_gender=bool(user and user["role"] == "customer" and not gender),
-                           my_gender=gender,
-                           on_waitlist=bool(user and growth.on_waitlist(user["id"])))
+                           my_gender=gender)
+
+
+@app.route("/shop")
+def shop_page():
+    user = current_user()
+    return render_template("shop.html", on_waitlist=bool(user and growth.on_waitlist(user["id"])))
 
 
 @app.route("/salon/<int:salon_id>")

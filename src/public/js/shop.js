@@ -1,26 +1,19 @@
-// Trimzee Shop tab and waitlist interaction
+// Trimzee Shop waitlist interaction
 (function () {
-    var btn = document.getElementById("shopBtn"), panel = document.getElementById("shopPanel");
-    if (!btn) { return; }
-    btn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        panel.hidden = !panel.hidden;
-        btn.setAttribute("aria-expanded", String(!panel.hidden));
-    });
-    panel.addEventListener("click", function (e) { e.stopPropagation(); });
-    document.addEventListener("click", function () { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); });
-    document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); }
-    });
     var notify = document.getElementById("shopNotify");
-    if (notify) {
-        notify.addEventListener("click", async function () {
-            notify.disabled = true;
-            try {
-                var res = await fetch("/api/shop-waitlist", { method: "POST", credentials: "same-origin" });
-                notify.textContent = res.ok ? "✓ You're on the list" : "Please try again";
-                if (!res.ok) { notify.disabled = false; }
-            } catch (e) { notify.textContent = "Please try again"; notify.disabled = false; }
-        });
-    }
+    var status = document.getElementById("shopStatus");
+    if (!notify) { return; }
+    notify.addEventListener("click", async function () {
+        notify.disabled = true;
+        status.textContent = "";
+        try {
+            var res = await fetch("/api/shop-waitlist", { method: "POST", credentials: "same-origin" });
+            var data = await res.json();
+            if (!res.ok) { throw new Error(data.error || "Please try again."); }
+            notify.textContent = "✓ You're on the list";
+        } catch (error) {
+            status.textContent = error.message || "Could not join the list. Please try again.";
+            notify.disabled = false;
+        }
+    });
 })();
