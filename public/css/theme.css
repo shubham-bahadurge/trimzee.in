@@ -30,7 +30,7 @@ h1, h2, h3 { letter-spacing: -.01em; }
 .bottom-tabs { position: fixed; z-index: 60; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 9px 12px max(9px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--paper); }
 .bottom-tabs.has-subscription { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .bottom-tabs.has-shop, .bottom-tabs.has-subscription.has-shop { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.bottom-tabs.has-payments { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.bottom-tabs.has-payments { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .bottom-tabs a, .bottom-tabs button { display: grid; justify-items: center; align-content: center; gap: 3px; min-width: 0; color: var(--muted); font-size: .72rem; font-weight: 600; text-decoration: none; }
 .bottom-tabs button { appearance: none; padding: 0; border: 0; background: transparent; cursor: pointer; font-family: inherit; }
 .bottom-tabs svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
