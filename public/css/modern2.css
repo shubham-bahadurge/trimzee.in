@@ -8,11 +8,8 @@
 /* parlour / salon tag on cards */
 .tag { display: inline-block; align-self: start; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; width: fit-content; }
 
-/* shop (coming soon) button, stacked above the chat button */
-.shop { position: fixed; right: 16px; bottom: 86px; z-index: 50; }
-.shop-btn { background: #fff; color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 22px rgba(0,0,0,.18); }
-.shop-btn:hover { background: var(--bg); }
-.shop-panel { position: absolute; right: 0; bottom: 70px; width: min(300px, calc(100vw - 32px)); background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 18px 50px rgba(0,0,0,.22); padding: 16px; display: grid; gap: 10px; }
+/* shop (coming soon) tab panel */
+.shop-panel { position: fixed; z-index: 55; right: 12px; bottom: calc(78px + env(safe-area-inset-bottom)); width: min(300px, calc(100vw - 24px)); background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 18px 50px rgba(0,0,0,.22); padding: 16px; display: grid; gap: 10px; }
 .shop-panel[hidden] { display: none; }
 .shop-panel p { margin: 0; }
 

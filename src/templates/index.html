@@ -109,16 +109,13 @@
         <p id="empty" class="empty" hidden>{{ 'No saved salons yet. Tap the heart on a salon to save it.' if saved_view else 'No salons match here yet. Try another search.' }}</p>
     </main>
 
-    <div class="shop">
-        <section class="shop-panel" id="shopPanel" hidden aria-label="Trimzee Shop">
-            <strong>🛍️ Trimzee Shop</strong>
-            <p class="muted">Hair-care and grooming products from trusted brands, delivered to you. Coming soon!</p>
-            {% if current_user %}
-            <button class="btn small" type="button" id="shopNotify" {% if on_waitlist %}disabled{% endif %}>{{ "✓ You're on the list" if on_waitlist else "Notify me at launch" }}</button>
-            {% else %}<a class="btn small" href="/register">Sign up to get notified</a>{% endif %}
-        </section>
-        <button class="chat-btn shop-btn" type="button" id="shopBtn" aria-label="Trimzee Shop, coming soon" aria-expanded="false">🛍️</button>
-    </div>
+    <section class="shop-panel" id="shopPanel" hidden aria-label="Trimzee Shop">
+        <strong>🛍️ Trimzee Shop</strong>
+        <p class="muted">Hair-care and grooming products from trusted brands, delivered to you. Coming soon!</p>
+        {% if current_user %}
+        <button class="btn small" type="button" id="shopNotify" {% if on_waitlist %}disabled{% endif %}>{{ "✓ You're on the list" if on_waitlist else "Notify me at launch" }}</button>
+        {% else %}<a class="btn small" href="/register">Sign up to get notified</a>{% endif %}
+    </section>
 
     <div class="chat">
         <section class="chat-panel" id="chatPanel" hidden aria-label="Trimzee assistant">

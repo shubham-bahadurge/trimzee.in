@@ -52,7 +52,7 @@
         document.addEventListener("keydown", function (e) { if (e.key === "Escape") { close(); } });
     })();
 </script>
-<nav class="bottom-tabs{% if current_user and current_user.role in ['owner', 'admin'] %} has-subscription{% endif %}" aria-label="Main navigation">
+<nav class="bottom-tabs{% if current_user and current_user.role in ['owner', 'admin'] %} has-subscription{% endif %}{% if request.path == '/' %} has-shop{% endif %}" aria-label="Main navigation">
     <a href="/" class="{{ 'active' if request.path == '/' and request.args.get('view') != 'saved' else '' }}"
        {% if request.path == '/' and request.args.get('view') != 'saved' %}aria-current="page"{% endif %}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></svg>
@@ -92,6 +92,12 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
         <span>Saved</span>
     </a>
+    {% endif %}
+    {% if request.path == '/' %}
+    <button type="button" id="shopBtn" aria-label="Trimzee Shop, coming soon" aria-controls="shopPanel" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18l-1.5 13h-15L3 8Z"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/></svg>
+        <span>Shop</span>
+    </button>
     {% endif %}
 </nav>
 {% if current_user %}<script>window.TZ_AUTH = true; window.TZ_ROLE = "{{ current_user.role }}";</script>

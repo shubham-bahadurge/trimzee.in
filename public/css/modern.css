@@ -121,7 +121,6 @@ h1 { font-size: 1.7rem; font-weight: 800; }
 .map-preview-link:hover { background: var(--bg); }
 .map-preview-link svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .home .chat { bottom: 88px; }
-.home .shop { bottom: 158px; }
 .save-salon { width: 34px; height: 34px; display: grid; place-items: center; flex: none; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); color: var(--muted); cursor: pointer; }
 .save-salon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .save-salon[aria-pressed="true"] { color: var(--ink); }

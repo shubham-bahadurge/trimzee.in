@@ -1,4 +1,4 @@
-// Trimzee Shop "coming soon" button
+// Trimzee Shop tab and waitlist interaction
 (function () {
     var btn = document.getElementById("shopBtn"), panel = document.getElementById("shopPanel");
     if (!btn) { return; }
@@ -9,6 +9,9 @@
     });
     panel.addEventListener("click", function (e) { e.stopPropagation(); });
     document.addEventListener("click", function () { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); }
+    });
     var notify = document.getElementById("shopNotify");
     if (notify) {
         notify.addEventListener("click", async function () {
