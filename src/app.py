@@ -841,6 +841,16 @@ def owner_location():
     return owner_view("Salon location saved." if ok else "Could not read that location.", error=not ok)
 
 
+@app.route("/dashboard/hours", methods=["POST"])
+def owner_hours():
+    denied = require_role("owner")
+    if denied:
+        return denied
+    ok, message = extras.save_salon_hours(
+        current_user()["id"], request.form.get("opening_time"), request.form.get("closing_time"))
+    return owner_view(message, error=not ok)
+
+
 @app.route("/dashboard/image", methods=["POST"])
 def owner_salon_image():
     denied = require_role("owner")

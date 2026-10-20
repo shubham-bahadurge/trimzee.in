@@ -1,6 +1,7 @@
 """SalonGo extras: admin, salon approval, reviews, service editing,
 real-location support and login rate limiting. Builds on db.py."""
 import os
+import re
 import time
 
 from werkzeug.security import generate_password_hash
@@ -32,7 +33,8 @@ def init_extras():
     conn = get_db()
     try:
         for col, ddl in (("image_data", "BYTEA" if pgdb.ENABLED else "BLOB"),
-                         ("image_mime", "TEXT")):
+                         ("image_mime", "TEXT"), ("opening_time", "TEXT NOT NULL DEFAULT '10:00'"),
+                         ("closing_time", "TEXT NOT NULL DEFAULT '20:00'")):
             if pgdb.ENABLED:
                 conn.execute(f"ALTER TABLE salons ADD COLUMN IF NOT EXISTS {col} {ddl}")
             else:
@@ -243,9 +245,30 @@ def get_user_bookings(user_id):
 def owner_salon_full(owner_id):
     conn = get_db()
     try:
-        row = conn.execute("SELECT id, name, status, approved, lat, lng, image_mime FROM salons "
+        row = conn.execute("SELECT id, name, status, approved, lat, lng, image_mime, "
+                           "opening_time, closing_time FROM salons "
                            "WHERE owner_id = ? ORDER BY id LIMIT 1", (owner_id,)).fetchone()
         return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def save_salon_hours(owner_id, opening_time, closing_time):
+    time_pattern = re.compile(r"(?:[01]\d|2[0-3]):(?:00|30)")
+    if not time_pattern.fullmatch(opening_time or "") or not time_pattern.fullmatch(closing_time or ""):
+        return False, "Choose opening and closing times on a 30-minute boundary."
+    start = int(opening_time[:2]) * 60 + int(opening_time[3:])
+    end = int(closing_time[:2]) * 60 + int(closing_time[3:])
+    if end - start < 30:
+        return False, "Closing time must be at least 30 minutes after opening time."
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "UPDATE salons SET opening_time = ?, closing_time = ? "
+            "WHERE id = (SELECT id FROM salons WHERE owner_id = ? ORDER BY id LIMIT 1)",
+            (opening_time, closing_time, owner_id))
+        conn.commit()
+        return (True, "Booking hours saved.") if cur.rowcount else (False, "Salon not found.")
     finally:
         conn.close()
 

@@ -94,6 +94,10 @@ dashboard. Images are limited to 5 MB and stored in the configured database so
 they persist across deployments. Approved salon photos appear on the homepage
 listing and the salon details page.
 
+Salon owners can also set their daily booking opening and closing times from
+the dashboard. Appointments remain available in 30-minute slots; the closing
+time is the end of the booking window, not a slot start time.
+
 ## Optional services and environment variables
 
 The app can run locally without configuring third-party services. Set these

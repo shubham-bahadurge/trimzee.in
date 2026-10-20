@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS salons (
     emoji       TEXT NOT NULL DEFAULT '💈',
     image_data  BLOB,
     image_mime  TEXT,
+    opening_time TEXT NOT NULL DEFAULT '10:00',
+    closing_time TEXT NOT NULL DEFAULT '20:00',
     status      TEXT NOT NULL DEFAULT 'available'
                 CHECK (status IN ('available', 'busy', 'closed', 'full')),
     next_slot   TEXT,
@@ -205,7 +207,7 @@ def get_salon(salon_id):
     conn = get_db()
     try:
         s = conn.execute("SELECT id, owner_id, name, address, distance_km, rating, emoji, image_mime, "
-                         "status, next_slot, approved, created_at, lat, lng, gender "
+                         "opening_time, closing_time, status, next_slot, approved, created_at, lat, lng, gender "
                          "FROM salons WHERE id = ? AND approved = 1",
                          (salon_id,)).fetchone()
         if not s:
@@ -218,21 +220,31 @@ def get_salon(salon_id):
         conn.close()
 
 
-def _todays_slots():
+def _todays_slots(opening_time="10:00", closing_time="20:00"):
     day = now_ist().strftime("%Y-%m-%d")
-    return [f"{day} {h:02d}:{m:02d}"
-            for h in range(OPEN_HOUR, CLOSE_HOUR) for m in (0, 30)]
+    return _slots_for_day(day, opening_time, closing_time)
+
+
+def _slots_for_day(day, opening_time="10:00", closing_time="20:00"):
+    start_hour, start_minute = map(int, opening_time.split(":"))
+    end_hour, end_minute = map(int, closing_time.split(":"))
+    start = start_hour * 60 + start_minute
+    end = end_hour * 60 + end_minute
+    return [f"{day} {minute // 60:02d}:{minute % 60:02d}"
+            for minute in range(start, end, 30)]
 
 
 def get_slots(salon_id):
     """Today's slots with a state: free / booked / past / closed."""
     conn = get_db()
     try:
-        salon = conn.execute("SELECT status FROM salons WHERE id = ? AND approved = 1",
+        salon = conn.execute("SELECT status, opening_time, closing_time FROM salons "
+                             "WHERE id = ? AND approved = 1",
                              (salon_id,)).fetchone()
         if not salon:
             return None
-        times = _todays_slots()
+        times = _slots_for_day(now_ist().strftime("%Y-%m-%d"),
+                               salon["opening_time"], salon["closing_time"])
         taken = {r["slot_start"] for r in conn.execute(
             "SELECT slot_start FROM bookings WHERE salon_id = ? "
             "AND status IN ('pending', 'confirmed') AND slot_start LIKE ?",
@@ -271,7 +283,8 @@ def create_booking(salon_id, service_id, slot, name, phone, customer_id=None):
         if not (phone.isdigit() and 10 <= len(phone) <= 12):
             return 400, "Please enter a valid phone number (10-12 digits).", None
 
-        salon = conn.execute("SELECT status FROM salons WHERE id = ? AND approved = 1",
+        salon = conn.execute("SELECT status, opening_time, closing_time FROM salons "
+                             "WHERE id = ? AND approved = 1",
                              (salon_id,)).fetchone()
         if not salon:
             return 404, "Salon not found.", None
@@ -281,7 +294,7 @@ def create_booking(salon_id, service_id, slot, name, phone, customer_id=None):
                            (service_id, salon_id)).fetchone()
         if not svc:
             return 400, "Please choose a service.", None
-        if slot not in _todays_slots():
+        if slot not in _todays_slots(salon["opening_time"], salon["closing_time"]):
             return 400, "That time slot is not available.", None
         if slot <= now_ist().strftime("%Y-%m-%d %H:%M"):
             return 409, "That time has already passed. Pick a later slot.", None

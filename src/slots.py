@@ -12,7 +12,7 @@ import mailer
 import meta
 import billing
 
-OPEN, CLOSE, DAYS = 10, 20, 2          # slots every 30 min, 10:00-19:30, today and tomorrow
+DAYS = 2
 MAX_CODE_TRIES = 5
 
 
@@ -26,12 +26,17 @@ def day_strings():
     return [(n + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(DAYS)]
 
 
-def slots_of(day):
-    return [f"{day} {h:02d}:{m:02d}" for h in range(OPEN, CLOSE) for m in (0, 30)]
+def slots_of(day, opening_time="10:00", closing_time="20:00"):
+    start_hour, start_minute = map(int, opening_time.split(":"))
+    end_hour, end_minute = map(int, closing_time.split(":"))
+    start = start_hour * 60 + start_minute
+    end = end_hour * 60 + end_minute
+    return [f"{day} {minute // 60:02d}:{minute % 60:02d}"
+            for minute in range(start, end, 30)]
 
 
-def window_slots():
-    return [s for d in day_strings() for s in slots_of(d)]
+def window_slots(opening_time="10:00", closing_time="20:00"):
+    return [s for d in day_strings() for s in slots_of(d, opening_time, closing_time)]
 
 
 def day_tabs():
@@ -72,19 +77,19 @@ def _taken(conn):
     return out
 
 
-def live_status(stored, taken):
+def live_status(stored, taken, opening_time="10:00", closing_time="20:00"):
     """(status, next_label). The owner's switch decides ON/OFF; busy / fully booked are worked out live.
     A salon that is ON never shows 'closed' just because it's evening: tomorrow's slots stay open."""
     if stored == "closed":
         return "closed", "Switched off"
     hm = _now().strftime("%Y-%m-%d %H:%M")
     today = hm[:10]
-    free = [t for t in window_slots() if t > hm and t not in taken]
+    free = [t for t in window_slots(opening_time, closing_time) if t > hm and t not in taken]
     if not free:
         return "full", "Fully booked"
     busy = False
-    if hm < f"{today} {CLOSE:02d}:00":
-        current = [t for t in slots_of(today) if t <= hm]
+    if hm < f"{today} {closing_time}":
+        current = [t for t in slots_of(today, opening_time, closing_time) if t <= hm]
         busy = bool(current) and current[-1] in taken      # the slot running right now is booked
     return ("busy" if busy else "available"), when_label(free[0]) if free[0][:10] != today else meta._pretty(free[0])
 
@@ -92,10 +97,12 @@ def live_status(stored, taken):
 def salon_live(salon_id):
     conn = db.get_db()
     try:
-        row = conn.execute("SELECT status FROM salons WHERE id = ?", (salon_id,)).fetchone()
+        row = conn.execute("SELECT status, opening_time, closing_time FROM salons WHERE id = ?",
+                           (salon_id,)).fetchone()
         if not row:
             return "closed", ""
-        return live_status(row["status"], _taken(conn).get(salon_id, set()))
+        return live_status(row["status"], _taken(conn).get(salon_id, set()),
+                           row["opening_time"], row["closing_time"])
     finally:
         conn.close()
 
@@ -111,7 +118,7 @@ def get_salons(user_gender=None):
             params = (billing.now_str(),)
         rows = conn.execute(
             "SELECT s.id, s.name, s.distance_km, s.rating, s.status, s.gender, s.lat, s.lng, "
-            "s.image_mime, MIN(sv.price) AS price "
+            "s.image_mime, s.opening_time, s.closing_time, MIN(sv.price) AS price "
             "FROM salons s JOIN users o ON o.id = s.owner_id JOIN services sv ON sv.salon_id = s.id "
             "WHERE s.approved = 1 AND o.is_active = 1" + extra + " GROUP BY s.id ORDER BY s.distance_km", params).fetchall()
         names = {}
@@ -125,7 +132,8 @@ def get_salons(user_gender=None):
     for r in rows:
         if want and r["gender"] not in (want, "unisex"):
             continue
-        status, nxt = live_status(r["status"], taken.get(r["id"], set()))
+        status, nxt = live_status(r["status"], taken.get(r["id"], set()),
+                                  r["opening_time"], r["closing_time"])
         out.append({"id": r["id"], "name": r["name"], "rating": r["rating"], "distance": r["distance_km"],
                     "price": r["price"], "status": status, "next": nxt, "services": names.get(r["id"], []),
                     "gender": r["gender"], "lat": r["lat"], "lng": r["lng"],
@@ -142,7 +150,7 @@ def get_salon(salon_id):
 
 
 # ----------------------------- slots ----------------------------------------
-def _states(conn, salon_id, day, is_open):
+def _states(conn, salon_id, day, is_open, opening_time, closing_time):
     """One day of slots. A slot is booked once every working barber is taken."""
     barbers = billing.barber_count(conn, salon_id)
     booked = {r["slot_start"]: r["n"] for r in conn.execute(
@@ -150,7 +158,7 @@ def _states(conn, salon_id, day, is_open):
         "AND slot_start LIKE ? GROUP BY slot_start", (salon_id, day + "%"))}
     hm = _now().strftime("%Y-%m-%d %H:%M")
     out = []
-    for t in slots_of(day):
+    for t in slots_of(day, opening_time, closing_time):
         used = booked.get(t, 0)
         if not is_open:
             state = "closed"
@@ -167,14 +175,16 @@ def _states(conn, salon_id, day, is_open):
 def get_slots(salon_id, day, viewer_id=None):
     conn = db.get_db()
     try:
-        salon = conn.execute("SELECT status FROM salons s WHERE s.id = ? AND s.approved = 1", (salon_id,)).fetchone()
+        salon = conn.execute("SELECT status, opening_time, closing_time FROM salons s "
+                             "WHERE s.id = ? AND s.approved = 1", (salon_id,)).fetchone()
         if not salon:
             return None
         today = day_strings()[0]
         if day != today:
             day = today
         is_open = salon["status"] != "closed" and billing.salon_can_book(conn, salon_id)
-        out = _states(conn, salon_id, day, is_open)
+        out = _states(conn, salon_id, day, is_open,
+                      salon["opening_time"], salon["closing_time"])
         return {"open": is_open, "day": day, "slots": out, "limited": False, "locked": False}
     finally:
         conn.close()
@@ -186,15 +196,17 @@ def book(user_id, salon_id, service_id, slot, phone):
     phone = re.sub(r"\D", "", phone or "")
     if not 10 <= len(phone) <= 12:
         return 400, "Please enter a valid phone number (10-12 digits).", None, None
-    if slot[:10] != day_strings()[0] or slot not in set(window_slots()):
-        return 400, "That time slot is not available.", None, None
-    if slot <= _now().strftime("%Y-%m-%d %H:%M"):
-        return 409, "That time has already passed. Pick a later slot.", None, None
     conn = db.get_db()
     try:
-        salon = conn.execute("SELECT status FROM salons WHERE id = ? AND approved = 1", (salon_id,)).fetchone()
+        salon = conn.execute("SELECT status, opening_time, closing_time FROM salons "
+                             "WHERE id = ? AND approved = 1", (salon_id,)).fetchone()
         if not salon:
             return 404, "Salon not found.", None, None
+        if (not isinstance(slot, str) or slot[:10] != day_strings()[0]
+                or slot not in set(window_slots(salon["opening_time"], salon["closing_time"]))):
+            return 400, "That time slot is not available.", None, None
+        if slot <= _now().strftime("%Y-%m-%d %H:%M"):
+            return 409, "That time has already passed. Pick a later slot.", None, None
         if salon["status"] == "closed" or not billing.salon_can_book(conn, salon_id):
             return 409, "This salon is not taking bookings right now.", None, None
         if not conn.execute("SELECT 1 FROM services WHERE id = ? AND salon_id = ?", (service_id, salon_id)).fetchone():

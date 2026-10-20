@@ -58,16 +58,19 @@ def _taken_today(conn):
     return out
 
 
-def live_status(stored, taken):
+def live_status(stored, taken, opening_time="10:00", closing_time="20:00"):
     """Returns (status, next_label). stored is the owner's switch: 'available' = ON, 'closed' = OFF."""
     if stored == "closed":
         return "closed", "Switched off"
     hm = db.now_ist().strftime("%Y-%m-%d %H:%M")
     day = hm[:10]
-    if hm >= f"{day} {db.CLOSE_HOUR:02d}:00":
-        return "closed", "Opens tomorrow"
-    times = db._todays_slots()
+    times = db._todays_slots(opening_time, closing_time)
     free = [t for t in times if t > hm and t not in taken]
+    tomorrow = db._slots_for_day((db.now_ist() + timedelta(days=1)).strftime("%Y-%m-%d"),
+                                 opening_time, closing_time)
+    free.extend(t for t in tomorrow if t not in taken)
+    if hm >= f"{day} {closing_time}" and free:
+        return "closed", "Opens tomorrow"
     current = [t for t in times if t <= hm]
     if not free:
         return "full", "Tomorrow"
@@ -79,10 +82,12 @@ def live_status(stored, taken):
 def salon_live(salon_id):
     conn = db.get_db()
     try:
-        row = conn.execute("SELECT status FROM salons WHERE id = ?", (salon_id,)).fetchone()
+        row = conn.execute("SELECT status, opening_time, closing_time FROM salons WHERE id = ?",
+                           (salon_id,)).fetchone()
         if not row:
             return "closed", ""
-        return live_status(row["status"], _taken_today(conn).get(salon_id, set()))
+        return live_status(row["status"], _taken_today(conn).get(salon_id, set()),
+                           row["opening_time"], row["closing_time"])
     finally:
         conn.close()
 
@@ -92,7 +97,8 @@ def get_salons(user_gender=None):
     salons = extras.get_salons()
     conn = db.get_db()
     try:
-        rows = {r["id"]: r for r in conn.execute("SELECT id, gender, status FROM salons")}
+        rows = {r["id"]: r for r in conn.execute(
+            "SELECT id, gender, status, opening_time, closing_time FROM salons")}
         taken = _taken_today(conn)
     finally:
         conn.close()
@@ -103,7 +109,9 @@ def get_salons(user_gender=None):
         s["gender"] = r["gender"] if r else "unisex"
         if want and s["gender"] not in (want, "unisex"):
             continue
-        s["status"], s["next"] = live_status(r["status"] if r else "available", taken.get(s["id"], set()))
+        s["status"], s["next"] = live_status(
+            r["status"] if r else "available", taken.get(s["id"], set()),
+            r["opening_time"] if r else "10:00", r["closing_time"] if r else "20:00")
         out.append(s)
     return out
 

@@ -170,6 +170,8 @@ PG_STATEMENTS = [
         emoji TEXT NOT NULL DEFAULT '💈',
         image_data BYTEA,
         image_mime TEXT,
+        opening_time TEXT NOT NULL DEFAULT '10:00',
+        closing_time TEXT NOT NULL DEFAULT '20:00',
         status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'busy', 'closed', 'full')),
         next_slot TEXT,
         approved INTEGER NOT NULL DEFAULT 0,
