@@ -103,7 +103,8 @@ environment variables in your shell or hosting provider when you enable them:
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Configure email delivery for verification and account messages. |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` | Configure WhatsApp notifications through Twilio. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Enable Google sign-in. |
-| `ANTHROPIC_API_KEY`, `CHAT_MODEL` | Enable the external assistant model. |
+| `GEMINI_API_KEY` | Enable the assistant's Google Gemini integration. |
+| `CHAT_MODEL` | Gemini model name; defaults to `gemini-2.5-flash`. |
 | `BILLING_ENFORCE` | Set to `1` to enforce the subscription checks used by billing features. |
 
 Never put real credentials in source files or commit them to Git.

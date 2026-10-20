@@ -1,6 +1,7 @@
 """Trimzee assistant. Answers from live salon data with built-in rules.
-If an ANTHROPIC_API_KEY setting exists it asks Claude instead and falls back to the rules on any problem."""
+If GEMINI_API_KEY is set, it asks Gemini first and falls back to the rules if needed."""
 import json
+import logging
 import os
 import re
 import time
@@ -69,21 +70,34 @@ def rule_reply(message, salons):
     return "I can help with finding salons, prices, free slots and how booking works. Try \"cheapest haircut\" or \"open now\".", []
 
 
-def ask_claude(message, salons):
-    key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+def ask_gemini(message, salons):
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not key:
         return None
     context = "\n".join(f"- {_line(s)}; services: {', '.join(s['services'])}; next free: {s['next']}" for s in salons[:20])
-    body = json.dumps({"model": os.environ.get("CHAT_MODEL", "claude-sonnet-5-5"), "max_tokens": 300,
-                       "system": SYSTEM + context, "messages": [{"role": "user", "content": message[:500]}]}).encode()
-    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
-        "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"})
+    model = os.environ.get("CHAT_MODEL", "gemini-2.5-flash").strip()
+    body = json.dumps({
+        "systemInstruction": {"parts": [{"text": SYSTEM + context}]},
+        "contents": [{"role": "user", "parts": [{"text": message[:500]}]}],
+        "generationConfig": {"maxOutputTokens": 300},
+    }).encode()
+    req = urllib.request.Request(
+        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+        data=body,
+        headers={"x-goog-api-key": key, "content-type": "application/json"},
+    )
     try:
         with urllib.request.urlopen(req, timeout=8) as resp:
             data = json.load(resp)
-        text = "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text").strip()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            logging.warning("Gemini chatbot response did not include any candidates")
+            return None
+        parts = candidates[0].get("content", {}).get("parts", [])
+        text = "".join(part.get("text", "") for part in parts if isinstance(part, dict)).strip()
         return text or None
-    except Exception:
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        logging.warning("Gemini chatbot request failed: %s", exc)
         return None
 
 
@@ -92,7 +106,7 @@ def reply(message, salons):
     message = (message or "").strip()[:500]
     if not message:
         return "Ask me anything about salons, prices or booking.", []
-    ai = ask_claude(message, salons)
+    ai = ask_gemini(message, salons)
     if ai:
         return ai, []
     return rule_reply(message, salons)
