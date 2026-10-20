@@ -176,6 +176,7 @@ def salon_page(salon_id):
         abort(404)
     return render_template("salon.html", salon=data["salon"], services=data["services"], labels=STATUS_LABELS,
                            reviews=data["reviews"], review_count=data["review_count"],
+                           barbers=slots.get_barbers(salon_id),
                            owner_phone=growth.salon_owner_phone(salon_id), days=slots.day_tabs()[:1],
                            auth=user["role"] if user else "", my_phone=(user or {}).get("phone") or "")
 
@@ -961,9 +962,16 @@ def api_salons():
 def api_slots(salon_id):
     user = current_user()
     viewer = user["id"] if user and user["role"] == "customer" else None
-    data = slots.get_slots(salon_id, request.args.get("day", ""), viewer) if extras.salon_is_live(salon_id) else None
+    raw_barber_id = request.args.get("barber_id", "")
+    try:
+        barber_id = int(raw_barber_id) if raw_barber_id else None
+    except ValueError:
+        return jsonify({"error": "Invalid barber selection."}), 400
+    data = slots.get_slots(salon_id, request.args.get("day", ""), viewer, barber_id) if extras.salon_is_live(salon_id) else None
     if data is None:
         return jsonify({"error": "Salon not found."}), 404
+    if "error" in data:
+        return jsonify({"error": data["error"]}), 400
     return jsonify(data)
 
 
@@ -990,6 +998,10 @@ def api_book():
         service_id = int(body.get("service_id"))
     except (TypeError, ValueError):
         return jsonify({"error": "Please choose a service and a time."}), 400
+    try:
+        barber_id = int(body["barber_id"]) if body.get("barber_id") not in (None, "") else None
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid barber selection."}), 400
     user, err = booking_guard(salon_id)
     if err:
         return err
@@ -997,7 +1009,7 @@ def api_book():
     if not near:
         return jsonify({"error": why}), 403
     code, message, booking_id, secret = slots.book(user["id"], salon_id, service_id, str(body.get("slot", "")),
-                                                   body.get("phone"))
+                                                   body.get("phone"), barber_id)
     if code != 201:
         return jsonify({"error": message}), code
     info = growth.booking_info(booking_id)
@@ -1007,7 +1019,8 @@ def api_book():
         accounts.update_phone(user["id"], body.get("phone"))
     detail = slots.booking_detail(user["id"], booking_id) or {}
     return jsonify({"message": message, "booking_id": booking_id, "code": secret, "salon": info["salon"],
-                    "when": detail.get("when"), "service": info["service"], "price": info["price"],
+                    "when": detail.get("when"), "service": info["service"], "barber": detail.get("barber"),
+                    "price": info["price"],
                     "directions": slots.maps_link(detail.get("lat"), detail.get("lng")),
                     "owner_wa": detail.get("owner_wa"), "detail": f"/booking/{booking_id}"}), 201
 

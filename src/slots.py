@@ -159,20 +159,42 @@ def get_salon(salon_id):
     return data
 
 
+def get_barbers(salon_id):
+    conn = db.get_db()
+    try:
+        barber_ids = billing.active_barbers(conn, salon_id)
+        if not barber_ids:
+            return []
+        placeholders = ",".join("?" for _ in barber_ids)
+        rows = conn.execute(
+            f"SELECT id, name FROM barbers WHERE salon_id = ? AND active = 1 AND id IN ({placeholders}) "
+            "ORDER BY id", (salon_id, *barber_ids)).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
 # ----------------------------- slots ----------------------------------------
-def _states(conn, salon_id, day, is_open, opening_time, closing_time):
+def _states(conn, salon_id, day, is_open, opening_time, closing_time, barber_id=None):
     """One day of slots. A slot is booked once every working barber is taken."""
     barbers = billing.barber_count(conn, salon_id)
-    booked = {r["slot_start"]: r["n"] for r in conn.execute(
-        "SELECT slot_start, COUNT(*) AS n FROM bookings WHERE salon_id = ? AND status IN ('pending', 'confirmed') "
-        "AND slot_start LIKE ? GROUP BY slot_start", (salon_id, day + "%"))}
+    if barber_id is None:
+        booked = {r["slot_start"]: r["n"] for r in conn.execute(
+            "SELECT slot_start, COUNT(*) AS n FROM bookings WHERE salon_id = ? "
+            "AND status IN ('pending', 'confirmed') AND slot_start LIKE ? GROUP BY slot_start",
+            (salon_id, day + "%"))}
+    else:
+        booked = {r["slot_start"]: r["n"] for r in conn.execute(
+            "SELECT slot_start, COUNT(*) AS n FROM bookings WHERE salon_id = ? AND barber_id = ? "
+            "AND status IN ('pending', 'confirmed') AND slot_start LIKE ? GROUP BY slot_start",
+            (salon_id, barber_id, day + "%"))}
     hm = _now().strftime("%Y-%m-%d %H:%M")
     out = []
     for t in slots_of(day, opening_time, closing_time):
         used = booked.get(t, 0)
         if not is_open:
             state = "closed"
-        elif used >= barbers:
+        elif used >= (1 if barber_id is not None else barbers):
             state = "booked"
         elif t <= hm:
             state = "past"
@@ -182,13 +204,16 @@ def _states(conn, salon_id, day, is_open, opening_time, closing_time):
     return out
 
 
-def get_slots(salon_id, day, viewer_id=None):
+def get_slots(salon_id, day, viewer_id=None, barber_id=None):
     conn = db.get_db()
     try:
         salon = conn.execute("SELECT status, opening_time, closing_time, early_open_date, early_open_time FROM salons s "
                              "WHERE s.id = ? AND s.approved = 1", (salon_id,)).fetchone()
         if not salon:
             return None
+        active_barbers = billing.active_barbers(conn, salon_id)
+        if barber_id is not None and barber_id not in active_barbers:
+            return {"error": "This barber is no longer available."}
         today = day_strings()[0]
         if day != today:
             day = today
@@ -198,14 +223,14 @@ def get_slots(salon_id, day, viewer_id=None):
         is_open = (salon["status"] != "closed" and billing.salon_can_book(conn, salon_id)
                    and opening_time <= now_hm < closing_time)
         out = _states(conn, salon_id, day, is_open,
-                      opening_time, closing_time)
+                      opening_time, closing_time, barber_id)
         return {"open": is_open, "day": day, "slots": out, "limited": False, "locked": False}
     finally:
         conn.close()
 
 
 # ----------------------------- booking -------------------------------------
-def book(user_id, salon_id, service_id, slot, phone):
+def book(user_id, salon_id, service_id, slot, phone, barber_id=None):
     """Returns (http_status, message, booking_id, code). New bookings wait for the owner's Accept."""
     phone = re.sub(r"\D", "", phone or "")
     if not 10 <= len(phone) <= 12:
@@ -229,18 +254,23 @@ def book(user_id, salon_id, service_id, slot, phone):
             return 409, "This salon is not taking bookings right now.", None, None
         if not conn.execute("SELECT 1 FROM services WHERE id = ? AND salon_id = ?", (service_id, salon_id)).fetchone():
             return 400, "Please choose a service.", None, None
-        barbers = billing.barber_count(conn, salon_id)
-        used = conn.execute("SELECT COUNT(*) FROM bookings WHERE salon_id = ? AND slot_start = ? "
-                            "AND status IN ('pending', 'confirmed')", (salon_id, slot)).fetchone()[0]
-        if used >= barbers:
+        active_barbers = billing.active_barbers(conn, salon_id)
+        if barber_id is not None and barber_id not in active_barbers:
+            return 400, "The selected barber is no longer available. Please choose another.", None, None
+        free_barbers = billing.free_barbers(conn, salon_id, slot)
+        if barber_id is not None:
+            if barber_id not in free_barbers:
+                return 409, "This barber is already booked for that time. Please choose another barber or time.", None, None
+            free_barbers = [barber_id]
+        elif not free_barbers:
             return 409, "Sorry, someone just booked that slot. Please pick another.", None, None
         code = f"{secrets.randbelow(10000):04d}"
-        for barber_id in billing.free_barbers(conn, salon_id, slot):
+        for assigned_barber_id in free_barbers:
             try:
                 booking_id = conn.execute(
                     "INSERT INTO bookings (customer_id, salon_id, service_id, slot_start, status, contact_phone, code, "
                     "barber_id) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)",
-                    (user_id, salon_id, service_id, slot, phone, code, barber_id)).lastrowid
+                    (user_id, salon_id, service_id, slot, phone, code, assigned_barber_id)).lastrowid
                 conn.commit()
                 return 201, "Booking requested.", booking_id, code
             except db.sqlite3.IntegrityError:
@@ -256,11 +286,13 @@ def whatsapp_booking(info, code):
         return
     when = when_label(info["slot_start"])
     mailer.send_whatsapp(growth.wa_number(info["contact_phone"]),
-                         f"Trimzee: booking request #{info['id']} sent to {info['salon']} for {info['service']}, {when}. "
+                         f"Trimzee: booking request #{info['id']} sent to {info['salon']} for {info['service']} "
+                         f"with {info['barber']}, {when}. "
                          f"Your confirmation code is {code}. Show it to the salon when you arrive. "
                          "We'll message you when the salon accepts.")
     mailer.send_whatsapp(growth.wa_number(info["owner_phone"]),
-                         f"Trimzee: new booking request from {info['customer']} for {info['service']}, {when}. "
+                         f"Trimzee: new booking request from {info['customer']} for {info['service']} "
+                         f"with {info['barber']}, {when}. "
                          "Open your dashboard to Accept or Reject.")
 
 
@@ -300,8 +332,10 @@ def bookings_for(salon_id, day):
     conn = db.get_db()
     try:
         rows = conn.execute("SELECT b.id, b.slot_start, b.status, b.contact_phone, u.name AS customer_name, "
-                            "sv.name AS service_name, sv.price FROM bookings b JOIN users u ON u.id = b.customer_id "
-                            "JOIN services sv ON sv.id = b.service_id WHERE b.salon_id = ? AND b.slot_start LIKE ? "
+                            "sv.name AS service_name, sv.price, br.name AS barber_name "
+                            "FROM bookings b JOIN users u ON u.id = b.customer_id "
+                            "JOIN services sv ON sv.id = b.service_id LEFT JOIN barbers br ON br.id = b.barber_id "
+                            "WHERE b.salon_id = ? AND b.slot_start LIKE ? "
                             "ORDER BY b.slot_start", (salon_id, day + "%")).fetchall()
         return [dict(r) for r in rows]
     finally:
@@ -312,8 +346,9 @@ def booking_detail(user_id, booking_id):
     conn = db.get_db()
     try:
         r = conn.execute("SELECT b.id, b.slot_start, b.status, b.code, b.contact_phone, s.id AS salon_id, s.name AS salon, "
-                         "s.lat, s.lng, sv.name AS service, sv.price, ow.phone AS owner_phone FROM bookings b "
+                         "s.lat, s.lng, sv.name AS service, sv.price, br.name AS barber, ow.phone AS owner_phone FROM bookings b "
                          "JOIN salons s ON s.id = b.salon_id JOIN services sv ON sv.id = b.service_id "
+                         "LEFT JOIN barbers br ON br.id = b.barber_id "
                          "JOIN users ow ON ow.id = s.owner_id WHERE b.id = ? AND b.customer_id = ?",
                          (booking_id, user_id)).fetchone()
         if not r:
@@ -362,8 +397,10 @@ def user_bookings(user_id):
         now = _now().strftime("%Y-%m-%d %H:%M")
         rows = conn.execute(
             "SELECT b.id, b.slot_start, b.status, b.code, s.name AS salon_name, sv.name AS service_name, sv.price, "
+            "br.name AS barber_name, "
             "r.rating AS my_rating FROM bookings b JOIN salons s ON s.id = b.salon_id "
-            "JOIN services sv ON sv.id = b.service_id LEFT JOIN reviews r ON r.booking_id = b.id "
+            "JOIN services sv ON sv.id = b.service_id LEFT JOIN barbers br ON br.id = b.barber_id "
+            "LEFT JOIN reviews r ON r.booking_id = b.id "
             "WHERE b.customer_id = ? ORDER BY b.slot_start DESC", (user_id,)).fetchall()
         out = []
         for r in rows:

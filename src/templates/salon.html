@@ -42,7 +42,20 @@
             {% endfor %}
         </div>
 
-        <h2>2. Pick a time <small class="muted">(live)</small></h2>
+        {% if barbers|length > 1 %}
+        <h2>2. Choose a barber</h2>
+        <div class="barber-choice">
+            <label for="barber">Choose a specific barber or let the salon assign one</label>
+            <select id="barber">
+                <option value="">Any available barber</option>
+                {% for barber in barbers %}
+                <option value="{{ barber.id }}">{{ barber.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        <h2>{{ 3 if barbers|length > 1 else 2 }}. Pick a time <small class="muted">(live)</small></h2>
         <div class="day-tabs" role="tablist">
             {% for d in days %}<button type="button" class="day-tab {% if loop.first %}active{% endif %}" data-day="{{ d.value }}">{{ d.label }}</button>{% endfor %}
         </div>
@@ -54,7 +67,7 @@
         </div>
         <p id="closedMsg" class="empty" hidden>This salon isn't taking bookings right now.</p>
 
-        <h2>3. Your phone number</h2>
+        <h2>{{ 4 if barbers|length > 1 else 3 }}. Your phone number</h2>
         <div class="details">
             <input id="phone" type="tel" inputmode="numeric" placeholder="Phone number (digits only)" maxlength="12" autocomplete="tel" value="{{ my_phone }}">
             <button id="confirm" class="book" disabled>Select a time to continue</button>

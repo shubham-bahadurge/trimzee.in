@@ -4,6 +4,9 @@
 .salon-image { display: block; width: 100%; max-height: 340px; object-fit: cover; border-radius: 16px; margin-bottom: 20px; }
 .booking h2 { margin: 26px 0 12px; font-size: 1.1rem; }
 .services { display: grid; gap: 8px; }
+.barber-choice { display: grid; gap: 6px; }
+.barber-choice label { color: #6b7280; font-size: .9rem; }
+.barber-choice select { width: 100%; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; font: inherit; }
 .service {
     display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center;
     background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px 14px; cursor: pointer;

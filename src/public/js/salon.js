@@ -13,6 +13,7 @@ const closedMsg = document.getElementById("closedMsg");
 const rangeInfo = document.getElementById("rangeInfo");
 const tabs = Array.from(document.querySelectorAll(".day-tab"));
 const modal = document.getElementById("modal");
+const barberSelect = document.getElementById("barber");
 
 let day = tabs.length ? tabs[0].dataset.day : "";
 let selected = null;
@@ -132,8 +133,19 @@ function render(data) {
 async function loadSlots() {
     if (document.hidden) { return; }
     try {
-        const res = await fetch("/api/salons/" + salonId + "/slots?day=" + encodeURIComponent(day), { credentials: "same-origin" });
-        if (res.ok) { render(await res.json()); }
+        const params = new URLSearchParams({ day: day });
+        if (barberSelect && barberSelect.value) { params.set("barber_id", barberSelect.value); }
+        const res = await fetch("/api/salons/" + salonId + "/slots?" + params.toString(), { credentials: "same-origin" });
+        const data = await res.json();
+        if (res.ok) {
+            message.hidden = true;
+            render(data);
+        } else {
+            selected = null;
+            grid.innerHTML = "";
+            showMessage(data.error || "Could not load available times.", false);
+            updateButton();
+        }
     } catch (e) { /* offline: keep showing the last times */ }
 }
 
@@ -149,6 +161,15 @@ tabs.forEach(function (tab) {
     });
 });
 
+if (barberSelect) {
+    barberSelect.addEventListener("change", function () {
+        selected = null;
+        message.hidden = true;
+        updateButton();
+        loadSlots();
+    });
+}
+
 // ---- booking + confirmation pop-up -----------------------------------------
 function link(text, href, ghost) {
     const a = document.createElement("a");
@@ -160,7 +181,8 @@ function link(text, href, ghost) {
 }
 
 function openModal(data) {
-    document.getElementById("modalWhen").textContent = data.salon + " · " + data.when + " · " + data.service;
+    document.getElementById("modalWhen").textContent = data.salon + " · " + data.when + " · " + data.service +
+        (data.barber ? " · " + data.barber : "");
     document.getElementById("modalCode").textContent = data.code;
     const actions = document.getElementById("modalActions");
     actions.innerHTML = "";
@@ -184,6 +206,7 @@ confirmBtn.addEventListener("click", async function () {
     try {
         const res = await post("/api/book", {
             salon_id: salonId, service_id: service ? service.value : null, slot: selected,
+            barber_id: barberSelect ? barberSelect.value : null,
             phone: document.getElementById("phone").value,
             lat: here ? here.latitude : null, lng: here ? here.longitude : null
         });

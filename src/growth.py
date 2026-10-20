@@ -71,8 +71,9 @@ def booking_info(booking_id):
     conn = db.get_db()
     try:
         r = conn.execute("SELECT b.id, b.slot_start, b.contact_phone, b.customer_id, s.name AS salon, s.owner_id, "
-                         "sv.name AS service, sv.price, cu.name AS customer, ow.phone AS owner_phone "
+                         "sv.name AS service, sv.price, br.name AS barber, cu.name AS customer, ow.phone AS owner_phone "
                          "FROM bookings b JOIN salons s ON s.id = b.salon_id JOIN services sv ON sv.id = b.service_id "
+                         "LEFT JOIN barbers br ON br.id = b.barber_id "
                          "JOIN users cu ON cu.id = b.customer_id JOIN users ow ON ow.id = s.owner_id "
                          "WHERE b.id = ?", (booking_id,)).fetchone()
         return dict(r) if r else None

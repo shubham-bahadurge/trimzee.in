@@ -54,7 +54,7 @@
                     <span class="badge {{ b.status }}">{{ {'pending': 'New request', 'confirmed': 'Confirmed', 'completed': 'Completed', 'cancelled': 'Cancelled', 'rejected': 'Declined'}.get(b.status, b.status) }}</span>
                 </div>
                 <div><div class="bk-title">{{ b.customer_name }}</div>
-                    <div class="bk-meta"><span>{{ b.service_name }}</span><span>₹{{ b.price }}</span>
+                    <div class="bk-meta"><span>{{ b.service_name }}{% if b.barber_name %} · {{ b.barber_name }}{% endif %}</span><span>₹{{ b.price }}</span>
                         {% if b.contact_phone %}<a href="tel:{{ b.contact_phone }}">📞 {{ b.contact_phone }}</a>{% endif %}</div></div>
                 {% if b.status == 'pending' %}
                 <form method="post" action="/dashboard/bookings/{{ b.id }}" class="bk-actions">
