@@ -75,7 +75,7 @@ def ask_gemini(message, salons):
     if not key:
         return None
     context = "\n".join(f"- {_line(s)}; services: {', '.join(s['services'])}; next free: {s['next']}" for s in salons[:20])
-    model = os.environ.get("CHAT_MODEL", "gemini-2.5-flash").strip()
+    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash").strip()
     body = json.dumps({
         "systemInstruction": {"parts": [{"text": SYSTEM + context}]},
         "contents": [{"role": "user", "parts": [{"text": message[:500]}]}],
@@ -96,6 +96,10 @@ def ask_gemini(message, salons):
         parts = candidates[0].get("content", {}).get("parts", [])
         text = "".join(part.get("text", "") for part in parts if isinstance(part, dict)).strip()
         return text or None
+    except urllib.error.HTTPError as exc:
+        details = exc.read().decode("utf-8", errors="replace").strip()
+        logging.warning("Gemini chatbot request failed (HTTP %s): %s", exc.code, details or exc.reason)
+        return None
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         logging.warning("Gemini chatbot request failed: %s", exc)
         return None
