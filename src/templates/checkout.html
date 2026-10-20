@@ -11,6 +11,12 @@
 .co-row:first-of-type{border-top:0}
 .co-total{font-size:1.15rem;font-weight:800}
 .co-test{background:var(--warnbg);color:var(--warn);border-radius:14px;padding:12px 14px;margin:12px 0;font-weight:600;font-size:.9rem}
+.co-coupon{margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:12px}
+.co-coupon summary{cursor:pointer;font-weight:700}
+.co-coupon-row{display:flex;gap:8px;margin-top:10px}
+.co-coupon-row input{min-width:0;flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;text-transform:uppercase}
+.co-coupon-row button{padding:10px 14px;white-space:nowrap}
+.co-coupon-note{color:var(--muted);font-size:.8rem;line-height:1.4;margin:8px 0 0}
 .co-pay{display:block;width:100%;padding:16px 18px;margin-top:6px}
 .co-msg{color:var(--muted);font-size:.85rem;text-align:center;margin:12px 0;min-height:1.2em}
 .co-secure{color:var(--muted);font-size:.8rem;text-align:center;line-height:1.5}
@@ -26,6 +32,16 @@
 <div class="co-row"><span>{{ quote.plan.name }}</span><b>&#8377;{{ quote.price }}</b></div>
 {% if quote.discount %}<div class="co-row"><span>Coupon {{ quote.coupon }}</span><b>- &#8377;{{ quote.discount }}</b></div>{% endif %}
 <div class="co-row co-total"><span>You pay</span><span>&#8377;{{ quote.final }}</span></div>
+<details class="co-coupon" {% if quote.coupon %}open{% endif %}>
+<summary>{{ 'Change coupon code' if quote.coupon else 'Have a coupon code?' }}</summary>
+<form class="co-coupon-row" method="post" action="/plans/buy">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<input type="hidden" name="plan" value="{{ quote.plan.code }}">
+<input id="checkout-coupon" name="coupon" aria-label="Coupon code" maxlength="32" placeholder="Enter coupon code" autocomplete="off" value="{{ quote.coupon or '' }}" required>
+<button class="btn ghost" type="submit">Apply</button>
+</form>
+<p class="co-coupon-note">Applying a coupon updates your checkout total. Free-day coupons can be redeemed from the salon plan page.</p>
+</details>
 <button id="pay" class="btn co-pay" type="button">Pay &#8377;{{ quote.final }}</button>
 <p id="msg" class="co-msg"></p>
 </section>
