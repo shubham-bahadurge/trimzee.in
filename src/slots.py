@@ -110,7 +110,8 @@ def get_salons(user_gender=None):
             extra = " AND o.id IN (SELECT user_id FROM subscriptions WHERE kind = 'owner' AND ends > ?)"
             params = (billing.now_str(),)
         rows = conn.execute(
-            "SELECT s.id, s.name, s.distance_km, s.rating, s.status, s.gender, s.lat, s.lng, MIN(sv.price) AS price "
+            "SELECT s.id, s.name, s.distance_km, s.rating, s.status, s.gender, s.lat, s.lng, "
+            "s.image_mime, MIN(sv.price) AS price "
             "FROM salons s JOIN users o ON o.id = s.owner_id JOIN services sv ON sv.salon_id = s.id "
             "WHERE s.approved = 1 AND o.is_active = 1" + extra + " GROUP BY s.id ORDER BY s.distance_km", params).fetchall()
         names = {}
@@ -127,7 +128,8 @@ def get_salons(user_gender=None):
         status, nxt = live_status(r["status"], taken.get(r["id"], set()))
         out.append({"id": r["id"], "name": r["name"], "rating": r["rating"], "distance": r["distance_km"],
                     "price": r["price"], "status": status, "next": nxt, "services": names.get(r["id"], []),
-                    "gender": r["gender"], "lat": r["lat"], "lng": r["lng"]})
+                    "gender": r["gender"], "lat": r["lat"], "lng": r["lng"],
+                    "image_url": f"/salons/{r['id']}/image" if r["image_mime"] else None})
     return out
 
 

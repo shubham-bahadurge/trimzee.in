@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS salons (
     distance_km REAL NOT NULL DEFAULT 0,
     rating      REAL NOT NULL DEFAULT 0,
     emoji       TEXT NOT NULL DEFAULT '💈',
+    image_data  BLOB,
+    image_mime  TEXT,
     status      TEXT NOT NULL DEFAULT 'available'
                 CHECK (status IN ('available', 'busy', 'closed', 'full')),
     next_slot   TEXT,
@@ -202,7 +204,9 @@ def now_ist():
 def get_salon(salon_id):
     conn = get_db()
     try:
-        s = conn.execute("SELECT * FROM salons WHERE id = ? AND approved = 1",
+        s = conn.execute("SELECT id, owner_id, name, address, distance_km, rating, emoji, image_mime, "
+                         "status, next_slot, approved, created_at, lat, lng, gender "
+                         "FROM salons WHERE id = ? AND approved = 1",
                          (salon_id,)).fetchone()
         if not s:
             return None

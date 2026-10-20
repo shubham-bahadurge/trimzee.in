@@ -68,6 +68,9 @@
                 data-distance="{{ s.distance }}"
                 data-lat="{{ s.lat if s.lat is not none else '' }}" data-lng="{{ s.lng if s.lng is not none else '' }}"
                 data-status="{{ s.status }}">
+                {% if s.image_url %}
+                <div class="card-img"><img src="{{ s.image_url }}" alt="{{ s.name }}" loading="lazy"></div>
+                {% endif %}
                 <div class="card-body">
                     <div class="row">
                         <h3>{{ s.name }}</h3>

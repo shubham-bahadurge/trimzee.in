@@ -31,6 +31,14 @@ MAX_FAILS_PER_IP = 20
 def init_extras():
     conn = get_db()
     try:
+        for col, ddl in (("image_data", "BYTEA" if pgdb.ENABLED else "BLOB"),
+                         ("image_mime", "TEXT")):
+            if pgdb.ENABLED:
+                conn.execute(f"ALTER TABLE salons ADD COLUMN IF NOT EXISTS {col} {ddl}")
+            else:
+                cols = [r["name"] for r in conn.execute("PRAGMA table_info(salons)")]
+                if col not in cols:
+                    conn.execute(f"ALTER TABLE salons ADD COLUMN {col} {ddl}")
         if not pgdb.ENABLED:  # SQLite: add what the older tables are missing
             cols = [r["name"] for r in conn.execute("PRAGMA table_info(salons)")]
             for col in ("lat", "lng"):
@@ -117,7 +125,7 @@ def get_salons():
     conn = get_db()
     try:
         rows = conn.execute(
-            "SELECT s.id, s.name, s.distance_km, s.rating, s.emoji, s.status, s.next_slot, "
+            "SELECT s.id, s.name, s.distance_km, s.rating, s.emoji, s.image_mime, s.status, s.next_slot, "
             "s.lat, s.lng, MIN(sv.price) AS price FROM salons s "
             "JOIN users o ON o.id = s.owner_id JOIN services sv ON sv.salon_id = s.id "
             f"WHERE {LIVE} GROUP BY s.id ORDER BY s.distance_km").fetchall()
@@ -128,7 +136,8 @@ def get_salons():
             out.append({"id": r["id"], "name": r["name"], "rating": r["rating"],
                         "distance": r["distance_km"], "price": r["price"], "status": r["status"],
                         "next": r["next_slot"], "emoji": r["emoji"], "services": names,
-                        "lat": r["lat"], "lng": r["lng"]})
+                        "lat": r["lat"], "lng": r["lng"],
+                        "image_url": f"/salons/{r['id']}/image" if r["image_mime"] else None})
         return out
     finally:
         conn.close()
@@ -234,9 +243,47 @@ def get_user_bookings(user_id):
 def owner_salon_full(owner_id):
     conn = get_db()
     try:
-        row = conn.execute("SELECT id, name, status, approved, lat, lng FROM salons "
+        row = conn.execute("SELECT id, name, status, approved, lat, lng, image_mime FROM salons "
                            "WHERE owner_id = ? ORDER BY id LIMIT 1", (owner_id,)).fetchone()
         return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def save_salon_image(owner_id, image_data, image_mime):
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "UPDATE salons SET image_data = ?, image_mime = ? "
+            "WHERE id = (SELECT id FROM salons WHERE owner_id = ? ORDER BY id LIMIT 1)",
+            (image_data, image_mime, owner_id))
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
+def remove_salon_image(owner_id):
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "UPDATE salons SET image_data = NULL, image_mime = NULL "
+            "WHERE id = (SELECT id FROM salons WHERE owner_id = ? ORDER BY id LIMIT 1)",
+            (owner_id,))
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
+def salon_image(salon_id):
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT image_data, image_mime, approved, owner_id "
+                           "FROM salons WHERE id = ?", (salon_id,)).fetchone()
+        if not row or not row["image_data"] or not row["image_mime"]:
+            return None
+        return row["image_data"], row["image_mime"], row["approved"], row["owner_id"]
     finally:
         conn.close()
 

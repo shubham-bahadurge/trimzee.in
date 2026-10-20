@@ -87,6 +87,13 @@ The main browser code is in `src/public/js/salon.js`; the route is in
 `src/app.py`; booking and availability logic is in `src/slots.py`; barber
 capacity and the uniqueness rule are in `src/billing.py`.
 
+## Salon photos
+
+Salon owners can upload, replace, or remove a JPEG, PNG, or WebP photo from the
+dashboard. Images are limited to 5 MB and stored in the configured database so
+they persist across deployments. Approved salon photos appear on the homepage
+listing and the salon details page.
+
 ## Optional services and environment variables
 
 The app can run locally without configuring third-party services. Set these

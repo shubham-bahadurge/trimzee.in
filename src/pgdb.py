@@ -168,6 +168,8 @@ PG_STATEMENTS = [
         distance_km DOUBLE PRECISION NOT NULL DEFAULT 0,
         rating DOUBLE PRECISION NOT NULL DEFAULT 0,
         emoji TEXT NOT NULL DEFAULT '💈',
+        image_data BYTEA,
+        image_mime TEXT,
         status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'busy', 'closed', 'full')),
         next_slot TEXT,
         approved INTEGER NOT NULL DEFAULT 0,

@@ -10,7 +10,7 @@ import slots
 import billing
 import payments
 
-SCHEMA_VERSION = "2026-10-v10-owner-subscriptions-only"
+SCHEMA_VERSION = "2026-10-v11-salon-images"
 
 
 def _wanted():

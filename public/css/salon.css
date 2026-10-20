@@ -1,6 +1,7 @@
 /* Layout and interactive styles for salon details and appointment booking. */
 .booking { max-width: 760px; }
 .booking h1 { font-size: 1.7rem; }
+.salon-image { display: block; width: 100%; max-height: 340px; object-fit: cover; border-radius: 16px; margin-bottom: 20px; }
 .booking h2 { margin: 26px 0 12px; font-size: 1.1rem; }
 .services { display: grid; gap: 8px; }
 .service {

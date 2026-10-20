@@ -14,6 +14,9 @@
     {% include "_nav.html" %}
 
     <main class="container booking">
+        {% if salon.image_mime %}
+        <img class="salon-image" src="/salons/{{ salon.id }}/image" alt="{{ salon.name }}" fetchpriority="high">
+        {% endif %}
         <div class="row">
             <h1>{{ salon.name }}</h1>
             <span class="rating">★ {{ salon.rating }}{% if review_count %} <small class="muted">({{ review_count }})</small>{% endif %}</span>

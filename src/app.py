@@ -41,6 +41,7 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=bool(os.environ.get("VERCEL")),
+    MAX_CONTENT_LENGTH=5 * 1024 * 1024 + 64 * 1024,
 )
 
 STATUS_LABELS = {"available": "Available", "busy": "Busy", "closed": "Closed", "full": "Fully booked"}
@@ -71,6 +72,14 @@ def csrf_token():
 
 
 app.jinja_env.globals["csrf_token"] = csrf_token
+
+
+@app.errorhandler(413)
+def request_too_large(_error):
+    user = current_user()
+    if request.path == "/dashboard/image" and user and user["role"] == "owner":
+        return owner_view("The image must be 5 MB or smaller.", error=True), 413
+    return "Request is too large.", 413
 
 
 @app.context_processor
@@ -169,6 +178,20 @@ def salon_page(salon_id):
                            reviews=data["reviews"], review_count=data["review_count"],
                            owner_phone=growth.salon_owner_phone(salon_id), days=slots.day_tabs()[:1],
                            auth=user["role"] if user else "", my_phone=(user or {}).get("phone") or "")
+
+
+@app.route("/salons/<int:salon_id>/image")
+def salon_image(salon_id):
+    image = extras.salon_image(salon_id)
+    if not image:
+        abort(404)
+    image_data, image_mime, approved, owner_id = image
+    user = current_user()
+    if not approved and not (user and user["role"] == "owner" and user["id"] == owner_id):
+        abort(404)
+    return Response(image_data, mimetype=image_mime,
+                    headers={"Cache-Control": "public, max-age=3600" if approved else "private, no-store",
+                             "X-Content-Type-Options": "nosniff"})
 
 
 @app.route("/q/<int:salon_id>")
@@ -816,6 +839,35 @@ def owner_location():
         return denied
     ok = extras.set_salon_location(current_user()["id"], request.form.get("lat"), request.form.get("lng"))
     return owner_view("Salon location saved." if ok else "Could not read that location.", error=not ok)
+
+
+@app.route("/dashboard/image", methods=["POST"])
+def owner_salon_image():
+    denied = require_role("owner")
+    if denied:
+        return denied
+    uid = current_user()["id"]
+    if request.form.get("action") == "remove":
+        ok = extras.remove_salon_image(uid)
+        return owner_view("Salon image removed." if ok else "Could not find your salon.", error=not ok)
+
+    upload = request.files.get("image")
+    if not upload or not upload.filename:
+        return owner_view("Choose an image to upload.", error=True)
+    image_data = upload.read(5 * 1024 * 1024 + 1)
+    if len(image_data) > 5 * 1024 * 1024:
+        return owner_view("The image must be 5 MB or smaller.", error=True)
+    if image_data.startswith(b"\x89PNG\r\n\x1a\n"):
+        image_mime = "image/png"
+    elif image_data.startswith(b"\xff\xd8\xff"):
+        image_mime = "image/jpeg"
+    elif (len(image_data) >= 12 and image_data[:4] == b"RIFF"
+          and image_data[8:12] == b"WEBP"):
+        image_mime = "image/webp"
+    else:
+        return owner_view("Use a JPEG, PNG, or WebP image.", error=True)
+    ok = extras.save_salon_image(uid, image_data, image_mime)
+    return owner_view("Salon image saved." if ok else "Could not find your salon.", error=not ok)
 
 
 # ----------------------------- admin ---------------------------------------
