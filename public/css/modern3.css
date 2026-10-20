@@ -46,7 +46,7 @@
 .poster-qr { max-width: 100%; height: auto; }
 .poster-url { font-size: .8rem; word-break: break-all; }
 @media print {
-    .no-print, .topbar, .toasts { display: none !important; }
+    .no-print, .topbar, .bottom-tabs, .toasts { display: none !important; }
     body { background: #fff; }
     .poster { border: 3px solid #000; margin: 0 auto; max-width: 520px; break-inside: avoid; }
 }

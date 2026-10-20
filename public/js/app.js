@@ -8,9 +8,33 @@ const locBtn = document.getElementById("useLocation");
 const locStatus = document.getElementById("locStatus");
 const genderBtn = document.getElementById("genderBtn");
 const genderPanel = document.getElementById("genderPanel");
+const savedView = document.body.dataset.savedView === "true";
+const savedStorageKey = "trimzee.savedSalons";
 
 let activeGender = "";
 let here = null;
+
+function readSavedSalons() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(savedStorageKey) || "[]");
+        return Array.isArray(saved) ? saved.map(String) : [];
+    } catch (error) {
+        console.error("Could not read saved salons from browser storage.", error);
+        return [];
+    }
+}
+
+let savedSalons = readSavedSalons();
+
+function updateSaveButtons() {
+    cards.forEach(function (card) {
+        const button = card.querySelector(".save-salon");
+        const isSaved = savedSalons.includes(card.dataset.salonId);
+        button.setAttribute("aria-pressed", String(isSaved));
+        button.setAttribute("aria-label", (isSaved ? "Remove " : "Save ") + card.dataset.name);
+        button.title = isSaved ? "Remove saved salon" : "Save salon";
+    });
+}
 
 function haversineKm(lat1, lon1, lat2, lon2) {
     const rad = Math.PI / 180;
@@ -29,12 +53,14 @@ function applyFilters() {
         const gender = card.dataset.gender;
         const matchGender = !activeGender || gender === activeGender || gender === "unisex";
         const matchRange = !here || (card.dataset.known === "1" && parseFloat(card.dataset.distance) <= RANGE_KM);
-        const show = matchText && matchGender && matchRange;
+        const matchSaved = !savedView || savedSalons.includes(card.dataset.salonId);
+        const show = matchText && matchGender && matchRange && matchSaved;
         card.hidden = !show;
         if (show) { visible += 1; }
     });
-    emptyMsg.textContent = here ? "No salons within 5 km of you yet. Try moving closer or check back soon." :
-        "No salons match here yet. Try another search.";
+    emptyMsg.textContent = savedView ? "No saved salons yet. Tap the heart on a salon to save it." :
+        here ? "No salons within 5 km of you yet. Try moving closer or check back soon." :
+            "No salons match here yet. Try another search.";
     emptyMsg.hidden = visible > 0;
 }
 
@@ -80,11 +106,29 @@ function startLocation() {
 
 locBtn.addEventListener("click", startLocation);
 searchInput.addEventListener("input", applyFilters);
-startLocation();
+if (!savedView) { startLocation(); }
 
 document.querySelectorAll(".book").forEach(function (btn) {
     btn.addEventListener("click", function () { window.location.href = "/salon/" + btn.dataset.id; });
 });
+
+document.querySelectorAll(".save-salon").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+        const salonId = btn.closest(".card").dataset.salonId;
+        savedSalons = savedSalons.includes(salonId)
+            ? savedSalons.filter(function (id) { return id !== salonId; })
+            : savedSalons.concat(salonId);
+        try {
+            localStorage.setItem(savedStorageKey, JSON.stringify(savedSalons));
+        } catch (error) {
+            console.error("Could not save salons to browser storage.", error);
+        }
+        updateSaveButtons();
+        applyFilters();
+    });
+});
+updateSaveButtons();
+applyFilters();
 
 if (genderBtn) {
     genderBtn.addEventListener("click", function (e) {

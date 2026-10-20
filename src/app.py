@@ -143,7 +143,9 @@ def viewer_gender():
 def home():
     user = current_user()
     gender = viewer_gender()
-    return render_template("index.html", salons=slots.get_salons(gender), labels=STATUS_LABELS,
+    saved_view = request.args.get("view") == "saved"
+    return render_template("index.html", salons=slots.get_salons(None if saved_view else gender),
+                           labels=STATUS_LABELS, saved_view=saved_view,
                            need_gender=bool(user and user["role"] == "customer" and not gender),
                            my_gender=gender,
                            on_waitlist=bool(user and growth.on_waitlist(user["id"])))

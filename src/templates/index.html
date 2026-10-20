@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/css/auth.css">
     <link rel="stylesheet" href="/css/extra.css">
 </head>
-<body class="home">
+<body class="home" data-saved-view="{{ 'true' if saved_view else 'false' }}">
     {% include "_nav.html" %}
 
     <section class="hero-tag">
@@ -48,12 +48,13 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
             </button>
         </div>
-        {% if my_gender %}<span class="pill">{{ '👨 Salons for men' if my_gender == 'male' else '👩 Parlours for women' }}</span>{% endif %}
-        <p class="muted status-line" id="locStatus" aria-live="polite">📍 Allow location to see salons within 5 km of you.</p>
+        {% if my_gender and not saved_view %}<span class="pill">{{ '👨 Salons for men' if my_gender == 'male' else '👩 Parlours for women' }}</span>{% endif %}
+        <p class="muted status-line" id="locStatus" aria-live="polite">{{ 'Saved salons on this device' if saved_view else '📍 Allow location to see salons within 5 km of you.' }}</p>
 
-        <h2 class="section-title">Nearby {{ 'parlours' if my_gender == 'female' else 'salons' }}</h2>
+        <h2 class="section-title">{{ 'Saved salons' if saved_view else 'Nearby ' ~ ('parlours' if my_gender == 'female' else 'salons') }}</h2>
         {% set mapped_salons = salons|selectattr('lat', 'ne', none)|selectattr('lng', 'ne', none)|list %}
         {% set map_salon = mapped_salons|first if mapped_salons else none %}
+        {% if not saved_view %}
         <section class="map-preview" aria-label="Explore nearby salons on a map">
             <span class="map-preview-pin map-preview-pin-primary" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
@@ -69,9 +70,11 @@
                 Explore Map
             </a>
         </section>
+        {% endif %}
         <div class="grid" id="grid">
             {% for s in salons %}
             <article class="card"
+                data-salon-id="{{ s.id }}"
                 data-name="{{ s.name|lower }}"
                 data-services="{{ s.services|join(',')|lower }}"
                 data-gender="{{ s.gender }}"
@@ -81,7 +84,12 @@
                 <div class="card-body">
                     <div class="row">
                         <h3>{{ s.name }}</h3>
-                        <span class="rating">★ {{ s.rating }}</span>
+                        <div class="salon-card-actions">
+                            <span class="rating">★ {{ s.rating }}</span>
+                            <button class="save-salon" type="button" aria-label="Save {{ s.name }}" aria-pressed="false" title="Save salon">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
+                            </button>
+                        </div>
                     </div>
                     <span class="tag">{{ 'Parlour' if s.gender == 'women' else 'Salon' }}</span>
                     <p class="muted"><span class="dist">{{ "%.1f"|format(s.distance) }}</span> km away · {{ s.services|join(', ') }}</p>
@@ -98,7 +106,7 @@
             </article>
             {% endfor %}
         </div>
-        <p id="empty" class="empty" hidden>No salons match here yet. Try another search.</p>
+        <p id="empty" class="empty" hidden>{{ 'No saved salons yet. Tap the heart on a salon to save it.' if saved_view else 'No salons match here yet. Try another search.' }}</p>
     </main>
 
     <div class="shop">

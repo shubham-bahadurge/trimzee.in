@@ -1,47 +1,58 @@
-<!-- Shared site header and account menu included by the page templates. -->
+<!-- Shared site header and bottom navigation. -->
 <link rel="stylesheet" href="/css/theme.css">
 <link rel="stylesheet" href="/css/modern.css">
 <link rel="stylesheet" href="/css/modern2.css">
 <link rel="stylesheet" href="/css/modern3.css">
 <header class="topbar">
-    <div class="menu-wrap">
-        <button class="icon-btn" type="button" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="menuPanel">☰</button>
-        <nav class="pop left" id="menuPanel" hidden>
-            <a href="/">Home</a>
-            {% if current_user and current_user.role == 'owner' %}<a href="/dashboard">Dashboard</a>
-            {% elif current_user and current_user.role == 'admin' %}<a href="/admin">Admin</a>
-            {% else %}<a href="/my-bookings">My bookings</a>{% endif %}
-            {% if current_user %}<a href="/account">My account</a>{% else %}<a href="/login">Sign in</a><a href="/register">Create account</a>{% endif %}
-            {% if current_user and current_user.role == 'owner' %}<a href="/plans">Salon subscription</a>
-            {% elif current_user and current_user.role == 'admin' %}<a href="/admin/billing">Billing</a>{% endif %}
-        </nav>
-    </div>
-
     <a class="brand" href="/" aria-label="Trimzee home">
         <img src="/img/logo-mark.png" alt="" width="30" height="31">
         <span>TRIMZEE</span>
     </a>
-
-    <div class="menu-wrap">
-        <a class="icon-btn" href="{{ '/account' if current_user else '/login' }}" aria-label="{{ 'My account' if current_user else 'Sign in' }}">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
-        </a>
-    </div>
 </header>
-<script>
-    (function () {
-        var btn = document.getElementById("menuBtn"), panel = document.getElementById("menuPanel");
-        function close() { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); }
-        btn.addEventListener("click", function (e) {
-            e.stopPropagation();
-            var open = panel.hidden;
-            panel.hidden = !open;
-            btn.setAttribute("aria-expanded", String(open));
-        });
-        panel.addEventListener("click", function (e) { e.stopPropagation(); });
-        document.addEventListener("click", close);
-        document.addEventListener("keydown", function (e) { if (e.key === "Escape") { close(); } });
-    })();
-</script>
+<nav class="bottom-tabs{% if current_user and current_user.role in ['owner', 'admin'] %} has-subscription{% endif %}" aria-label="Main navigation">
+    <a href="/" class="{{ 'active' if request.path == '/' and request.args.get('view') != 'saved' else '' }}"
+       {% if request.path == '/' and request.args.get('view') != 'saved' %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></svg>
+        <span>Home</span>
+    </a>
+    {% if current_user and current_user.role == 'owner' %}
+    <a href="/dashboard" class="{{ 'active' if request.path.startswith('/dashboard') else '' }}"
+       {% if request.path.startswith('/dashboard') %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+        <span>Bookings</span>
+    </a>
+    {% elif current_user and current_user.role == 'admin' %}
+    <a href="/admin" class="{{ 'active' if request.path.startswith('/admin') else '' }}"
+       {% if request.path.startswith('/admin') %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+        <span>Bookings</span>
+    </a>
+    {% else %}
+    <a href="/my-bookings" class="{{ 'active' if request.path.startswith('/my-bookings') else '' }}"
+       {% if request.path.startswith('/my-bookings') %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        <span>Bookings</span>
+    </a>
+    {% endif %}
+    {% if current_user and current_user.role in ['owner', 'admin'] %}
+    {% set subscription_url = '/plans' if current_user.role == 'owner' else '/admin/billing' %}
+    {% set subscription_active = request.path.startswith(subscription_url) %}
+    <a href="{{ subscription_url }}" class="{{ 'active' if subscription_active else '' }}"
+       {% if subscription_active %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+        <span>Subscription</span>
+    </a>
+    {% endif %}
+    <a href="/?view=saved" class="{{ 'active' if request.path == '/' and request.args.get('view') == 'saved' else '' }}"
+       {% if request.path == '/' and request.args.get('view') == 'saved' %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
+        <span>Saved</span>
+    </a>
+    <a href="{{ '/account' if current_user else '/login' }}" class="{{ 'active' if request.path == '/account' or (not current_user and request.path == '/login') else '' }}"
+       {% if request.path == '/account' or (not current_user and request.path == '/login') %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+        <span>Account</span>
+    </a>
+</nav>
 {% if current_user %}<script>window.TZ_AUTH = true; window.TZ_ROLE = "{{ current_user.role }}";</script>
 <script src="/js/notify.js"></script>{% endif %}

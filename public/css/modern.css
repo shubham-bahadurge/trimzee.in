@@ -120,6 +120,15 @@ h1 { font-size: 1.7rem; font-weight: 800; }
 .map-preview-link { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); font-weight: 800; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
 .map-preview-link:hover { background: var(--bg); }
 .map-preview-link svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.home .chat { bottom: 88px; }
+.home .shop { bottom: 158px; }
+.save-salon { width: 34px; height: 34px; display: grid; place-items: center; flex: none; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); color: var(--muted); cursor: pointer; }
+.save-salon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.save-salon[aria-pressed="true"] { color: var(--ink); }
+.save-salon[aria-pressed="true"] svg { fill: currentColor; }
+.save-salon:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.salon-card-actions { display: flex; align-items: center; gap: 6px; }
+.home[data-saved-view="true"] .map-preview { display: none; }
 
 @media (min-width: 700px) { .tiles { grid-template-columns: repeat(4, 1fr); } .hero-tag h1 { font-size: 2.8rem; } }
 @media (max-width: 520px) { .svc-grid { grid-template-columns: 1fr 1fr; } .review-form { grid-template-columns: 1fr; } }

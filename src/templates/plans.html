@@ -102,11 +102,6 @@ details.coupon summary{cursor:pointer;font-weight:700;font-size:.92rem}
   function sync() { code.value = cp.value; }
   cp.addEventListener("input", sync);
   document.getElementById("buyform").addEventListener("submit", sync);
-  var b = document.getElementById("menuBtn"), p = document.getElementById("menuPanel");
-  if (b && p) {
-    b.addEventListener("click", function (e) { e.stopPropagation(); var h = p.hidden; p.hidden = !h; b.setAttribute("aria-expanded", h ? "true" : "false"); });
-    document.addEventListener("click", function () { p.hidden = true; });
-  }
 })();
 </script>
 </body>
