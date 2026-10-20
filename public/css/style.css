@@ -79,6 +79,15 @@ body {
 .hours-fields { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
 .hours-fields .field { display: grid; gap: 6px; font-weight: 600; }
 .hours-fields input { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; font: inherit; }
+.salon-photo-form { display: grid; gap: 12px; min-width: 0; }
+.salon-photo-form h2 { margin: 0; }
+.salon-photo-field { display: grid; gap: 8px; min-width: 0; }
+.salon-photo-input { display: block; width: 100%; min-width: 0; box-sizing: border-box; padding: 9px; border: 1px dashed var(--line, #d8dfe1); border-radius: 12px; background: var(--bg, #eef2f3); color: var(--ink, #0b0b0b); font-family: inherit; font-size: .9rem; }
+.salon-photo-input::file-selector-button { margin-right: 10px; padding: 8px 11px; border: 0; border-radius: 8px; background: var(--ink, #0b0b0b); color: var(--paper, #fff); font: inherit; font-weight: 700; cursor: pointer; }
+.salon-photo-input::file-selector-button:hover { background: #333; }
+.salon-photo-hint { margin: 0; line-height: 1.45; overflow-wrap: anywhere; }
+.salon-photo-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.salon-photo-remove { display: inline-flex; margin-top: 8px; }
 .card-body { padding: 16px; display: grid; gap: 8px; }
 .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .card h3 { font-size: 1.1rem; }

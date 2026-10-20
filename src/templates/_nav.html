@@ -52,7 +52,7 @@
         document.addEventListener("keydown", function (e) { if (e.key === "Escape") { close(); } });
     })();
 </script>
-<nav class="bottom-tabs{% if current_user and current_user.role in ['owner', 'admin'] %} has-subscription{% endif %} has-shop" aria-label="Main navigation">
+<nav class="bottom-tabs{% if current_user and current_user.role in ['owner', 'admin'] %} has-subscription{% endif %}{% if current_user and current_user.role == 'admin' %} has-payments{% endif %} has-shop" aria-label="Main navigation">
     <a href="/" class="{{ 'active' if request.path == '/' and request.args.get('view') != 'saved' else '' }}"
        {% if request.path == '/' and request.args.get('view') != 'saved' %}aria-current="page"{% endif %}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></svg>
@@ -85,6 +85,13 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
         <span>Subscription</span>
     </a>
+    {% if current_user.role == 'admin' %}
+    <a href="/admin/payments" class="{{ 'active' if request.path.startswith('/admin/payments') else '' }}"
+       {% if request.path.startswith('/admin/payments') %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v12H3z"/><path d="M3 11h18M7 15h3"/></svg>
+        <span>Payments</span>
+    </a>
+    {% endif %}
     {% endif %}
     {% if not current_user or current_user.role not in ['owner', 'admin'] %}
     <a href="/?view=saved" class="{{ 'active' if request.path == '/' and request.args.get('view') == 'saved' else '' }}"

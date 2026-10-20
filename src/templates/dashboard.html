@@ -95,19 +95,23 @@
             </form>
         </div>
         <div class="panel">
-            <form method="post" action="/dashboard/image" enctype="multipart/form-data">
+            <form method="post" action="/dashboard/image" enctype="multipart/form-data" class="salon-photo-form">
                 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
                 <h2>Salon photo</h2>
                 {% if salon.image_mime %}
                 <img class="owner-salon-image" src="/salons/{{ salon.id }}/image" alt="{{ salon.name }} photo">
                 {% endif %}
-                <label class="field" for="salonImage">Add or change your salon photo</label>
-                <input id="salonImage" type="file" name="image" accept="image/jpeg,image/png,image/webp">
-                <p class="hint">JPEG, PNG, or WebP · maximum 5 MB. Customers will see this on your salon listing.</p>
-                <button class="btn small" type="submit" name="action" value="upload">Save photo</button>
+                <div class="salon-photo-field">
+                    <label class="field" for="salonImage">Add or change your salon photo</label>
+                    <input id="salonImage" class="salon-photo-input" type="file" name="image" accept="image/jpeg,image/png,image/webp">
+                    <p class="hint salon-photo-hint">JPEG, PNG, or WebP · maximum 5 MB. Customers will see this on your salon listing.</p>
+                </div>
+                <div class="salon-photo-actions">
+                    <button class="btn small" type="submit" name="action" value="upload">Save photo</button>
+                </div>
             </form>
             {% if salon.image_mime %}
-            <form method="post" action="/dashboard/image" class="inline">
+            <form method="post" action="/dashboard/image" class="inline salon-photo-remove">
                 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
                 <button class="btn danger small" type="submit" name="action" value="remove">Remove photo</button>
             </form>
