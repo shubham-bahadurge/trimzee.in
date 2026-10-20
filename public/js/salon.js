@@ -150,11 +150,6 @@ tabs.forEach(function (tab) {
 });
 
 // ---- booking + confirmation pop-up -----------------------------------------
-function waNumber(raw) {
-    const digits = (raw || "").replace(/\D/g, "");
-    return digits.length === 10 ? "91" + digits : digits;
-}
-
 function link(text, href, ghost) {
     const a = document.createElement("a");
     a.className = "btn" + (ghost ? " ghost" : "");
@@ -169,16 +164,10 @@ function openModal(data) {
     document.getElementById("modalCode").textContent = data.code;
     const actions = document.getElementById("modalActions");
     actions.innerHTML = "";
-    actions.appendChild(link("View booking", data.detail, false));
     if (data.directions) { actions.appendChild(link("🧭 Get directions", data.directions, true)); }
     if (data.owner_wa) {
         actions.appendChild(link("💬 WhatsApp the salon", "https://wa.me/" + data.owner_wa + "?text=" +
             encodeURIComponent("Hi, I booked " + data.when + " on Trimzee (booking #" + data.booking_id + ")."), true));
-    }
-    const me = waNumber(document.getElementById("phone").value);
-    if (me.length >= 11) {
-        actions.appendChild(link("📲 Save on my WhatsApp", "https://wa.me/" + me + "?text=" + encodeURIComponent(
-            "Trimzee booking #" + data.booking_id + ": " + data.salon + ", " + data.when + ". Confirmation code: " + data.code), true));
     }
     modal.hidden = false;
     document.getElementById("modalClose").focus();
