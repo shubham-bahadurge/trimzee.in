@@ -52,6 +52,23 @@
         <p class="muted status-line" id="locStatus" aria-live="polite">📍 Allow location to see salons within 5 km of you.</p>
 
         <h2 class="section-title">Nearby {{ 'parlours' if my_gender == 'female' else 'salons' }}</h2>
+        {% set mapped_salons = salons|selectattr('lat', 'ne', none)|selectattr('lng', 'ne', none)|list %}
+        {% set map_salon = mapped_salons|first if mapped_salons else none %}
+        <section class="map-preview" aria-label="Explore nearby salons on a map">
+            <span class="map-preview-pin map-preview-pin-primary" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            </span>
+            <span class="map-preview-pin map-preview-pin-secondary" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            </span>
+            <span class="map-preview-pin map-preview-pin-tertiary" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            </span>
+            <a class="map-preview-link" href="https://www.google.com/maps/search/?api=1&amp;query={% if map_salon %}{{ map_salon.lat }},{{ map_salon.lng }}{% else %}salons{% endif %}" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 19-8-8 19-2-8-9-3Z"/><path d="m12 14 5-5"/></svg>
+                Explore Map
+            </a>
+        </section>
         <div class="grid" id="grid">
             {% for s in salons %}
             <article class="card"

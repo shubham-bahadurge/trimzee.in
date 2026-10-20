@@ -111,5 +111,15 @@ h1 { font-size: 1.7rem; font-weight: 800; }
 .gender-opts label:has(input:checked) { border-color: var(--ink); background: var(--ink); color: #fff; }
 .gender-opts input { accent-color: #fff; }
 
+.map-preview { position: relative; height: 164px; display: grid; place-items: end center; margin: 0 0 18px; overflow: hidden; border: 1.5px solid var(--line); border-radius: 20px; background-color: var(--paper); background-image: radial-gradient(var(--line) 1.5px, transparent 1.5px); background-size: 22px 22px; }
+.map-preview-pin { position: absolute; width: 22px; height: 22px; color: var(--muted); }
+.map-preview-pin svg { width: 100%; height: 100%; fill: currentColor; stroke: var(--paper); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.map-preview-pin-primary { top: 32%; left: 29%; width: 32px; height: 32px; color: var(--ink); }
+.map-preview-pin-secondary { top: 51%; left: 60%; }
+.map-preview-pin-tertiary { top: 38%; left: 75%; }
+.map-preview-link { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink); font-weight: 800; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.map-preview-link:hover { background: var(--bg); }
+.map-preview-link svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
 @media (min-width: 700px) { .tiles { grid-template-columns: repeat(4, 1fr); } .hero-tag h1 { font-size: 2.8rem; } }
 @media (max-width: 520px) { .svc-grid { grid-template-columns: 1fr 1fr; } .review-form { grid-template-columns: 1fr; } }
