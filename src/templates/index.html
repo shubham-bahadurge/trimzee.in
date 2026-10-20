@@ -74,12 +74,12 @@
                 {% else %}
                     <span aria-hidden="true">✂</span>
                 {% endif %}
+                    <span class="rating salon-photo-rating">★ {{ s.rating }}</span>
                 </div>
                 <div class="card-body salon-card-body">
                     <div class="row salon-card-heading">
                         <h3>{{ s.name }}</h3>
                         <div class="salon-card-actions">
-                            <span class="rating">★ {{ s.rating }}</span>
                             <button class="save-salon" type="button" aria-label="Save {{ s.name }}" aria-pressed="false" title="Save salon">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
                             </button>
