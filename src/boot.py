@@ -10,7 +10,7 @@ import slots
 import billing
 import payments
 
-SCHEMA_VERSION = "2026-10-v12-salon-hours"
+SCHEMA_VERSION = "2026-10-v13-early-opening"
 
 
 def _wanted():

@@ -18,15 +18,21 @@
         {% elif salon.approved == 2 %}<p class="message err">Your {{ venue }} registration was not approved.</p>{% endif %}
         {% if notice %}<p class="message {{ 'err' if error else 'ok' }}">{{ notice }}</p>{% endif %}
 
-        {% set is_on = salon.status != 'closed' %}
+        {% set schedule_closed = salon.status != 'closed' and live == 'closed' %}
+        {% set is_on = salon.status != 'closed' and live != 'closed' %}
         <form method="post" action="/dashboard/toggle" class="power {{ 'on' if is_on else 'off' }}">
             <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-            <input type="hidden" name="state" value="{{ 'off' if is_on else 'on' }}">
-            <div><strong>{{ venue|capitalize }} is {{ 'ON' if is_on else 'OFF' }}</strong>
-                <span class="sub">{% if is_on %}Taking bookings · next free slot: {{ next_label }}{% else %}New bookings are paused{% endif %}</span></div>
-            <button class="switch" type="submit" aria-label="{{ 'Turn salon off' if is_on else 'Turn salon on' }}"></button>
+            <div><strong>{{ venue|capitalize }} is {{ 'OFF' if schedule_closed else 'ON' if is_on else 'OFF' }}</strong>
+                <span class="sub">{% if schedule_closed %}Closed for today · {{ next_label }}{% elif is_on %}Taking bookings · next free slot: {{ next_label }}{% else %}New bookings are paused{% endif %}</span></div>
+            {% if schedule_closed and next_label.startswith('Opens at ') %}
+            <button class="switch" type="submit" name="state" value="on" aria-label="Open early today"></button>
+            <button class="btn ghost small" type="submit" name="state" value="off">Keep salon off</button>
+            {% else %}
+            <button class="switch" type="submit" name="state" value="{{ 'off' if is_on or schedule_closed else 'on' }}"
+                aria-label="{{ 'Disable automatic opening' if schedule_closed else 'Turn salon off' if is_on else 'Turn salon on' }}"></button>
+            {% endif %}
         </form>
-        <p class="hint" style="margin-top:-4px">Stays ON until you switch it off. The status updates by itself: Busy while a booked slot is running, Available 30 minutes later, Fully booked when every slot is taken.</p>
+        <p class="hint" style="margin-top:-4px">Stays ON until you switch it off. It closes at the configured closing time and opens again at the next opening time. Turn it on before opening to open early today; your regular hours stay unchanged.</p>
 
         <div class="tiles">
             <div class="tile"><span>Today's revenue</span><strong>₹{{ rev.today_earned }}</strong><small>{{ rev.today_done }} completed</small></div>
@@ -84,7 +90,7 @@
                         <input id="closingTime" type="time" name="closing_time" value="{{ salon.closing_time }}" step="1800" required>
                     </label>
                 </div>
-                <p class="hint">Customers can book every 30 minutes during these hours. The closing time is not a bookable start time.</p>
+                <p class="hint">Customers can book every 30 minutes during these hours. The closing time is not a bookable start time. Opening early today uses the current time rounded down to the nearest 30 minutes and does not change your regular schedule.</p>
                 <button class="btn small" type="submit">Save booking hours</button>
             </form>
         </div>

@@ -53,6 +53,22 @@ body {
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; }
 .card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .06); }
 .card[hidden] { display: none; }
+.salon-list-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 850px; margin: 0 auto; }
+.salon-list-card { display: grid; grid-template-columns: minmax(100px, 27%) minmax(0, 1fr); min-height: 176px; border: 1px solid var(--line, #d8dfe1); border-radius: 20px; }
+.salon-card-photo { min-height: 100%; display: grid; place-items: center; overflow: hidden; background: linear-gradient(135deg, #f1edff, #fbfaff); color: #7455e8; font-size: 2.6rem; }
+.salon-card-photo img { display: block; width: 100%; height: 100%; min-height: 176px; object-fit: cover; }
+.salon-card-body { min-width: 0; grid-template-rows: auto auto 1fr auto; align-content: center; gap: 9px; padding: 16px 18px; }
+.salon-card-heading { min-width: 0; }
+.salon-card-heading h3 { min-width: 0; overflow-wrap: anywhere; }
+.salon-card-distance { margin: 0; }
+.salon-service-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.salon-service-chips span { max-width: 100%; padding: 5px 11px; border-radius: 999px; background: #f1f3f4; color: #526067; font-size: .82rem; }
+.salon-card-footer { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.salon-card-info { display: grid; gap: 7px; min-width: 0; }
+.salon-card-info .price { margin: 0; }
+.salon-card-status { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.salon-book-button { flex: none; min-width: 128px; margin: 0; padding: 12px 16px; border-radius: 11px; background: #119b8a; }
+.salon-book-button:hover { background: #0d8174; }
 .card-img {
     height: 130px; display: flex; align-items: center; justify-content: center;
     font-size: 3rem; background: linear-gradient(135deg, #ede9fe, #fce7f3);
@@ -95,4 +111,30 @@ body {
 @media (max-width: 520px) {
     .hero h1 { font-size: 1.8rem; }
     .search-box select { flex: 1 1 100%; }
+    .salon-list-grid { gap: 11px; }
+    .salon-list-card { grid-template-columns: minmax(88px, 29%) minmax(0, 1fr); min-height: 150px; border-radius: 16px; }
+    .salon-card-photo img { min-height: 150px; }
+    .salon-card-body { gap: 7px; padding: 11px; }
+    .salon-card-heading h3 { font-size: 1rem; }
+    .salon-card-actions { gap: 5px; }
+    .salon-card-actions .rating { font-size: .88rem; }
+    .salon-card-actions .save-salon { width: 30px; height: 30px; }
+    .salon-service-chips { gap: 5px; }
+    .salon-service-chips span { padding: 4px 8px; font-size: .75rem; }
+    .salon-card-footer { align-items: stretch; gap: 7px; }
+    .salon-card-info { gap: 5px; }
+    .salon-card-status { gap: 5px; }
+    .salon-card-status .muted { font-size: .75rem; }
+    .salon-book-button { align-self: end; min-width: 0; padding: 10px 12px; font-size: .9rem; }
+}
+
+@media (max-width: 360px) {
+    .salon-list-card { grid-template-columns: 72px minmax(0, 1fr); }
+    .salon-card-body { gap: 7px; padding: 8px; }
+    .salon-card-heading h3 { font-size: .88rem; }
+    .salon-card-actions .rating { font-size: .78rem; }
+    .salon-card-actions .save-salon { width: 26px; height: 26px; }
+    .salon-card-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+    .salon-card-status .muted { display: none; }
+    .salon-book-button { padding: 9px 10px; font-size: .82rem; }
 }

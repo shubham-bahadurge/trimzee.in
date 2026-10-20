@@ -58,9 +58,9 @@
             </a>
         </section>
         {% endif %}
-        <div class="grid" id="grid">
+        <div class="grid salon-list-grid" id="grid">
             {% for s in salons %}
-            <article class="card"
+            <article class="card salon-list-card"
                 data-salon-id="{{ s.id }}"
                 data-name="{{ s.name|lower }}"
                 data-services="{{ s.services|join(',')|lower }}"
@@ -68,11 +68,15 @@
                 data-distance="{{ s.distance }}"
                 data-lat="{{ s.lat if s.lat is not none else '' }}" data-lng="{{ s.lng if s.lng is not none else '' }}"
                 data-status="{{ s.status }}">
+                <div class="salon-card-photo">
                 {% if s.image_url %}
-                <div class="card-img"><img src="{{ s.image_url }}" alt="{{ s.name }}" loading="lazy"></div>
+                    <img src="{{ s.image_url }}" alt="{{ s.name }}" loading="lazy">
+                {% else %}
+                    <span aria-hidden="true">✂</span>
                 {% endif %}
-                <div class="card-body">
-                    <div class="row">
+                </div>
+                <div class="card-body salon-card-body">
+                    <div class="row salon-card-heading">
                         <h3>{{ s.name }}</h3>
                         <div class="salon-card-actions">
                             <span class="rating">★ {{ s.rating }}</span>
@@ -81,17 +85,25 @@
                             </button>
                         </div>
                     </div>
-                    <span class="tag">{{ 'Parlour' if s.gender == 'women' else 'Salon' }}</span>
-                    <p class="muted"><span class="dist">{{ "%.1f"|format(s.distance) }}</span> km away · {{ s.services|join(', ') }}</p>
-                    <p class="price">From ₹{{ s.price }}</p>
-                    <div class="row">
-                        <span class="badge {{ s.status }}">{{ labels[s.status] }}</span>
-                        <span class="muted">Next free: {{ s.next }}</span>
+                    <p class="muted salon-card-distance">📍 <span class="dist">{{ "%.1f"|format(s.distance) }}</span> km away</p>
+                    <div class="salon-service-chips" aria-label="Services">
+                        {% for service in s.services[:3] %}
+                        <span>{{ service }}</span>
+                        {% endfor %}
                     </div>
-                    <button class="book" data-id="{{ s.id }}" data-name="{{ s.name }}"
-                        {% if s.status in ['closed', 'full'] %}disabled{% endif %}>
-                        {% if s.status == 'closed' %}Closed{% elif s.status == 'full' %}Fully booked{% else %}Book now{% endif %}
-                    </button>
+                    <div class="salon-card-footer">
+                        <div class="salon-card-info">
+                            <p class="price">From ₹{{ s.price }}</p>
+                            <div class="salon-card-status">
+                                <span class="badge {{ s.status }}">{{ labels[s.status] }}</span>
+                                <span class="muted">Next free: {{ s.next }}</span>
+                            </div>
+                        </div>
+                        <button class="book salon-book-button" data-id="{{ s.id }}" data-name="{{ s.name }}"
+                            {% if s.status in ['closed', 'full'] %}disabled{% endif %}>
+                            {% if s.status == 'closed' %}Closed{% elif s.status == 'full' %}Fully booked{% else %}Book Slot{% endif %}
+                        </button>
+                    </div>
                 </div>
             </article>
             {% endfor %}

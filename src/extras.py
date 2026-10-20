@@ -34,7 +34,8 @@ def init_extras():
     try:
         for col, ddl in (("image_data", "BYTEA" if pgdb.ENABLED else "BLOB"),
                          ("image_mime", "TEXT"), ("opening_time", "TEXT NOT NULL DEFAULT '10:00'"),
-                         ("closing_time", "TEXT NOT NULL DEFAULT '20:00'")):
+                         ("closing_time", "TEXT NOT NULL DEFAULT '20:00'"),
+                         ("early_open_date", "TEXT"), ("early_open_time", "TEXT")):
             if pgdb.ENABLED:
                 conn.execute(f"ALTER TABLE salons ADD COLUMN IF NOT EXISTS {col} {ddl}")
             else:
@@ -246,7 +247,7 @@ def owner_salon_full(owner_id):
     conn = get_db()
     try:
         row = conn.execute("SELECT id, name, status, approved, lat, lng, image_mime, "
-                           "opening_time, closing_time FROM salons "
+                           "opening_time, closing_time, early_open_date, early_open_time FROM salons "
                            "WHERE owner_id = ? ORDER BY id LIMIT 1", (owner_id,)).fetchone()
         return dict(row) if row else None
     finally:
@@ -264,7 +265,8 @@ def save_salon_hours(owner_id, opening_time, closing_time):
     conn = get_db()
     try:
         cur = conn.execute(
-            "UPDATE salons SET opening_time = ?, closing_time = ? "
+            "UPDATE salons SET opening_time = ?, closing_time = ?, "
+            "early_open_date = NULL, early_open_time = NULL "
             "WHERE id = (SELECT id FROM salons WHERE owner_id = ? ORDER BY id LIMIT 1)",
             (opening_time, closing_time, owner_id))
         conn.commit()

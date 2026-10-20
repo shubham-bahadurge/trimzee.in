@@ -96,7 +96,9 @@ listing and the salon details page.
 
 Salon owners can also set their daily booking opening and closing times from
 the dashboard. Appointments remain available in 30-minute slots; the closing
-time is the end of the booking window, not a slot start time.
+time is the end of the booking window, not a slot start time. When the owner
+leaves the salon enabled, it automatically closes at the daily closing time and
+opens again at the next configured opening time.
 
 ## Optional services and environment variables
 
