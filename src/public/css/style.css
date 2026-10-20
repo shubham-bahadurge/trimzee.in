@@ -54,7 +54,7 @@ body {
 .card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .06); }
 .card[hidden] { display: none; }
 .salon-list-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 850px; margin: 0 auto; }
-.salon-list-card { display: grid; grid-template-columns: 25% minmax(0, 1fr); min-height: 176px; border: 1px solid var(--line, #d8dfe1); border-radius: 20px; }
+.salon-list-card { display: grid; grid-template-columns: 35% minmax(0, 1fr); min-height: 176px; border: 1px solid var(--line, #d8dfe1); border-radius: 20px; }
 .salon-card-photo { min-height: 100%; display: grid; place-items: center; overflow: hidden; background: linear-gradient(135deg, #f1edff, #fbfaff); color: #7455e8; font-size: 2.6rem; }
 .salon-card-photo img { display: block; width: 100%; height: 100%; min-height: 176px; object-fit: cover; }
 .salon-card-body { min-width: 0; grid-template-rows: auto auto 1fr auto; align-content: center; gap: 9px; padding: 16px 18px; }
@@ -112,7 +112,7 @@ body {
     .hero h1 { font-size: 1.8rem; }
     .search-box select { flex: 1 1 100%; }
     .salon-list-grid { gap: 11px; }
-    .salon-list-card { grid-template-columns: 25% minmax(0, 1fr); min-height: 150px; border-radius: 16px; }
+    .salon-list-card { grid-template-columns: 35% minmax(0, 1fr); min-height: 150px; border-radius: 16px; }
     .salon-card-photo img { min-height: 150px; }
     .salon-card-body { gap: 7px; padding: 11px; }
     .salon-card-heading h3 { font-size: 1rem; }
@@ -129,7 +129,7 @@ body {
 }
 
 @media (max-width: 360px) {
-    .salon-list-card { grid-template-columns: 25% minmax(0, 1fr); }
+    .salon-list-card { grid-template-columns: 35% minmax(0, 1fr); }
     .salon-card-body { gap: 7px; padding: 8px; }
     .salon-card-heading h3 { font-size: .88rem; }
     .salon-card-actions .rating { font-size: .78rem; }
