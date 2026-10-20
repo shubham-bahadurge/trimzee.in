@@ -8,7 +8,6 @@ import db
 import extras
 import pgdb
 
-GENDERS = ("men", "women", "unisex")
 USER_GENDERS = ("male", "female")
 SAMPLE_GENDERS = {"Style Studio": "men", "Royal Cuts": "men", "Glow Beauty Lounge": "women",
                   "Color Theory": "women"}  # the rest stay "unisex"
@@ -159,19 +158,6 @@ def owner_gender(owner_id):
         row = conn.execute("SELECT gender FROM salons WHERE owner_id = ? ORDER BY id LIMIT 1",
                            (owner_id,)).fetchone()
         return row["gender"] if row else "unisex"
-    finally:
-        conn.close()
-
-
-def set_salon_gender(owner_id, gender):
-    if gender not in GENDERS:
-        return False
-    conn = db.get_db()
-    try:
-        cur = conn.execute("UPDATE salons SET gender = ? WHERE id = "
-                           "(SELECT id FROM salons WHERE owner_id = ? ORDER BY id LIMIT 1)", (gender, owner_id))
-        conn.commit()
-        return cur.rowcount > 0
     finally:
         conn.close()
 

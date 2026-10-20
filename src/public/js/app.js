@@ -6,12 +6,9 @@ const cards = Array.from(document.querySelectorAll(".card"));
 const emptyMsg = document.getElementById("empty");
 const locBtn = document.getElementById("useLocation");
 const locStatus = document.getElementById("locStatus");
-const genderBtn = document.getElementById("genderBtn");
-const genderPanel = document.getElementById("genderPanel");
 const savedView = document.body.dataset.savedView === "true";
 const savedStorageKey = "trimzee.savedSalons";
 
-let activeGender = "";
 let here = null;
 
 function readSavedSalons() {
@@ -50,11 +47,9 @@ function applyFilters() {
     let visible = 0;
     cards.forEach(function (card) {
         const matchText = !text || card.dataset.name.includes(text) || card.dataset.services.includes(text);
-        const gender = card.dataset.gender;
-        const matchGender = !activeGender || gender === activeGender || gender === "unisex";
         const matchRange = !here || (card.dataset.known === "1" && parseFloat(card.dataset.distance) <= RANGE_KM);
         const matchSaved = !savedView || savedSalons.includes(card.dataset.salonId);
-        const show = matchText && matchGender && matchRange && matchSaved;
+        const show = matchText && matchRange && matchSaved;
         card.hidden = !show;
         if (show) { visible += 1; }
     });
@@ -129,24 +124,3 @@ document.querySelectorAll(".save-salon").forEach(function (btn) {
 });
 updateSaveButtons();
 applyFilters();
-
-if (genderBtn) {
-    genderBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        genderPanel.hidden = !genderPanel.hidden;
-        genderBtn.setAttribute("aria-expanded", String(!genderPanel.hidden));
-    });
-    genderPanel.addEventListener("click", function (e) { e.stopPropagation(); });
-    genderPanel.querySelectorAll(".gender").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-            activeGender = btn.dataset.gender;
-            genderPanel.querySelectorAll(".gender").forEach(function (b) { b.classList.remove("active"); });
-            btn.classList.add("active");
-            genderBtn.classList.toggle("on", activeGender !== "");
-            genderPanel.hidden = true;
-            genderBtn.setAttribute("aria-expanded", "false");
-            applyFilters();
-        });
-    });
-    document.addEventListener("click", function () { genderPanel.hidden = true; });
-}

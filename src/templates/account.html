@@ -31,12 +31,6 @@
                 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
                 <label class="field">Name
                     <input type="text" name="name" minlength="2" maxlength="60" value="{{ current_user.name }}" required></label>
-                <label class="field">Gender
-                    <select name="gender">
-                        <option value="" {% if not current_user.gender %}selected{% endif %}>Not set</option>
-                        <option value="male" {% if current_user.gender == 'male' %}selected{% endif %}>Male</option>
-                        <option value="female" {% if current_user.gender == 'female' %}selected{% endif %}>Female</option>
-                    </select></label>
                 <label class="field">Mobile number
                     <input type="tel" name="phone" inputmode="numeric" maxlength="14" placeholder="10-digit mobile number" value="{{ current_user.phone or '' }}" {% if current_user.role == 'owner' %}required{% endif %}></label>
                 <div class="profile-actions">

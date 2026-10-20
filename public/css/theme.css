@@ -43,7 +43,7 @@ h1, h2, h3 { letter-spacing: -.01em; }
 .shop-card { display: grid; justify-items: start; gap: 14px; }
 .shop-card h1, .shop-card p { margin: 0; }
 .shop-card .hint:empty { display: none; }
-.searchrow { display: grid; grid-template-columns: 44px 1fr 44px; gap: 10px; align-items: center; }
+.searchrow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: center; }
 .searchrow input[type=search] { height: 44px; padding: 0 18px; border: 1.5px solid var(--ink); border-radius: 999px; font-size: 1rem;
     background: var(--paper); color: var(--ink); width: 100%; font-family: inherit; }
 .searchrow input[type=search]:focus { outline: 3px solid rgba(11,11,11,.18); }

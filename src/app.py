@@ -145,9 +145,8 @@ def home():
     gender = viewer_gender()
     saved_view = request.args.get("view") == "saved"
     return render_template("index.html", salons=slots.get_salons(None if saved_view else gender),
-                           labels=STATUS_LABELS, saved_view=saved_view,
-                           need_gender=bool(user and user["role"] == "customer" and not gender),
-                           my_gender=gender)
+                           labels=STATUS_LABELS, saved_view=saved_view, my_gender=gender,
+                           need_gender=bool(user and user["role"] == "customer" and not gender))
 
 
 @app.route("/shop")
@@ -204,7 +203,8 @@ def profile_gender():
     user = current_user()
     if not user:
         return redirect("/login")
-    meta.set_user_gender(user["id"], request.form.get("gender", ""))
+    if user["role"] == "customer" and not user["gender"]:
+        meta.set_user_gender(user["id"], request.form.get("gender", ""))
     return redirect("/")
 
 
@@ -657,7 +657,7 @@ def account_profile():
         return redirect("/login")
     user = current_user()
     ok, message = accounts.update_profile(user["id"], user["role"], request.form.get("name"),
-                                          request.form.get("gender"), request.form.get("phone"))
+                                          request.form.get("phone"))
     g.pop("user", None)
     return account_view(message, error=not ok)
 
@@ -713,11 +713,11 @@ def owner_view(notice=None, error=False):
     if not salon:
         abort(404)
     live, next_label = slots.salon_live(salon["id"])
-    gender = meta.owner_gender(current_user()["id"])
     days = [{"label": t["label"], "rows": slots.bookings_for(salon["id"], t["value"])}
             for t in slots.day_tabs()[:1]]
     return render_template("dashboard.html", salon=salon, labels=STATUS_LABELS, notice=notice, error=error,
-                           gender=gender, venue=growth.venue_word(gender), live=live, next_label=next_label,
+                           venue=growth.venue_word(meta.owner_gender(current_user()["id"])),
+                           live=live, next_label=next_label,
                            rev=meta.revenue(salon["id"]), days=days)
 
 
@@ -807,15 +807,6 @@ def owner_service_delete(service_id):
         return denied
     ok, message = extras.delete_service(current_user()["id"], service_id)
     return services_view(message, error=not ok)
-
-
-@app.route("/dashboard/gender", methods=["POST"])
-def owner_gender():
-    denied = require_role("owner")
-    if denied:
-        return denied
-    ok = meta.set_salon_gender(current_user()["id"], request.form.get("gender", ""))
-    return owner_view("Saved." if ok else "Please choose Men, Women or Unisex.", error=not ok)
 
 
 @app.route("/dashboard/location", methods=["POST"])

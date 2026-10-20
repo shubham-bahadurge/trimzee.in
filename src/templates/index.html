@@ -30,25 +30,12 @@
         </div>
         {% endif %}
 
-        <div class="searchrow {% if my_gender %}no-filter{% endif %}">
-            {% if not my_gender %}
-            <div class="menu-wrap">
-                <button class="round-btn" type="button" id="genderBtn" aria-label="Filter: men or women" aria-expanded="false" aria-controls="genderPanel">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-                </button>
-                <div class="pop left" id="genderPanel" hidden>
-                    <button class="pop-btn gender active" type="button" data-gender="">Everyone</button>
-                    <button class="pop-btn gender" type="button" data-gender="men">Male</button>
-                    <button class="pop-btn gender" type="button" data-gender="women">Female</button>
-                </div>
-            </div>
-            {% endif %}
-            <input id="search" type="search" placeholder="Search {{ 'parlours' if my_gender == 'female' else 'salons' }} or services" aria-label="Search">
+        <div class="searchrow">
             <button class="round-btn" type="button" id="useLocation" aria-label="Use my live location" title="Use my live location">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
             </button>
+            <input id="search" type="search" placeholder="Search {{ 'parlours' if my_gender == 'female' else 'salons' }} or services" aria-label="Search">
         </div>
-        {% if my_gender and not saved_view %}<span class="pill">{{ '👨 Salons for men' if my_gender == 'male' else '👩 Parlours for women' }}</span>{% endif %}
         <p class="muted status-line" id="locStatus" aria-live="polite">{{ 'Saved salons on this device' if saved_view else '📍 Allow location to see salons within 5 km of you.' }}</p>
 
         <h2 class="section-title">{{ 'Saved salons' if saved_view else 'Nearby ' ~ ('parlours' if my_gender == 'female' else 'salons') }}</h2>

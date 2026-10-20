@@ -73,19 +73,6 @@
 
         <h2 class="section-title">{{ venue|capitalize }} settings</h2>
         <div class="panel">
-            <form method="post" action="/dashboard/gender" class="row-form">
-                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-                <label class="field">This {{ venue }} is for
-                    <select name="gender">
-                        {% for key, label in [('unisex', 'Everyone (unisex)'), ('men', 'Men'), ('women', 'Women')] %}
-                        <option value="{{ key }}" {% if key == gender %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <button class="btn small" type="submit">Save</button>
-            </form>
-        </div>
-        <div class="panel">
             <form method="post" action="/dashboard/location" id="locForm">
                 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
                 <input type="hidden" name="lat" id="lat"><input type="hidden" name="lng" id="lng">

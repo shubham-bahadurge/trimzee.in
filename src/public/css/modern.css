@@ -24,7 +24,6 @@ h1 { font-size: 1.7rem; font-weight: 800; }
 .hero-tag h1 { font-size: 2.1rem; line-height: 1.15; font-weight: 800; letter-spacing: -.02em; }
 .hero-tag p { margin-top: 8px; font-size: 1.05rem; color: var(--muted); font-weight: 600; }
 .home-main { max-width: 1100px; padding-top: 14px; }
-.searchrow.no-filter { grid-template-columns: 1fr 44px; }
 .pill { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: .85rem; font-weight: 700; margin-top: 10px; }
 .notice-card { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: #fff; border: 1.5px solid var(--ink); border-radius: 16px; padding: 12px 14px; margin-bottom: 12px; }
 .notice-card form { display: flex; gap: 8px; }
