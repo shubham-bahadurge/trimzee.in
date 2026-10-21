@@ -34,7 +34,7 @@
         <div class="services">
             {% for s in services %}
             <label class="service">
-                <input type="checkbox" name="service" value="{{ s.id }}" data-name="{{ s.name }}" data-price="{{ s.price }}">
+                <input type="checkbox" name="service" value="{{ s.id }}" data-name="{{ s.name }}" data-price="{{ s.price }}" data-duration="{{ s.duration_min }}">
                 <span>{{ s.name }}</span>
                 <span class="muted">{{ s.duration_min }} min</span>
                 <strong>₹{{ s.price }}</strong>
@@ -63,7 +63,7 @@
         <div id="slots" class="slots"><p class="muted">Loading times…</p></div>
         <div class="legend">
             <span><i class="dot free"></i>Free</span>
-            <span><i class="dot booked"></i>Booked</span>
+            <span><i class="dot booked"></i>Unavailable</span>
             <span><i class="dot selected"></i>Selected</span>
         </div>
         <p id="closedMsg" class="empty" hidden>This salon isn't taking bookings right now.</p>

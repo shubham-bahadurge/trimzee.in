@@ -26,7 +26,7 @@
                     <span class="badge {{ b.status }}">{{ {'pending': 'Waiting for salon', 'confirmed': 'Confirmed', 'completed': 'Completed', 'cancelled': 'Cancelled', 'rejected': 'Declined'}.get(b.status, b.status) }}</span>
                 </div>
                 <div><div class="bk-title">{{ b.salon_name }}</div>
-                    <div class="bk-meta"><span>{{ b.service_name }}{% if b.barber_name %} · {{ b.barber_name }}{% endif %}</span><span>₹{{ b.price }}</span></div></div>
+                    <div class="bk-meta"><span>{{ b.service_name }} · {{ b.duration_min }} min{% if b.barber_name %} · {{ b.barber_name }}{% endif %}</span><span>₹{{ b.price }}</span></div></div>
                 {% if b.show_code %}<div class="code-row">Your code <strong>{{ b.code }}</strong><span class="muted">show it at the salon</span></div>{% endif %}
                 <div class="bk-actions">
                     <a class="btn ghost small" href="/booking/{{ b.id }}">Details &amp; directions</a>

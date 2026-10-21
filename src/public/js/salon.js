@@ -68,8 +68,10 @@ function updateButton() {
         confirmBtn.textContent = "Confirm booking for " + pretty(selected.slice(11));
     }
     const total = services.reduce(function (sum, service) { return sum + Number(service.dataset.price); }, 0);
+    const duration = services.reduce(function (sum, service) { return sum + Number(service.dataset.duration); }, 0);
     serviceSummary.textContent = services.length ?
-        services.map(function (service) { return service.dataset.name; }).join(", ") + " · Total: ₹" + total :
+        services.map(function (service) { return service.dataset.name; }).join(", ") +
+        " · Total: ₹" + total + " · " + duration + " min" :
         "Select at least one service.";
 }
 
@@ -145,9 +147,15 @@ async function loadSlots() {
     try {
         const params = new URLSearchParams({ day: day });
         if (barberSelect && barberSelect.value) { params.set("barber_id", barberSelect.value); }
+        serviceOptions.filter(function (service) { return service.checked; }).forEach(function (service) {
+            params.append("service_id", service.value);
+        });
         const res = await fetch("/api/salons/" + salonId + "/slots?" + params.toString(), { credentials: "same-origin" });
         const data = await res.json();
         if (res.ok) {
+            const duration = serviceOptions.filter(function (service) { return service.checked; })
+                .reduce(function (sum, service) { return sum + Number(service.dataset.duration); }, 0) || 30;
+            if (data.duration_min !== duration) { return; }
             message.hidden = true;
             render(data);
         } else {
@@ -191,7 +199,8 @@ function link(text, href, ghost) {
 }
 
 function openModal(data) {
-    document.getElementById("modalWhen").textContent = data.salon + " · " + data.when + " · " + data.service +
+    document.getElementById("modalWhen").textContent = data.salon + " · " + data.when + " · " +
+        data.duration_min + " min · " + data.service +
         (data.barber ? " · " + data.barber : "");
     document.getElementById("modalCode").textContent = data.code;
     const actions = document.getElementById("modalActions");
@@ -211,7 +220,10 @@ modal.addEventListener("click", function (e) { if (e.target === modal) { closeMo
 document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeModal(); } });
 
 serviceOptions.forEach(function (service) {
-    service.addEventListener("change", updateButton);
+    service.addEventListener("change", function () {
+        updateButton();
+        loadSlots();
+    });
 });
 
 confirmBtn.addEventListener("click", async function () {

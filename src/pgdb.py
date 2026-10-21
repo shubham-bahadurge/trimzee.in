@@ -193,6 +193,7 @@ PG_STATEMENTS = [
         salon_id INTEGER NOT NULL REFERENCES salons(id),
         service_id INTEGER NOT NULL REFERENCES services(id),
         slot_start TEXT NOT NULL,
+        duration_min INTEGER NOT NULL DEFAULT 30,
         contact_phone TEXT,
         status TEXT NOT NULL DEFAULT 'pending'
             CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled', 'rejected')),
@@ -226,6 +227,18 @@ def pg_init_db():
     try:
         for statement in PG_STATEMENTS:
             conn.execute(statement)
+        has_duration = conn.execute(
+            "SELECT 1 FROM information_schema.columns "
+            "WHERE table_schema = current_schema() AND table_name = 'bookings' AND column_name = 'duration_min'"
+        ).fetchone()
+        if not has_duration:
+            conn.execute("ALTER TABLE bookings ADD COLUMN duration_min INTEGER NOT NULL DEFAULT 30")
+            conn.execute(
+                "UPDATE bookings b SET duration_min = COALESCE("
+                "(SELECT SUM(s.duration_min) FROM booking_services bs JOIN services s ON s.id = bs.service_id "
+                "WHERE bs.booking_id = b.id), "
+                "(SELECT duration_min FROM services WHERE id = b.service_id), 30)"
+            )
         if conn.execute("SELECT COUNT(*) FROM salons").fetchone()[0] == 0:
             _db.seed_sample_data(conn)
         conn.commit()

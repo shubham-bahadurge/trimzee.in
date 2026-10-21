@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     salon_id    INTEGER NOT NULL REFERENCES salons(id),
     service_id  INTEGER NOT NULL REFERENCES services(id),
     slot_start  TEXT NOT NULL,
+    duration_min INTEGER NOT NULL DEFAULT 30,
     contact_phone TEXT,
     status      TEXT NOT NULL DEFAULT 'pending'
                 CHECK (status IN ('pending', 'confirmed', 'completed',
@@ -134,6 +135,14 @@ def init_db():
         cols = [r["name"] for r in conn.execute("PRAGMA table_info(bookings)")]
         if "contact_phone" not in cols:
             conn.execute("ALTER TABLE bookings ADD COLUMN contact_phone TEXT")
+        if "duration_min" not in cols:
+            conn.execute("ALTER TABLE bookings ADD COLUMN duration_min INTEGER NOT NULL DEFAULT 30")
+            conn.execute(
+                "UPDATE bookings SET duration_min = COALESCE("
+                "(SELECT SUM(s.duration_min) FROM booking_services bs JOIN services s ON s.id = bs.service_id "
+                "WHERE bs.booking_id = bookings.id), "
+                "(SELECT duration_min FROM services WHERE id = bookings.service_id), 30)"
+            )
         if conn.execute("SELECT COUNT(*) FROM salons").fetchone()[0] == 0:
             seed_sample_data(conn)
         conn.commit()
@@ -144,16 +153,19 @@ def init_db():
 def booking_service_summary(conn, booking_id, fallback_service_id):
     """Return the selected service names and total price, including legacy bookings."""
     rows = conn.execute(
-        "SELECT sv.name, sv.price FROM booking_services bs "
+        "SELECT sv.name, sv.price, sv.duration_min FROM booking_services bs "
         "JOIN services sv ON sv.id = bs.service_id WHERE bs.booking_id = ? ORDER BY bs.service_id",
         (booking_id,),
     ).fetchall()
     if not rows:
-        row = conn.execute("SELECT name, price FROM services WHERE id = ?", (fallback_service_id,)).fetchone()
+        row = conn.execute("SELECT name, price, duration_min FROM services WHERE id = ?",
+                           (fallback_service_id,)).fetchone()
         rows = [row] if row else []
+    booking = conn.execute("SELECT duration_min FROM bookings WHERE id = ?", (booking_id,)).fetchone()
     return {
         "service_name": ", ".join(row["name"] for row in rows),
         "price": sum(row["price"] for row in rows),
+        "duration_min": booking["duration_min"] if booking else sum(row["duration_min"] for row in rows),
     }
 
 

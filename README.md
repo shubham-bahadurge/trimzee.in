@@ -76,11 +76,11 @@ and upgraded automatically when the app starts.
 
 ## How appointment booking works
 
-1. The salon page asks `/api/salons/<salon_id>/slots` for current availability.
-2. The customer chooses one or more services and an available time. Choosing a time only selects it in the browser; it does not reserve the time.
+1. The salon page asks `/api/salons/<salon_id>/slots` for current availability using the selected services' combined duration.
+2. The customer chooses one or more services and an available start time. Their service durations are combined and scheduled consecutively; availability only shows starts with enough time before closing and no overlapping bookings. Choosing a time only selects it in the browser; it does not reserve the time.
 3. When the customer confirms, the page sends the request to `/api/book`.
 4. The server checks the salon, service, time, customer, and booking rules, then saves a pending booking.
-5. The database's unique active-booking index is the final protection against two requests taking the same barber and time. If another request wins first, the customer is asked to choose a different time. Customers can browse every available time without buying a plan; only salon owners have subscriptions.
+5. The server serializes bookings for each salon and day, then checks the full appointment interval against existing bookings before saving. If another request takes an overlapping time first, the customer is asked to choose a different time. Customers can browse every available time without buying a plan; only salon owners have subscriptions.
 6. The salon owner can accept or reject the pending request from the dashboard.
 
 The main browser code is in `src/public/js/salon.js`; the route is in
