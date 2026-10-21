@@ -267,12 +267,13 @@ def notify_new_booking(booking_id):
     """Tell the salon owner about a new booking."""
     conn = db.get_db()
     try:
-        r = conn.execute("SELECT s.owner_id, b.slot_start, u.name AS customer, sv.name AS service FROM bookings b "
+        r = conn.execute("SELECT s.owner_id, b.id, b.service_id, b.slot_start, u.name AS customer, sv.name AS service FROM bookings b "
                          "JOIN salons s ON s.id = b.salon_id JOIN users u ON u.id = b.customer_id "
                          "JOIN services sv ON sv.id = b.service_id WHERE b.id = ?", (booking_id,)).fetchone()
         if r:
+            service = db.booking_service_summary(conn, r["id"], r["service_id"])["service_name"]
             _notify(conn, r["owner_id"], "booking", booking_id,
-                    f"New booking: {r['customer']} · {r['service']} at {_pretty(r['slot_start'])}")
+                    f"New booking: {r['customer']} · {service} at {_pretty(r['slot_start'])}")
             conn.commit()
     finally:
         conn.close()

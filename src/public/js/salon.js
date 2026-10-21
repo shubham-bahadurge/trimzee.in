@@ -14,6 +14,8 @@ const rangeInfo = document.getElementById("rangeInfo");
 const tabs = Array.from(document.querySelectorAll(".day-tab"));
 const modal = document.getElementById("modal");
 const barberSelect = document.getElementById("barber");
+const serviceOptions = Array.from(document.querySelectorAll("input[name=service]"));
+const serviceSummary = document.getElementById("serviceSummary");
 
 let day = tabs.length ? tabs[0].dataset.day : "";
 let selected = null;
@@ -48,12 +50,16 @@ function post(url, body) {
 }
 
 function updateButton() {
+    const services = serviceOptions.filter(function (service) { return service.checked; });
     if (auth !== "customer") {
         confirmBtn.disabled = true;
         confirmBtn.textContent = "Customer account needed";
     } else if (!nearOk) {
         confirmBtn.disabled = true;
         confirmBtn.textContent = "Turn on location to book";
+    } else if (!services.length) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Choose at least one service";
     } else if (!selected) {
         confirmBtn.disabled = true;
         confirmBtn.textContent = "Select a time to continue";
@@ -61,6 +67,10 @@ function updateButton() {
         confirmBtn.disabled = false;
         confirmBtn.textContent = "Confirm booking for " + pretty(selected.slice(11));
     }
+    const total = services.reduce(function (sum, service) { return sum + Number(service.dataset.price); }, 0);
+    serviceSummary.textContent = services.length ?
+        services.map(function (service) { return service.dataset.name; }).join(", ") + " · Total: ₹" + total :
+        "Select at least one service.";
 }
 
 function updateRange() {
@@ -200,12 +210,16 @@ document.getElementById("modalClose").addEventListener("click", closeModal);
 modal.addEventListener("click", function (e) { if (e.target === modal) { closeModal(); } });
 document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeModal(); } });
 
+serviceOptions.forEach(function (service) {
+    service.addEventListener("change", updateButton);
+});
+
 confirmBtn.addEventListener("click", async function () {
-    const service = document.querySelector("input[name=service]:checked");
+    const services = serviceOptions.filter(function (service) { return service.checked; });
     confirmBtn.disabled = true;
     try {
         const res = await post("/api/book", {
-            salon_id: salonId, service_id: service ? service.value : null, slot: selected,
+            salon_id: salonId, service_ids: services.map(function (service) { return service.value; }), slot: selected,
             barber_id: barberSelect ? barberSelect.value : null,
             phone: document.getElementById("phone").value,
             lat: here ? here.latitude : null, lng: here ? here.longitude : null

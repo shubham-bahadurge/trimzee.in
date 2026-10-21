@@ -70,13 +70,18 @@ def venue_word(gender):
 def booking_info(booking_id):
     conn = db.get_db()
     try:
-        r = conn.execute("SELECT b.id, b.slot_start, b.contact_phone, b.customer_id, s.name AS salon, s.owner_id, "
+        r = conn.execute("SELECT b.id, b.service_id, b.slot_start, b.contact_phone, b.customer_id, s.name AS salon, s.owner_id, "
                          "sv.name AS service, sv.price, br.name AS barber, cu.name AS customer, ow.phone AS owner_phone "
                          "FROM bookings b JOIN salons s ON s.id = b.salon_id JOIN services sv ON sv.id = b.service_id "
                          "LEFT JOIN barbers br ON br.id = b.barber_id "
                          "JOIN users cu ON cu.id = b.customer_id JOIN users ow ON ow.id = s.owner_id "
                          "WHERE b.id = ?", (booking_id,)).fetchone()
-        return dict(r) if r else None
+        if not r:
+            return None
+        info = dict(r)
+        info.update(db.booking_service_summary(conn, info["id"], info["service_id"]))
+        info["service"] = info.pop("service_name")
+        return info
     finally:
         conn.close()
 

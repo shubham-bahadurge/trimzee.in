@@ -252,10 +252,13 @@ def barbers_context(owner_id):
                                                  "ORDER BY active DESC, id", (sid,))]
         day = db.now_ist().strftime("%Y-%m-%d")
         rows = conn.execute(
-            "SELECT b.slot_start, b.status, b.barber_id, u.name AS customer, sv.name AS service FROM bookings b "
+            "SELECT b.id, b.service_id, b.slot_start, b.status, b.barber_id, u.name AS customer, sv.name AS service FROM bookings b "
             "JOIN users u ON u.id = b.customer_id JOIN services sv ON sv.id = b.service_id "
             "WHERE b.salon_id = ? AND b.slot_start LIKE ? AND b.status IN ('pending', 'confirmed', 'completed') "
             "ORDER BY b.slot_start", (sid, day + "%")).fetchall()
+        rows = [dict(row) for row in rows]
+        for row in rows:
+            row["service"] = db.booking_service_summary(conn, row["id"], row["service_id"])["service_name"]
     finally:
         conn.close()
     by_barber = {}

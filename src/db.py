@@ -76,6 +76,12 @@ CREATE TABLE IF NOT EXISTS bookings (
     created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS booking_services (
+    booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+    service_id INTEGER NOT NULL REFERENCES services(id),
+    PRIMARY KEY (booking_id, service_id)
+);
+
 -- The database itself refuses two active bookings
 -- for the same salon and the same time slot.
 CREATE UNIQUE INDEX IF NOT EXISTS one_active_booking_per_slot
@@ -133,6 +139,22 @@ def init_db():
         conn.commit()
     finally:
         conn.close()
+
+
+def booking_service_summary(conn, booking_id, fallback_service_id):
+    """Return the selected service names and total price, including legacy bookings."""
+    rows = conn.execute(
+        "SELECT sv.name, sv.price FROM booking_services bs "
+        "JOIN services sv ON sv.id = bs.service_id WHERE bs.booking_id = ? ORDER BY bs.service_id",
+        (booking_id,),
+    ).fetchall()
+    if not rows:
+        row = conn.execute("SELECT name, price FROM services WHERE id = ?", (fallback_service_id,)).fetchone()
+        rows = [row] if row else []
+    return {
+        "service_name": ", ".join(row["name"] for row in rows),
+        "price": sum(row["price"] for row in rows),
+    }
 
 
 def seed_sample_data(conn):
@@ -421,13 +443,14 @@ def get_user_bookings(user_id):
     try:
         now = now_ist().strftime("%Y-%m-%d %H:%M")
         rows = conn.execute(
-            "SELECT b.id, b.slot_start, b.status, s.name AS salon_name, "
+            "SELECT b.id, b.service_id, b.slot_start, b.status, s.name AS salon_name, "
             "sv.name AS service_name, sv.price FROM bookings b "
             "JOIN salons s ON s.id = b.salon_id JOIN services sv ON sv.id = b.service_id "
             "WHERE b.customer_id = ? ORDER BY b.slot_start DESC", (user_id,)).fetchall()
         out = []
         for r in rows:
             d = dict(r)
+            d.update(booking_service_summary(conn, d["id"], d["service_id"]))
             d["can_cancel"] = d["status"] in ACTIVE and d["slot_start"] > now
             out.append(d)
         return out
@@ -469,12 +492,17 @@ def get_salon_bookings_today(salon_id):
     try:
         day = now_ist().strftime("%Y-%m-%d")
         rows = conn.execute(
-            "SELECT b.id, b.slot_start, b.status, b.contact_phone, u.name AS customer_name, "
+            "SELECT b.id, b.service_id, b.slot_start, b.status, b.contact_phone, u.name AS customer_name, "
             "sv.name AS service_name, sv.price FROM bookings b "
             "JOIN users u ON u.id = b.customer_id JOIN services sv ON sv.id = b.service_id "
             "WHERE b.salon_id = ? AND b.slot_start LIKE ? ORDER BY b.slot_start",
             (salon_id, day + "%")).fetchall()
-        return [dict(r) for r in rows]
+        out = []
+        for row in rows:
+            booking = dict(row)
+            booking.update(booking_service_summary(conn, booking["id"], booking["service_id"]))
+            out.append(booking)
+        return out
     finally:
         conn.close()
 

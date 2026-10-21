@@ -230,8 +230,16 @@ def get_slots(salon_id, day, viewer_id=None, barber_id=None):
 
 
 # ----------------------------- booking -------------------------------------
-def book(user_id, salon_id, service_id, slot, phone, barber_id=None):
+def book(user_id, salon_id, service_ids, slot, phone, barber_id=None):
     """Returns (http_status, message, booking_id, code). New bookings wait for the owner's Accept."""
+    if isinstance(service_ids, (str, int)):
+        service_ids = [service_ids]
+    try:
+        service_ids = list(dict.fromkeys(int(service_id) for service_id in service_ids))
+    except (TypeError, ValueError):
+        return 400, "Please choose at least one service.", None, None
+    if not service_ids:
+        return 400, "Please choose at least one service.", None, None
     phone = re.sub(r"\D", "", phone or "")
     if not 10 <= len(phone) <= 12:
         return 400, "Please enter a valid phone number (10-12 digits).", None, None
@@ -252,8 +260,11 @@ def book(user_id, salon_id, service_id, slot, phone, barber_id=None):
             return 409, "That time has already passed. Pick a later slot.", None, None
         if salon["status"] == "closed" or not billing.salon_can_book(conn, salon_id):
             return 409, "This salon is not taking bookings right now.", None, None
-        if not conn.execute("SELECT 1 FROM services WHERE id = ? AND salon_id = ?", (service_id, salon_id)).fetchone():
-            return 400, "Please choose a service.", None, None
+        available_services = {row["id"] for row in conn.execute(
+            "SELECT id FROM services WHERE salon_id = ?", (salon_id,)
+        )}
+        if not set(service_ids).issubset(available_services):
+            return 400, "Please choose valid services for this salon.", None, None
         active_barbers = billing.active_barbers(conn, salon_id)
         if barber_id is not None and barber_id not in active_barbers:
             return 400, "The selected barber is no longer available. Please choose another.", None, None
@@ -270,7 +281,10 @@ def book(user_id, salon_id, service_id, slot, phone, barber_id=None):
                 booking_id = conn.execute(
                     "INSERT INTO bookings (customer_id, salon_id, service_id, slot_start, status, contact_phone, code, "
                     "barber_id) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)",
-                    (user_id, salon_id, service_id, slot, phone, code, assigned_barber_id)).lastrowid
+                    (user_id, salon_id, service_ids[0], slot, phone, code, assigned_barber_id)).lastrowid
+                for service_id in service_ids:
+                    conn.execute("INSERT INTO booking_services (booking_id, service_id) VALUES (?, ?)",
+                                 (booking_id, service_id))
                 conn.commit()
                 return 201, "Booking requested.", booking_id, code
             except db.sqlite3.IntegrityError:
@@ -331,13 +345,18 @@ def complete_with_code(owner_id, booking_id, code):
 def bookings_for(salon_id, day):
     conn = db.get_db()
     try:
-        rows = conn.execute("SELECT b.id, b.slot_start, b.status, b.contact_phone, u.name AS customer_name, "
+        rows = conn.execute("SELECT b.id, b.service_id, b.slot_start, b.status, b.contact_phone, u.name AS customer_name, "
                             "sv.name AS service_name, sv.price, br.name AS barber_name "
                             "FROM bookings b JOIN users u ON u.id = b.customer_id "
                             "JOIN services sv ON sv.id = b.service_id LEFT JOIN barbers br ON br.id = b.barber_id "
                             "WHERE b.salon_id = ? AND b.slot_start LIKE ? "
                             "ORDER BY b.slot_start", (salon_id, day + "%")).fetchall()
-        return [dict(r) for r in rows]
+        out = []
+        for row in rows:
+            booking = dict(row)
+            booking.update(db.booking_service_summary(conn, booking["id"], booking["service_id"]))
+            out.append(booking)
+        return out
     finally:
         conn.close()
 
@@ -345,7 +364,7 @@ def bookings_for(salon_id, day):
 def booking_detail(user_id, booking_id):
     conn = db.get_db()
     try:
-        r = conn.execute("SELECT b.id, b.slot_start, b.status, b.code, b.contact_phone, s.id AS salon_id, s.name AS salon, "
+        r = conn.execute("SELECT b.id, b.service_id, b.slot_start, b.status, b.code, b.contact_phone, s.id AS salon_id, s.name AS salon, "
                          "s.lat, s.lng, sv.name AS service, sv.price, br.name AS barber, ow.phone AS owner_phone FROM bookings b "
                          "JOIN salons s ON s.id = b.salon_id JOIN services sv ON sv.id = b.service_id "
                          "LEFT JOIN barbers br ON br.id = b.barber_id "
@@ -354,6 +373,8 @@ def booking_detail(user_id, booking_id):
         if not r:
             return None
         d = dict(r)
+        d.update(db.booking_service_summary(conn, d["id"], d["service_id"]))
+        d["service"] = d.pop("service_name")
         d["when"] = when_label(d["slot_start"])
         d["owner_wa"] = growth.wa_number(d.pop("owner_phone"))
         d["can_cancel"] = d["status"] in ("pending", "confirmed") and d["slot_start"] > _now().strftime("%Y-%m-%d %H:%M")
@@ -396,7 +417,7 @@ def user_bookings(user_id):
     try:
         now = _now().strftime("%Y-%m-%d %H:%M")
         rows = conn.execute(
-            "SELECT b.id, b.slot_start, b.status, b.code, s.name AS salon_name, sv.name AS service_name, sv.price, "
+            "SELECT b.id, b.service_id, b.slot_start, b.status, b.code, s.name AS salon_name, sv.name AS service_name, sv.price, "
             "br.name AS barber_name, "
             "r.rating AS my_rating FROM bookings b JOIN salons s ON s.id = b.salon_id "
             "JOIN services sv ON sv.id = b.service_id LEFT JOIN barbers br ON br.id = b.barber_id "
@@ -405,6 +426,7 @@ def user_bookings(user_id):
         out = []
         for r in rows:
             d = dict(r)
+            d.update(db.booking_service_summary(conn, d["id"], d["service_id"]))
             d["when"] = when_label(d["slot_start"])
             d["can_cancel"] = d["status"] in ("pending", "confirmed") and d["slot_start"] > now
             d["can_review"] = d["status"] == "completed" and d["my_rating"] is None

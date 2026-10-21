@@ -995,9 +995,17 @@ def api_book():
     body = request.get_json(silent=True) or {}
     try:
         salon_id = int(body.get("salon_id"))
-        service_id = int(body.get("service_id"))
     except (TypeError, ValueError):
-        return jsonify({"error": "Please choose a service and a time."}), 400
+        return jsonify({"error": "Please choose a salon and a time."}), 400
+    service_ids = body.get("service_ids")
+    if service_ids is None and body.get("service_id") is not None:
+        service_ids = [body.get("service_id")]
+    if not isinstance(service_ids, list) or not service_ids:
+        return jsonify({"error": "Please choose at least one service."}), 400
+    try:
+        service_ids = [int(service_id) for service_id in service_ids]
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid service selection."}), 400
     try:
         barber_id = int(body["barber_id"]) if body.get("barber_id") not in (None, "") else None
     except (TypeError, ValueError):
@@ -1008,7 +1016,7 @@ def api_book():
     near, why = meta.check_range(salon_id, body.get("lat"), body.get("lng"))
     if not near:
         return jsonify({"error": why}), 403
-    code, message, booking_id, secret = slots.book(user["id"], salon_id, service_id, str(body.get("slot", "")),
+    code, message, booking_id, secret = slots.book(user["id"], salon_id, service_ids, str(body.get("slot", "")),
                                                    body.get("phone"), barber_id)
     if code != 201:
         return jsonify({"error": message}), code

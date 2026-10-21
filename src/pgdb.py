@@ -197,6 +197,10 @@ PG_STATEMENTS = [
         status TEXT NOT NULL DEFAULT 'pending'
             CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled', 'rejected')),
         created_at TIMESTAMPTZ NOT NULL DEFAULT now())""",
+    """CREATE TABLE IF NOT EXISTS booking_services (
+        booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+        service_id INTEGER NOT NULL REFERENCES services(id),
+        PRIMARY KEY (booking_id, service_id))""",
     """CREATE UNIQUE INDEX IF NOT EXISTS one_active_booking_per_slot
         ON bookings (salon_id, slot_start) WHERE status IN ('pending', 'confirmed')""",
     """CREATE TABLE IF NOT EXISTS reviews (

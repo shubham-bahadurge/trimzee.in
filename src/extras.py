@@ -226,7 +226,7 @@ def get_user_bookings(user_id):
     try:
         now = now_ist().strftime("%Y-%m-%d %H:%M")
         rows = conn.execute(
-            "SELECT b.id, b.slot_start, b.status, s.name AS salon_name, sv.name AS service_name, "
+            "SELECT b.id, b.service_id, b.slot_start, b.status, s.name AS salon_name, sv.name AS service_name, "
             "sv.price, r.rating AS my_rating FROM bookings b "
             "JOIN salons s ON s.id = b.salon_id JOIN services sv ON sv.id = b.service_id "
             "LEFT JOIN reviews r ON r.booking_id = b.id "
@@ -234,6 +234,7 @@ def get_user_bookings(user_id):
         out = []
         for r in rows:
             d = dict(r)
+            d.update(db.booking_service_summary(conn, d["id"], d["service_id"]))
             d["can_cancel"] = d["status"] in ACTIVE and d["slot_start"] > now
             d["can_review"] = d["status"] == "completed" and d["my_rating"] is None
             out.append(d)

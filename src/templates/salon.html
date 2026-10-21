@@ -30,17 +30,18 @@
 
         <p id="rangeInfo" class="range-info">📍 Checking your location…</p>
 
-        <h2>1. Choose a service</h2>
+        <h2>1. Choose one or more services</h2>
         <div class="services">
             {% for s in services %}
             <label class="service">
-                <input type="radio" name="service" value="{{ s.id }}" {% if loop.first %}checked{% endif %}>
+                <input type="checkbox" name="service" value="{{ s.id }}" data-name="{{ s.name }}" data-price="{{ s.price }}">
                 <span>{{ s.name }}</span>
                 <span class="muted">{{ s.duration_min }} min</span>
                 <strong>₹{{ s.price }}</strong>
             </label>
             {% endfor %}
         </div>
+        <p id="serviceSummary" class="muted" aria-live="polite">Select at least one service.</p>
 
         {% if barbers|length > 1 %}
         <h2>2. Choose a barber</h2>
