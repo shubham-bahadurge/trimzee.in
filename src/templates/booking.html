@@ -28,7 +28,7 @@
         <div class="panel">
             <h2>{{ b.salon }}</h2>
             <p><strong>{{ b.when }}</strong></p>
-            <p class="muted">{{ b.service }} · ₹{{ b.price }} · {{ b.duration_min }} min{% if b.barber %} · {{ b.barber }}{% endif %}</p>
+            <p class="muted">{{ b.service }} · ₹{{ b.price }}{% if b.barber %} · {{ b.barber }}{% endif %}</p>
             {% if b.status == 'pending' %}<p class="hint">The salon will accept your request shortly. We'll alert you.</p>{% endif %}
         </div>
 

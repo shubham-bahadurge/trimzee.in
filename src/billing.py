@@ -160,30 +160,14 @@ def capacities(conn):
         "SELECT salon_id, COUNT(*) AS n FROM barbers WHERE active = 1 GROUP BY salon_id")}
 
 
-def active_bookings(conn, salon_id, day):
-    """Active bookings on a day, including the duration of all services in each booking."""
-    return [dict(row) for row in conn.execute(
-        "SELECT b.id, b.barber_id, b.slot_start, b.duration_min FROM bookings b "
-        "WHERE b.salon_id = ? AND b.slot_start LIKE ? AND " + ACTIVE_SQL,
-        (salon_id, day + "%"),
-    )]
-
-
-def free_barbers(conn, salon_id, slot, duration_min=30, bookings=None):
-    """Barbers free for the whole requested interval, least busy that day first."""
+def free_barbers(conn, salon_id, slot):
+    """Barbers with no booking at this slot, the least busy that day first."""
     ids = active_barbers(conn, salon_id)
-    bookings = bookings if bookings is not None else active_bookings(conn, salon_id, slot[:10])
-    start = datetime.strptime(slot, FMT)
-    end = start + timedelta(minutes=duration_min)
-    load = {}
-    used = set()
-    for booking in bookings:
-        barber_id = booking["barber_id"]
-        load[barber_id] = load.get(barber_id, 0) + 1
-        booked_start = datetime.strptime(booking["slot_start"], FMT)
-        booked_end = booked_start + timedelta(minutes=booking["duration_min"])
-        if start < booked_end and booked_start < end:
-            used.add(barber_id)
+    used = {r["barber_id"] for r in conn.execute(
+        f"SELECT barber_id FROM bookings WHERE salon_id = ? AND slot_start = ? AND {ACTIVE_SQL}", (salon_id, slot))}
+    load = {r["barber_id"]: r["n"] for r in conn.execute(
+        f"SELECT barber_id, COUNT(*) AS n FROM bookings WHERE salon_id = ? AND slot_start LIKE ? AND {ACTIVE_SQL} "
+        "GROUP BY barber_id", (salon_id, slot[:10] + "%"))}
     return sorted((i for i in ids if i not in used), key=lambda i: (load.get(i, 0), i))
 
 

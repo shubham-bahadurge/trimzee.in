@@ -3,7 +3,7 @@ import hmac
 import re
 import secrets
 import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import accounts
 import db
@@ -11,11 +11,9 @@ import growth
 import mailer
 import meta
 import billing
-import pgdb
 
 DAYS = 2
 MAX_CODE_TRIES = 5
-FMT = "%Y-%m-%d %H:%M"
 
 
 # ----------------------------- time helpers --------------------------------
@@ -65,34 +63,17 @@ def init_slots():
 
 # ----------------------------- live status ---------------------------------
 def _taken(conn):
-    """{salon_id: set(slot)} of 30-minute starts with every barber occupied."""
+    """{salon_id: set(slot)} of slots with no free barber left (pending/confirmed bookings from today on)."""
     start = _now().strftime("%Y-%m-%d") + " 00:00"
-    by_salon_day = {}
-    for row in conn.execute(
-            "SELECT id, salon_id, barber_id, slot_start, duration_min FROM bookings "
-            "WHERE status IN ('pending', 'confirmed') AND slot_start >= ?", (start,)):
-        by_salon_day.setdefault((row["salon_id"], row["slot_start"][:10]), []).append(dict(row))
-    salons = {row["id"]: dict(row) for row in conn.execute(
-        "SELECT id, opening_time, closing_time, early_open_date, early_open_time FROM salons"
-    )}
+    counts = {}
+    for r in conn.execute("SELECT salon_id, slot_start, COUNT(*) AS n FROM bookings WHERE status IN ('pending', 'confirmed') "
+                          "AND slot_start >= ? GROUP BY salon_id, slot_start", (start,)):
+        counts[(r["salon_id"], r["slot_start"])] = r["n"]
     capacity = billing.capacities(conn)
     out = {}
-    for (salon_id, day), bookings in by_salon_day.items():
-        salon = salons.get(salon_id)
-        if not salon:
-            continue
-        opening_time, closing_time = db.salon_hours(salon, day)
-        for slot in slots_of(day, opening_time, closing_time):
-            start_at = datetime.strptime(slot, FMT)
-            end_at = start_at + timedelta(minutes=30)
-            occupied = set()
-            for booking in bookings:
-                booked_start = datetime.strptime(booking["slot_start"], FMT)
-                booked_end = booked_start + timedelta(minutes=booking["duration_min"])
-                if start_at < booked_end and booked_start < end_at:
-                    occupied.add(booking["barber_id"] if booking["barber_id"] is not None else booking["id"])
-            if len(occupied) >= capacity.get(salon_id, 1):
-                out.setdefault(salon_id, set()).add(slot)
+    for (salon_id, slot), n in counts.items():
+        if n >= capacity.get(salon_id, 1):
+            out.setdefault(salon_id, set()).add(slot)
     return out
 
 
@@ -194,33 +175,36 @@ def get_barbers(salon_id):
 
 
 # ----------------------------- slots ----------------------------------------
-def _states(conn, salon_id, day, is_open, opening_time, closing_time, barber_id=None, duration_min=30):
+def _states(conn, salon_id, day, is_open, opening_time, closing_time, barber_id=None):
     """One day of slots. A slot is booked once every working barber is taken."""
     barbers = billing.barber_count(conn, salon_id)
-    bookings = billing.active_bookings(conn, salon_id, day)
-    capacity = 1 if barber_id is not None else barbers
-    close_at = datetime.strptime(day + " " + closing_time, FMT)
+    if barber_id is None:
+        booked = {r["slot_start"]: r["n"] for r in conn.execute(
+            "SELECT slot_start, COUNT(*) AS n FROM bookings WHERE salon_id = ? "
+            "AND status IN ('pending', 'confirmed') AND slot_start LIKE ? GROUP BY slot_start",
+            (salon_id, day + "%"))}
+    else:
+        booked = {r["slot_start"]: r["n"] for r in conn.execute(
+            "SELECT slot_start, COUNT(*) AS n FROM bookings WHERE salon_id = ? AND barber_id = ? "
+            "AND status IN ('pending', 'confirmed') AND slot_start LIKE ? GROUP BY slot_start",
+            (salon_id, barber_id, day + "%"))}
     hm = _now().strftime("%Y-%m-%d %H:%M")
     out = []
     for t in slots_of(day, opening_time, closing_time):
-        start = datetime.strptime(t, FMT)
-        end = start + timedelta(minutes=duration_min)
-        if end > close_at:
-            state = "unavailable"
-        elif not is_open:
+        used = booked.get(t, 0)
+        if not is_open:
             state = "closed"
+        elif used >= (1 if barber_id is not None else barbers):
+            state = "booked"
         elif t <= hm:
             state = "past"
         else:
-            free = billing.free_barbers(conn, salon_id, t, duration_min, bookings)
-            if barber_id is not None:
-                free = [available for available in free if available == barber_id]
-            state = "free" if len(free) >= capacity else "booked"
+            state = "free"
         out.append({"slot": t, "time": t[11:], "state": state})
     return out
 
 
-def get_slots(salon_id, day, viewer_id=None, barber_id=None, service_ids=None):
+def get_slots(salon_id, day, viewer_id=None, barber_id=None):
     conn = db.get_db()
     try:
         salon = conn.execute("SELECT status, opening_time, closing_time, early_open_date, early_open_time FROM salons s "
@@ -233,29 +217,14 @@ def get_slots(salon_id, day, viewer_id=None, barber_id=None, service_ids=None):
         today = day_strings()[0]
         if day != today:
             day = today
-        duration_min = 30
-        if service_ids:
-            try:
-                service_ids = list(dict.fromkeys(int(service_id) for service_id in service_ids))
-            except (TypeError, ValueError):
-                return {"error": "Invalid service selection."}
-            placeholders = ",".join("?" for _ in service_ids)
-            services = conn.execute(
-                f"SELECT id, duration_min FROM services WHERE salon_id = ? AND id IN ({placeholders})",
-                (salon_id, *service_ids),
-            ).fetchall()
-            if len(services) != len(service_ids):
-                return {"error": "Please choose valid services for this salon."}
-            duration_min = sum(service["duration_min"] for service in services)
         now = _now()
         now_hm = now.strftime("%H:%M")
         opening_time, closing_time = db.salon_hours(salon, day)
         is_open = (salon["status"] != "closed" and billing.salon_can_book(conn, salon_id)
                    and opening_time <= now_hm < closing_time)
         out = _states(conn, salon_id, day, is_open,
-                      opening_time, closing_time, barber_id, duration_min)
-        return {"open": is_open, "day": day, "duration_min": duration_min,
-                "slots": out, "limited": False, "locked": False}
+                      opening_time, closing_time, barber_id)
+        return {"open": is_open, "day": day, "slots": out, "limited": False, "locked": False}
     finally:
         conn.close()
 
@@ -291,29 +260,15 @@ def book(user_id, salon_id, service_ids, slot, phone, barber_id=None):
             return 409, "That time has already passed. Pick a later slot.", None, None
         if salon["status"] == "closed" or not billing.salon_can_book(conn, salon_id):
             return 409, "This salon is not taking bookings right now.", None, None
-        placeholders = ",".join("?" for _ in service_ids)
-        services = conn.execute(
-            f"SELECT id, duration_min FROM services WHERE salon_id = ? AND id IN ({placeholders})",
-            (salon_id, *service_ids),
-        ).fetchall()
-        if len(services) != len(service_ids):
+        available_services = {row["id"] for row in conn.execute(
+            "SELECT id FROM services WHERE salon_id = ?", (salon_id,)
+        )}
+        if not set(service_ids).issubset(available_services):
             return 400, "Please choose valid services for this salon.", None, None
-        duration_min = sum(service["duration_min"] for service in services)
-        slot_end = datetime.strptime(slot, FMT) + timedelta(minutes=duration_min)
-        close_at = datetime.strptime(slot[:10] + " " + closing_time, FMT)
-        if slot_end > close_at:
-            return 409, "The selected services won't fit before the salon closes. Please choose an earlier time.", None, None
-        billing.active_barbers(conn, salon_id)
-        if pgdb.ENABLED:
-            conn.execute("SELECT pg_advisory_xact_lock(?, ?)",
-                         (salon_id, datetime.strptime(slot[:10], "%Y-%m-%d").date().toordinal()))
-        else:
-            conn.execute("BEGIN IMMEDIATE")
         active_barbers = billing.active_barbers(conn, salon_id)
         if barber_id is not None and barber_id not in active_barbers:
             return 400, "The selected barber is no longer available. Please choose another.", None, None
-        active_bookings = billing.active_bookings(conn, salon_id, slot[:10])
-        free_barbers = billing.free_barbers(conn, salon_id, slot, duration_min, active_bookings)
+        free_barbers = billing.free_barbers(conn, salon_id, slot)
         if barber_id is not None:
             if barber_id not in free_barbers:
                 return 409, "This barber is already booked for that time. Please choose another barber or time.", None, None
@@ -324,9 +279,9 @@ def book(user_id, salon_id, service_ids, slot, phone, barber_id=None):
         for assigned_barber_id in free_barbers:
             try:
                 booking_id = conn.execute(
-                    "INSERT INTO bookings (customer_id, salon_id, service_id, slot_start, duration_min, status, "
-                    "contact_phone, code, barber_id) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)",
-                    (user_id, salon_id, service_ids[0], slot, duration_min, phone, code, assigned_barber_id)).lastrowid
+                    "INSERT INTO bookings (customer_id, salon_id, service_id, slot_start, status, contact_phone, code, "
+                    "barber_id) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)",
+                    (user_id, salon_id, service_ids[0], slot, phone, code, assigned_barber_id)).lastrowid
                 for service_id in service_ids:
                     conn.execute("INSERT INTO booking_services (booking_id, service_id) VALUES (?, ?)",
                                  (booking_id, service_id))

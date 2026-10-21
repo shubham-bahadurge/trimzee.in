@@ -30,7 +30,6 @@
 .slot.selected { background: #7c3aed; color: #fff; border-color: #7c3aed; }
 .slot:disabled { cursor: not-allowed; background: #f3f4f6; color: #9ca3af; }
 .slot.booked:disabled { background: #fee2e2; color: #991b1b; text-decoration: line-through; }
-.slot.unavailable:disabled { background: #f3f4f6; color: #6b7280; }
 .legend { display: flex; gap: 16px; margin-top: 10px; font-size: .85rem; color: #6b7280; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; border: 1px solid #d1d5db; background: #fff; }
 .dot.booked { background: #fee2e2; border-color: #fca5a5; }

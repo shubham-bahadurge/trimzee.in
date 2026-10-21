@@ -967,9 +967,7 @@ def api_slots(salon_id):
         barber_id = int(raw_barber_id) if raw_barber_id else None
     except ValueError:
         return jsonify({"error": "Invalid barber selection."}), 400
-    service_ids = request.args.getlist("service_id")
-    data = (slots.get_slots(salon_id, request.args.get("day", ""), viewer, barber_id, service_ids)
-            if extras.salon_is_live(salon_id) else None)
+    data = slots.get_slots(salon_id, request.args.get("day", ""), viewer, barber_id) if extras.salon_is_live(salon_id) else None
     if data is None:
         return jsonify({"error": "Salon not found."}), 404
     if "error" in data:
@@ -1030,7 +1028,7 @@ def api_book():
     detail = slots.booking_detail(user["id"], booking_id) or {}
     return jsonify({"message": message, "booking_id": booking_id, "code": secret, "salon": info["salon"],
                     "when": detail.get("when"), "service": info["service"], "barber": detail.get("barber"),
-                    "price": info["price"], "duration_min": info["duration_min"],
+                    "price": info["price"],
                     "directions": slots.maps_link(detail.get("lat"), detail.get("lng")),
                     "owner_wa": detail.get("owner_wa"), "detail": f"/booking/{booking_id}"}), 201
 
