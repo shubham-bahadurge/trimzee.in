@@ -5,10 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ salon.name }} - Trimzee</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/site.css">
     <link rel="stylesheet" href="/css/salon.css">
-    <link rel="stylesheet" href="/css/auth.css">
-    <link rel="stylesheet" href="/css/extra.css">
 </head>
 <body data-salon-id="{{ salon.id }}" data-lat="{{ salon.lat if salon.lat is not none else '' }}" data-lng="{{ salon.lng if salon.lng is not none else '' }}" data-owner-phone="{{ owner_phone or '' }}" data-salon="{{ salon.name }}" data-auth="{{ auth }}">
     {% include "_nav.html" %}

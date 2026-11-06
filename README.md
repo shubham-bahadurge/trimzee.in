@@ -37,7 +37,8 @@ and upgraded automatically when the app starts.
 | `src/` Python modules | Feature logic, separated by responsibility; see the module guide below. |
 | `src/templates/` | Jinja templates: HTML pages with placeholders filled by Flask. |
 | `src/public/js/` | Browser JavaScript for page interactions and API requests. |
-| `src/public/css/` | Stylesheets for layout, colors, and individual pages. |
+| `src/public/css/site.css` | Consolidated shared page styles. |
+| `src/public/css/salon.css` | Salon-details page styles. |
 | `src/db.py` | SQLite schema, database connections, and the local database setup. |
 | `src/pgdb.py` | Optional PostgreSQL connection adapter. |
 | `requirements.txt` | Python packages needed to run the application. |
@@ -67,10 +68,12 @@ and upgraded automatically when the app starts.
 ### Browser and page files
 
 - `src/public/js/app.js` powers salon search, filtering, and location-aware results on the homepage.
+- The homepage map uses Leaflet and OpenStreetMap tiles to show salons inside the customer's 5 km location radius with live availability colors.
 - `src/public/js/salon.js` loads salon availability and submits appointment requests.
 - `src/public/js/notify.js` displays booking and appointment notifications.
 - `src/public/js/chat.js` controls the assistant widget.
 - `src/public/js/shop.js` controls the shop waiting-list interaction.
+- Shared page styles are consolidated into `site.css` in the former cascade order: `style.css`, `auth.css`, `extra.css`, `theme.css`, `modern.css`, `modern2.css`, and `modern3.css`. Salon details load `salon.css` after the shared bundle.
 - The corresponding files under root `public/` are static-asset copies used by deployment setups.
 - `src/templates/` contains pages for account access, salons, bookings, owner dashboards, admin tools, plans, checkout, and legal information. Each template begins with a short comment describing its purpose.
 

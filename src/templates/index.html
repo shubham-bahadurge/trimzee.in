@@ -6,9 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trimzee - India's #1 Salon Booking App</title>
     <link rel="icon" href="/img/logo-mark.png">
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/auth.css">
-    <link rel="stylesheet" href="/css/extra.css">
+    <link rel="stylesheet" href="/css/site.css">
+    {% if not saved_view %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+    {% endif %}
 </head>
 <body class="home" data-saved-view="{{ 'true' if saved_view else 'false' }}">
     {% include "_nav.html" %}
@@ -39,15 +41,20 @@
         <p class="muted status-line" id="locStatus" aria-live="polite">{{ 'Saved salons on this device' if saved_view else '📍 Allow location to see salons within 5 km of you.' }}</p>
 
         <h2 class="section-title">{{ 'Saved salons' if saved_view else 'Nearby ' ~ ('parlours' if my_gender == 'female' else 'salons') }}</h2>
-        {% set mapped_salons = salons|selectattr('lat', 'ne', none)|selectattr('lng', 'ne', none)|list %}
-        {% set map_salon = mapped_salons|first if mapped_salons else none %}
         {% if not saved_view %}
-        <section class="map-preview" aria-label="Illustrative map preview, not a live map">
-            <p class="map-preview-caption">Illustrative preview · not a live map</p>
-            <a class="map-preview-link" href="https://www.google.com/maps/search/?api=1&amp;query={% if map_salon %}{{ map_salon.lat }},{{ map_salon.lng }}{% else %}salons{% endif %}" target="_blank" rel="noopener noreferrer">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 19-8-8 19-2-8-9-3Z"/><path d="m12 14 5-5"/></svg>
-                {% if map_salon %}View {{ map_salon.name }} on Google Maps{% else %}Search salons on Google Maps{% endif %}
-            </a>
+        <section class="nearby-map-section" aria-labelledby="nearbyMapTitle">
+            <h3 id="nearbyMapTitle">Salons within 5 km</h3>
+            <div class="nearby-map-wrap">
+                <div id="nearbyMap" class="nearby-map" aria-label="Map of salons within 5 km"></div>
+                <p id="mapMessage" class="nearby-map-message" aria-live="polite">Allow location access to see nearby salons on the map.</p>
+            </div>
+            <div class="nearby-map-legend" aria-label="Salon availability">
+                <span><i class="map-dot you"></i>Your location</span>
+                <span><i class="map-dot available"></i>Available</span>
+                <span><i class="map-dot busy"></i>Busy</span>
+                <span><i class="map-dot full"></i>Fully booked</span>
+                <span><i class="map-dot closed"></i>Closed</span>
+            </div>
         </section>
         {% endif %}
         <div class="grid salon-list-grid" id="grid">
@@ -121,6 +128,8 @@
     </div>
 
     <footer class="footer">© Trimzee · Book your salon. Skip the wait.</footer>
+    {% if not saved_view %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>{% endif %}
     <script src="/js/app.js"></script>
     <script src="/js/chat.js"></script>
 </body>

@@ -6,6 +6,8 @@ const cards = Array.from(document.querySelectorAll(".card"));
 const emptyMsg = document.getElementById("empty");
 const locBtn = document.getElementById("useLocation");
 const locStatus = document.getElementById("locStatus");
+const mapElement = document.getElementById("nearbyMap");
+const mapMessage = document.getElementById("mapMessage");
 const genderBtn = document.getElementById("genderBtn");
 const genderPanel = document.getElementById("genderPanel");
 const savedView = document.body.dataset.savedView === "true";
@@ -13,6 +15,10 @@ const savedStorageKey = "trimzee.savedSalons";
 
 let activeGender = "";
 let here = null;
+let nearbyMap = null;
+let mapMarkers = new Map();
+let userMarker = null;
+let rangeCircle = null;
 
 function readSavedSalons() {
     try {
@@ -62,6 +68,7 @@ function applyFilters() {
         here ? "No salons within 5 km of you yet. Try moving closer or check back soon." :
             "No salons match here yet. Try another search.";
     emptyMsg.hidden = visible > 0;
+    updateMap();
 }
 
 function updateDistances() {
@@ -76,7 +83,7 @@ function updateDistances() {
         } else {
             const km = haversineKm(here.latitude, here.longitude, lat, lng);
             card.dataset.known = "1";
-            card.dataset.distance = km.toFixed(1);
+            card.dataset.distance = String(km);
             label.textContent = km.toFixed(1);
         }
     });
@@ -86,13 +93,114 @@ function updateDistances() {
     applyFilters();
 }
 
+function statusColor(status) {
+    return { available: "#15803d", busy: "#d97706", full: "#dc2626", closed: "#64748b" }[status] || "#64748b";
+}
+
+function createMapPopup(card) {
+    const popup = document.createElement("div");
+    const name = document.createElement("strong");
+    name.textContent = card.querySelector(".salon-card-heading h3").textContent;
+    const detail = document.createElement("p");
+    const status = card.querySelector(".badge").textContent;
+    detail.textContent = card.querySelector(".dist").textContent + " km away · " + status;
+    const link = document.createElement("a");
+    link.href = "/salon/" + encodeURIComponent(card.dataset.salonId);
+    link.textContent = "View salon";
+    popup.append(name, detail, link);
+    return popup;
+}
+
+function updateMap() {
+    if (!mapElement) { return; }
+    if (!here) {
+        if (nearbyMap) { nearbyMap.remove(); }
+        nearbyMap = null;
+        mapMarkers.clear();
+        rangeCircle = null;
+        userMarker = null;
+        if (mapMessage) { mapMessage.hidden = false; }
+        return;
+    }
+    if (!window.L) {
+        mapMessage.textContent = "The map could not be loaded. Please try again later.";
+        mapMessage.hidden = false;
+        return;
+    }
+    if (!nearbyMap) {
+        const zoom = mapElement.clientWidth < 400 ? 11 : 12;
+        nearbyMap = L.map(mapElement).setView([here.latitude, here.longitude], zoom);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(nearbyMap);
+        rangeCircle = L.circle([here.latitude, here.longitude], {
+            radius: RANGE_KM * 1000,
+            color: "#119b8a",
+            fillColor: "#119b8a",
+            fillOpacity: 0.08,
+            weight: 2
+        }).addTo(nearbyMap);
+        userMarker = L.circleMarker([here.latitude, here.longitude], {
+            radius: 7,
+            color: "#fff",
+            weight: 2,
+            fillColor: "#2563eb",
+            fillOpacity: 1
+        }).bindPopup("Your location").addTo(nearbyMap);
+        window.setTimeout(function () { nearbyMap.invalidateSize(); }, 0);
+    } else {
+        rangeCircle.setLatLng([here.latitude, here.longitude]);
+        userMarker.setLatLng([here.latitude, here.longitude]);
+    }
+
+    const visibleIds = new Set();
+    cards.forEach(function (card) {
+        if (card.hidden || card.dataset.known !== "1" || Number(card.dataset.distance) > RANGE_KM) { return; }
+        const id = card.dataset.salonId;
+        const position = [Number(card.dataset.lat), Number(card.dataset.lng)];
+        const color = statusColor(card.dataset.status);
+        visibleIds.add(id);
+        let marker = mapMarkers.get(id);
+        if (!marker) {
+            marker = L.circleMarker(position, {
+                radius: 9,
+                color: "#fff",
+                weight: 2,
+                fillOpacity: 1
+            }).addTo(nearbyMap);
+            mapMarkers.set(id, marker);
+        }
+        marker.setLatLng(position);
+        marker.setStyle({ fillColor: color });
+        marker.bindPopup(createMapPopup(card));
+    });
+    mapMarkers.forEach(function (marker, id) {
+        if (!visibleIds.has(id)) {
+            marker.remove();
+            mapMarkers.delete(id);
+        }
+    });
+    mapMessage.textContent = visibleIds.size
+        ? ""
+        : "No salons match within 5 km. Try another search.";
+    mapMessage.hidden = visibleIds.size > 0;
+}
+
 let watchId = null;
 function startLocation() {
     if (!navigator.geolocation) {
         locStatus.textContent = "Your browser can't share location, so we're showing all salons.";
+        if (mapMessage) {
+            mapMessage.textContent = "Your browser can't share location, so nearby salons can't be shown on the map.";
+        }
         return;
     }
     locStatus.textContent = "Finding your location…";
+    if (mapMessage) {
+        mapMessage.textContent = "Finding your location…";
+        mapMessage.hidden = false;
+    }
     if (watchId !== null) { navigator.geolocation.clearWatch(watchId); }
     watchId = navigator.geolocation.watchPosition(function (pos) {
         here = pos.coords;
@@ -100,6 +208,10 @@ function startLocation() {
     }, function () {
         here = null;
         locStatus.textContent = "📍 Location is off. Tap the pin and allow access to see salons within 5 km.";
+        if (mapMessage) {
+            mapMessage.textContent = "Allow location access to see nearby salons on the map.";
+            mapMessage.hidden = false;
+        }
         applyFilters();
     }, { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 });
 }
