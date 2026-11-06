@@ -74,7 +74,7 @@
                 {% else %}
                     <span aria-hidden="true">✂</span>
                 {% endif %}
-                    <span class="rating salon-photo-rating">★ {{ s.rating }}</span>
+                    <span class="rating salon-photo-rating">{% if s.review_count %}★ {{ s.rating }}{% else %}New on Trimzee{% endif %}</span>
                 </div>
                 <div class="card-body salon-card-body">
                     <div class="row salon-card-heading">

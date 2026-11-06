@@ -19,7 +19,7 @@
         {% endif %}
         <div class="row">
             <h1>{{ salon.name }}</h1>
-            <span class="rating">★ {{ salon.rating }}{% if review_count %} <small class="muted">({{ review_count }})</small>{% endif %}</span>
+            <span class="rating">{% if review_count %}★ {{ salon.rating }} <small class="muted">({{ review_count }})</small>{% else %}New on Trimzee{% endif %}</span>
         </div>
         <p class="muted">{{ "%.1f"|format(salon.distance_km) }} km away ·
             <span class="badge {{ salon.status }}">{{ labels[salon.status] }}</span></p>
