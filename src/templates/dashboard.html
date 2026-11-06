@@ -16,12 +16,13 @@
         {% elif salon.approved == 2 %}<p class="message err">Your {{ venue }} registration was not approved.</p>{% endif %}
         {% if notice %}<p class="message {{ 'err' if error else 'ok' }}">{{ notice }}</p>{% endif %}
 
-        {% set schedule_closed = salon.status != 'closed' and live == 'closed' %}
-        {% set is_on = salon.status != 'closed' and live != 'closed' %}
+        {% set owner_on = salon.status != 'closed' %}
+        {% set schedule_closed = owner_on and live == 'closed' %}
+        {% set is_on = owner_on %}
         <form method="post" action="/dashboard/toggle" class="power {{ 'on' if is_on else 'off' }}">
             <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-            <div><strong>{{ venue|capitalize }} is {{ 'OFF' if schedule_closed else 'ON' if is_on else 'OFF' }}</strong>
-                <span class="sub">{% if schedule_closed %}Closed for today · {{ next_label }}{% elif is_on %}Taking bookings · next free slot: {{ next_label }}{% else %}New bookings are paused{% endif %}</span></div>
+            <div><strong>{{ venue|capitalize }} is {{ 'ON' if is_on else 'OFF' }}</strong>
+                <span class="sub">{% if schedule_closed %}Outside booking hours · {{ next_label }}{% elif is_on %}Taking bookings · next free slot: {{ next_label }}{% else %}New bookings are paused{% endif %}</span></div>
             {% if schedule_closed and next_label.startswith('Opens at ') %}
             <button class="switch" type="submit" name="state" value="on" aria-label="Open early today"></button>
             <button class="btn ghost small" type="submit" name="state" value="off">Keep salon off</button>

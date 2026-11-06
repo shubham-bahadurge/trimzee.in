@@ -370,7 +370,7 @@ h1 { font-size: 1.7rem; font-weight: 800; }
 .svc-grid .wide-field { grid-column: 1 / -1; }
 .svc-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
-.chat { position: fixed; right: 16px; bottom: 16px; z-index: 50; }
+.chat { position: fixed; right: 16px; bottom: 16px; z-index: 70; }
 .chat-btn { width: 58px; height: 58px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; font-size: 1.5rem; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.3); }
 .chat-btn:hover { background: #2a2a2a; }
 .chat-panel { position: absolute; right: 0; bottom: 70px; width: min(380px, calc(100vw - 32px)); height: min(520px, 70vh); background: #fff; border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 18px 50px rgba(0,0,0,.25); display: flex; flex-direction: column; overflow: hidden; }
@@ -407,7 +407,7 @@ h1 { font-size: 1.7rem; font-weight: 800; }
 .gender-opts label:has(input:checked) { border-color: var(--ink); background: var(--ink); color: #fff; }
 .gender-opts input { accent-color: #fff; }
 
-.nearby-map-section { max-width: 850px; margin: 0 auto 18px; }
+.nearby-map-section { position: relative; z-index: 1; max-width: 850px; margin: 0 auto 18px; }
 .nearby-map-section h3 { margin: 0 0 10px; font-size: 1rem; }
 .nearby-map-wrap { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--bg); }
 .nearby-map { width: 100%; height: 340px; }

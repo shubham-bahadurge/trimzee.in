@@ -1073,5 +1073,13 @@ def health():
     return {"status": "ok", "app": "Trimzee"}
 
 
+@app.route("/service-worker.js")
+def service_worker():
+    response = app.send_static_file("service-worker.js")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5001, debug=True)

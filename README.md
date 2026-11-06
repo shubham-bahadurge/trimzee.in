@@ -77,6 +77,18 @@ and upgraded automatically when the app starts.
 - The corresponding files under root `public/` are static-asset copies used by deployment setups.
 - `src/templates/` contains pages for account access, salons, bookings, owner dashboards, admin tools, plans, checkout, and legal information. Each template begins with a short comment describing its purpose.
 
+## Install Trimzee
+
+The homepage can be installed from a supported browser using the **Install
+Trimzee** button or the browser's install menu. On iPhone and iPad, use Safari's
+Share menu and choose **Add to Home Screen**. The app manifest and root-scoped
+service worker provide the standalone app window and a simple offline page.
+
+The service worker caches only the offline page and selected static app assets.
+Salon listings, location results, account pages, bookings, and API responses
+remain network-only and are never stored for offline use. The install prompt
+requires HTTPS in production; `localhost` is supported for local testing.
+
 ## How appointment booking works
 
 1. The salon page asks `/api/salons/<salon_id>/slots` for current availability.

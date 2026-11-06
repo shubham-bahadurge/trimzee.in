@@ -1,0 +1,32 @@
+{
+  "id": "/",
+  "name": "Trimzee - Salon Booking",
+  "short_name": "Trimzee",
+  "description": "Find nearby salons and book your next appointment with Trimzee.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111111",
+  "categories": ["beauty", "lifestyle"],
+  "icons": [
+    {
+      "src": "/img/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
