@@ -120,18 +120,8 @@
             <form method="post" action="/dashboard/location" id="locForm">
                 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
                 <input type="hidden" name="lat" id="lat"><input type="hidden" name="lng" id="lng">
-                <h2>City and area</h2>
-                <div class="hours-fields">
-                    <label class="field" for="salonArea">Area or neighbourhood
-                        <input id="salonArea" type="text" name="area" value="{{ salon.area or '' }}" maxlength="80" placeholder="e.g. Baner"></label>
-                    <label class="field" for="salonCity">City
-                        <input id="salonCity" type="text" name="city" value="{{ salon.city or '' }}" maxlength="80" placeholder="e.g. Pune"></label>
-                </div>
-                <p class="hint">Customers can use these labels to browse your salon without sharing their live location.</p>
-                <button class="btn small" type="submit">Save city and area</button>
-                <h2 style="margin-top:16px">Map location</h2>
                 <button class="btn ghost small" type="button" id="locBtn">📍 {% if salon.lat is not none %}Update{% else %}Set{% endif %} {{ venue }} location from this device</button>
-                <p class="hint" id="locMsg">{% if salon.lat is none %}Customers can only book once your map location is set (they must be within 5 km).{% else %}Map location saved. Customers within 5 km can book.{% endif %}</p>
+                <p class="hint" id="locMsg">{% if salon.lat is none %}Customers can only book once your location is set (they must be within 5 km).{% else %}Location saved. Customers within 5 km can book.{% endif %}</p>
             </form>
             <script>
                 document.getElementById("locBtn").addEventListener("click", function () {

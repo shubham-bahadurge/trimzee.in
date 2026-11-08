@@ -125,7 +125,7 @@ def get_salons(user_gender=None):
             extra = " AND o.id IN (SELECT user_id FROM subscriptions WHERE kind = 'owner' AND ends > ?)"
             params = (billing.now_str(),)
         rows = conn.execute(
-            "SELECT s.id, s.name, s.distance_km, s.rating, s.status, s.gender, s.lat, s.lng, s.city, s.area, "
+            "SELECT s.id, s.name, s.distance_km, s.rating, s.status, s.gender, s.lat, s.lng, "
             "s.image_mime, s.opening_time, s.closing_time, s.early_open_date, s.early_open_time, "
             "(SELECT COUNT(*) FROM reviews r WHERE r.salon_id = s.id) AS review_count, "
             "MIN(sv.price) AS price "
@@ -145,14 +145,10 @@ def get_salons(user_gender=None):
         opening_time, closing_time = db.salon_hours(r)
         status, nxt = live_status(r["status"], taken.get(r["id"], set()),
                                   opening_time, closing_time, r["opening_time"])
-        area = (r["area"] or "").strip()
-        city = (r["city"] or "").strip()
-        location_label = ", ".join(part for part in (area, city) if part)
         out.append({"id": r["id"], "name": r["name"], "rating": r["rating"], "distance": r["distance_km"],
                     "review_count": r["review_count"], "price": r["price"], "status": status, "next": nxt,
                     "services": names.get(r["id"], []),
                     "gender": r["gender"], "lat": r["lat"], "lng": r["lng"],
-                    "city": city, "area": area, "location_label": location_label,
                     "image_url": f"/salons/{r['id']}/image" if r["image_mime"] else None})
     return out
 
