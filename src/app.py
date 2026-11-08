@@ -241,17 +241,20 @@ def register():
             session["ref"] = ref
         if safe_next(request.args.get("next")):
             session["next"] = safe_next(request.args.get("next"))
-        return render_template("register.html", error=None, form={"ref": session.get("ref", "")})
+        return render_template("register.html", error=None, form={"ref": session.get("ref", "")},
+                               next=safe_next(session.get("next")))
     form = request.form
     ref = (form.get("ref") or "").strip().upper()
     if not mailer.email_configured():          # no verification possible -> no sign-ups (never skip the OTP)
         return render_template("register.html", error="Sign-up is paused while email verification is being set up. "
-                               "Please try again soon.", form=form), 503
+                               "Please try again soon.", form=form, next=safe_next(session.get("next"))), 503
     if ref and not accounts.find_referrer(ref):
-        return render_template("register.html", error="That referral code isn't valid.", form=form), 400
+        return render_template("register.html", error="That referral code isn't valid.", form=form,
+                               next=safe_next(session.get("next"))), 400
     mode, payload = signup.begin(form)
     if mode != "otp":
-        return render_template("register.html", error=payload if mode == "error" else "Please try again.", form=form), 400
+        return render_template("register.html", error=payload if mode == "error" else "Please try again.",
+                               form=form, next=safe_next(session.get("next"))), 400
     session["pending_email"] = payload
     session["ref"] = ref
     return redirect("/verify")

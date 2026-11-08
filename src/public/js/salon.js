@@ -66,7 +66,7 @@ function updateButton() {
         confirmBtn.textContent = "Select a time to continue";
     } else if (!auth) {
         confirmBtn.disabled = false;
-        confirmBtn.textContent = "Sign in to confirm booking";
+        confirmBtn.textContent = "Create account to confirm booking";
     } else {
         confirmBtn.disabled = false;
         confirmBtn.textContent = "Confirm booking for " + pretty(selected.slice(11));
@@ -225,7 +225,7 @@ serviceOptions.forEach(function (service) {
 
 confirmBtn.addEventListener("click", async function () {
     if (!auth) {
-        window.location.assign("/login?next=" + encodeURIComponent("/salon/" + salonId));
+        window.location.assign("/register?next=" + encodeURIComponent("/salon/" + salonId));
         return;
     }
     const services = serviceOptions.filter(function (service) { return service.checked; });

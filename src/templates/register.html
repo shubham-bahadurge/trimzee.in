@@ -37,7 +37,7 @@
 <p style="text-align:center;color:#888;margin-top:14px;font-size:.85rem;margin-top:8px">For customers. Salon owners sign up with the form above.</p>
 {% endif %}
 
-        <p class="muted">Already have an account? <a href="/login">Log in</a></p>
+        <p class="muted">Already have an account? <a href="/login{% if next %}?next={{ next|urlencode }}{% endif %}">Log in</a></p>
     </main>
     <script>
         var salonField = document.getElementById("salonField"), phoneField = document.getElementById("phoneField");
