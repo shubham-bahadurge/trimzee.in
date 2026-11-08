@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop store configuration. -->
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shop settings - Admin</title><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body>{% include "_nav.html" %}
+    <main class="store-main admin-shop"><h1>Shop settings</h1>{% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <form class="panel admin-form admin-form-grid" method="post"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <label class="admin-checkbox"><input type="checkbox" name="store_open" {% if settings.get('store_open', 'true') == 'true' %}checked{% endif %}> Store is open for orders</label>
+            <label class="store-field">Store name<input name="store_name" maxlength="120" required value="{{ settings.get('store_name', 'Trimzee Shop') }}"></label>
+            <label class="store-field">Support phone<input name="support_phone" maxlength="30" value="{{ settings.get('support_phone', '') }}"></label>
+            <label class="store-field">Support email<input name="support_email" type="email" maxlength="160" value="{{ settings.get('support_email', '') }}"></label>
+            <label class="store-field">GST percent<input name="gst_percent" type="number" min="0" max="100" step="0.01" value="{{ settings.get('gst_percent', '0') }}"></label>
+            <label class="store-field">Free shipping threshold (₹)<input name="free_shipping_threshold" type="number" min="0" step="0.01" value="{{ '%.2f'|format((settings.get('free_shipping_threshold_paise', '0')|int) / 100) }}"></label>
+            <label class="store-field">Low-stock threshold<input name="low_stock_threshold" type="number" min="0" step="1" value="{{ settings.get('low_stock_threshold', '5') }}"></label>
+            <button class="btn" type="submit">Save settings</button>
+        </form>
+    </main>
+</body></html>

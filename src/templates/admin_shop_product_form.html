@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop product editor. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ 'Edit' if editing else 'Add' }} product - Shop Admin</title>
+    <link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main admin-shop">
+        <a class="back" href="/admin/shop/products">← Products</a>
+        <h1>{{ 'Edit' if editing else 'Add' }} product</h1>
+        {% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <form class="panel admin-form" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <div class="admin-form-grid">
+                <label class="store-field">Name<input name="name" maxlength="160" required value="{{ item.name if item else '' }}"></label>
+                <label class="store-field">URL slug<input name="slug" maxlength="180" required pattern="[a-z0-9]+(-[a-z0-9]+)*" value="{{ item.slug if item else '' }}"></label>
+                <label class="store-field">Category<select name="category_id">
+                    <option value="">No category</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if item and item.category_id|string == category.id|string %}selected{% endif %}>{{ category.name }}{% if not category.is_active %} (hidden){% endif %}</option>
+                    {% endfor %}
+                </select></label>
+                <label class="store-field">Price (₹)<input name="price" type="number" min="0" step="0.01" required value="{{ '%.2f'|format(item.price_paise / 100) if item and item.price_paise is number else item.price_paise if item else '' }}"></label>
+                <label class="store-field">MRP (₹, optional)<input name="mrp" type="number" min="0" step="0.01" value="{{ '%.2f'|format(item.mrp_paise / 100) if item and item.mrp_paise is number else item.mrp_paise if item else '' }}"></label>
+                <label class="store-field">Stock quantity<input name="stock_qty" type="number" min="0" required value="{{ item.stock_qty if item else 0 }}"></label>
+                <label class="store-field">Image URL (optional)<input name="image_url" type="text" maxlength="500" placeholder="https://... or /path/to/image" value="{{ item.image_url if item and item.image_url and not item.image_url.startswith('/shop/product-images/') else '' }}"></label>
+                <label class="store-field">Upload image (JPEG, PNG, WebP; up to 5 MB)<input name="image" type="file" accept="image/jpeg,image/png,image/webp"></label>
+            </div>
+            {% if item and item.image_url %}<p><img class="admin-product-preview" src="{{ item.image_url }}" alt="Current product image"></p>{% endif %}
+            <label class="store-field">Description<textarea name="description" rows="5" maxlength="10000">{{ item.description if item else '' }}</textarea></label>
+            <div class="admin-checks">
+                <label><input type="checkbox" name="track_stock" {% if not item or item.track_stock %}checked{% endif %}> Track stock</label>
+                <label><input type="checkbox" name="is_active" {% if item and item.is_active %}checked{% endif %}> Product is active</label>
+            </div>
+            <section class="admin-variants">
+                <div class="section-head"><h2>Variants</h2><button class="btn ghost small" type="button" id="addVariant">Add variant</button></div>
+                <p class="muted">Optional sizes or options. Use a separate price and stock for each variant.</p>
+                <div id="variantRows">
+                    {% for variant in item.variants if item and item.variants %}
+                    <div class="admin-variant-row">
+                        <input type="hidden" name="variant_id" value="{{ variant.id }}">
+                        <label class="store-field">Label<input name="variant_label" maxlength="80" value="{{ variant.label }}"></label>
+                        <label class="store-field">Price ₹<input name="variant_price" type="number" min="0" step="0.01" value="{{ '%.2f'|format(variant.price_paise / 100) }}"></label>
+                        <label class="store-field">Stock<input name="variant_stock" type="number" min="0" value="{{ variant.stock_qty }}"></label>
+                        <label class="store-field">SKU<input name="variant_sku" maxlength="100" value="{{ variant.sku or '' }}"></label>
+                        <button class="link-button remove-variant" type="button">Remove</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            <button class="btn" type="submit">Save product</button>
+        </form>
+    </main>
+    <template id="variantTemplate"><div class="admin-variant-row">
+        <input type="hidden" name="variant_id" value="">
+        <label class="store-field">Label<input name="variant_label" maxlength="80"></label>
+        <label class="store-field">Price ₹<input name="variant_price" type="number" min="0" step="0.01"></label>
+        <label class="store-field">Stock<input name="variant_stock" type="number" min="0" value="0"></label>
+        <label class="store-field">SKU<input name="variant_sku" maxlength="100"></label>
+        <button class="link-button remove-variant" type="button">Remove</button>
+    </div></template>
+    <script>
+        const rows = document.getElementById("variantRows");
+        document.getElementById("addVariant").addEventListener("click", () => {
+            rows.append(document.getElementById("variantTemplate").content.cloneNode(true));
+        });
+        rows.addEventListener("click", (event) => {
+            if (event.target.matches(".remove-variant")) event.target.closest(".admin-variant-row").remove();
+        });
+        document.querySelector('input[name=name]').addEventListener("input", (event) => {
+            const slug = document.querySelector('input[name=slug]');
+            if (!slug.dataset.touched) slug.value = event.target.value.toLowerCase().trim()
+                .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        });
+        document.querySelector('input[name=slug]').addEventListener("input", (event) => {
+            event.target.dataset.touched = "1";
+        });
+    </script>
+</body>
+</html>

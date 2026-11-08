@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<!-- Explicit confirmation before submitting a Razorpay refund. -->
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Confirm refund - Shop Admin</title><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body>{% include "_nav.html" %}
+    <main class="store-main admin-shop"><a class="back" href="/admin/shop/orders/{{ order.id }}">← Back to order</a>
+        <section class="panel admin-form admin-refund-confirm">
+            <p class="store-eyebrow">CONFIRM PAYMENT ACTION</p><h1>Refund {{ order.order_number }}?</h1>
+            <p>This requests a full refund of <strong>₹{{ order.total_paise|paise }}</strong> through Razorpay.
+                Refunds cannot be undone. Confirm this action only after checking the order and payment.</p>
+            <form method="post" action="/admin/shop/orders/{{ order.id }}/refund">
+                <input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="confirm" value="yes">
+                <button class="btn danger" type="submit">Confirm full refund</button>
+                <a class="btn ghost" href="/admin/shop/orders/{{ order.id }}">Keep order</a>
+            </form>
+        </section>
+    </main>
+</body></html>

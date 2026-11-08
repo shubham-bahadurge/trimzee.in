@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop coupon editor. -->
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ 'Edit' if coupon else 'Create' }} coupon - Shop Admin</title><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body>{% include "_nav.html" %}
+    <main class="store-main admin-shop"><a class="back" href="/admin/shop/coupons">← Coupons</a><h1>{{ 'Edit' if coupon else 'Create' }} coupon</h1>
+        {% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message err">{{ notice.message }}</p>{% endif %}
+        <form class="panel admin-form admin-form-grid" method="post"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <label class="store-field">Code<input name="code" maxlength="40" pattern="[A-Za-z0-9_-]{2,40}" required value="{{ coupon.code if coupon else '' }}"></label>
+            <label class="store-field">Type<select name="type"><option value="percent" {% if coupon and coupon.type == 'percent' %}selected{% endif %}>Percent</option><option value="flat" {% if coupon and coupon.type == 'flat' %}selected{% endif %}>Flat rupee amount</option></select></label>
+            <label class="store-field">Value (% or ₹)<input name="value" type="number" min="0.01" step="0.01" required value="{{ coupon.value if coupon else '' }}"></label>
+            <label class="store-field">Minimum order (₹)<input name="min_order" type="number" min="0" step="0.01" value="{{ '%.2f'|format(coupon.min_order_paise / 100) if coupon else '0.00' }}"></label>
+            <label class="store-field">Maximum discount for percent (₹)<input name="max_discount" type="number" min="0" step="0.01" value="{{ '%.2f'|format(coupon.max_discount_paise / 100) if coupon and coupon.max_discount_paise is not none else '' }}"></label>
+            <label class="store-field">Total usage limit<input name="usage_limit" type="number" min="1" value="{{ coupon.usage_limit if coupon and coupon.usage_limit is not none else '' }}"></label>
+            <label class="store-field">Per-customer usage limit<input name="per_user_limit" type="number" min="1" value="{{ coupon.per_user_limit if coupon and coupon.per_user_limit is not none else '' }}"></label>
+            <label class="store-field">Starts at<input name="starts_at" type="datetime-local" value="{{ coupon.starts_at.strftime('%Y-%m-%dT%H:%M') if coupon and coupon.starts_at.strftime is defined else '' }}"></label>
+            <label class="store-field">Ends at<input name="ends_at" type="datetime-local" value="{{ coupon.ends_at.strftime('%Y-%m-%dT%H:%M') if coupon and coupon.ends_at.strftime is defined else '' }}"></label>
+            <button class="btn" type="submit">Save coupon</button>
+        </form>
+    </main>
+</body></html>

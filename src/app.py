@@ -28,6 +28,8 @@ import qr  # noqa: E402
 import signup  # noqa: E402
 import slots  # noqa: E402
 import push  # noqa: E402
+import shop_routes  # noqa: E402
+import shop_admin  # noqa: E402
 
 # "public" is where Vercel serves static files from.
 app = Flask(__name__, static_folder="public", static_url_path="")
@@ -97,7 +99,8 @@ def pretty_time(value):
 @app.before_request
 def csrf_protect():
     """Every HTML form POST must carry the secret token from our own pages."""
-    if request.method == "POST" and not request.path.startswith("/api/"):
+    if (request.method == "POST" and not request.path.startswith("/api/")
+            and request.path != "/webhooks/razorpay"):
         sent = request.form.get("csrf", "").encode()
         real = session.get("csrf", "").encode()
         if not real or not secrets.compare_digest(sent, real):
@@ -115,8 +118,14 @@ def require_role(role):
 
 
 def start_session(user_id):
+    shop_cart_key = session.get("shop_cart_key")
+    shop_coupon_code = session.get("shop_coupon_code")
     session.clear()
     session["user_id"] = user_id
+    if shop_cart_key:
+        session["shop_cart_key"] = shop_cart_key
+    if shop_coupon_code:
+        session["shop_coupon_code"] = shop_coupon_code
     session.permanent = True
 
 
@@ -132,6 +141,10 @@ def client_ip():
 def safe_next(value):
     v = (value or "").strip()
     return v if v.startswith("/") and not v.startswith("//") and "\\" not in v and len(v) < 200 else ""
+
+
+shop_routes.register_routes(app, current_user, safe_next)
+shop_admin.register_routes(app, current_user)
 
 
 def public_base():
@@ -157,12 +170,6 @@ def home():
     return render_template("index.html", salons=slots.get_salons(None if saved_view else gender),
                            labels=STATUS_LABELS, saved_view=saved_view, my_gender=gender,
                            need_gender=bool(user and user["role"] == "customer" and not gender))
-
-
-@app.route("/shop")
-def shop_page():
-    user = current_user()
-    return render_template("shop.html", on_waitlist=bool(user and growth.on_waitlist(user["id"])))
 
 
 @app.route("/salon/<int:salon_id>")

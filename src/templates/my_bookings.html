@@ -11,7 +11,7 @@
 <body>
     {% include "_nav.html" %}
     <main class="container">
-        <div class="page-head"><h1>My bookings</h1></div>
+        <div class="page-head"><h1>My bookings</h1><a class="btn ghost small" href="/orders">Shop orders</a></div>
         {% if notice %}<p class="message ok">{{ notice }}</p>{% endif %}
         {% if not bookings %}
             <div class="panel empty-card"><strong>No bookings yet</strong><p class="muted">Find a salon near you and book in seconds.</p><p><a class="btn" href="/">Find a salon</a></p></div>

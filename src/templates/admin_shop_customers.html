@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop customer listing. -->
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Customers - Shop Admin</title><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body>{% include "_nav.html" %}
+    <main class="store-main admin-shop"><h1>Customers</h1>{% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <form class="store-search admin-search" method="get"><label class="sr-only" for="customerSearch">Search customers</label>
+            <input id="customerSearch" name="q" value="{{ search }}" placeholder="Name, phone, or email"><button type="submit">Search</button></form>
+        <div class="table-wrap"><table class="table admin-table"><thead><tr><th>Customer</th><th>Orders</th><th>Total spent</th><th>Last order</th><th>Ordering access</th></tr></thead>
+            <tbody>{% for customer in customers %}
+            <tr><td><a href="/admin/shop/customers/{{ customer.id }}"><strong>{{ customer.name }}</strong></a><small>{{ customer.email }}{% if customer.phone %} · {{ customer.phone }}{% endif %}</small></td>
+                <td>{{ customer.order_count }}</td><td>₹{{ customer.total_spent_paise|paise }}</td><td>{{ customer.last_order_at or '—' }}</td>
+                <td>{{ 'Blocked' if customer.shop_blocked else 'Allowed' }}</td></tr>
+            {% else %}<tr><td colspan="5" class="muted">No customers found.</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </main>
+</body></html>

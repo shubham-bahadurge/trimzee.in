@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop customer detail. -->
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ customer.name }} - Shop Admin</title><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body>{% include "_nav.html" %}
+    <main class="store-main admin-shop"><a class="back" href="/admin/shop/customers">← Customers</a><h1>{{ customer.name }}</h1>
+        {% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <section class="panel order-panel"><p>{{ customer.email }}{% if customer.phone %}<br>{{ customer.phone }}{% endif %}</p>
+            <p>Joined {{ customer.created_at }}</p><p>Shop ordering: <strong>{{ 'Blocked' if customer.shop_blocked else 'Allowed' }}</strong></p>
+            <form method="post" action="/admin/shop/customers/{{ customer.id }}/block">
+                <input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="blocked" value="{{ '0' if customer.shop_blocked else '1' }}">
+                <button class="small-btn {{ 'danger' if not customer.shop_blocked else '' }}" type="submit">{{ 'Unblock ordering' if customer.shop_blocked else 'Block ordering' }}</button>
+            </form>
+        </section>
+        <h2>Order history</h2><div class="table-wrap"><table class="table admin-table"><thead><tr><th>Order</th><th>Status</th><th>Payment</th><th>Total</th><th>Date</th></tr></thead><tbody>
+            {% for order in customer.orders %}<tr><td><a href="/admin/shop/orders/{{ order.id }}">{{ order.order_number }}</a></td>
+                <td>{{ order.status|replace('_', ' ')|title }}</td><td>{{ order.payment_status|title }}</td><td>₹{{ order.total_paise|paise }}</td><td>{{ order.created_at }}</td></tr>
+            {% else %}<tr><td colspan="5" class="muted">No shop orders.</td></tr>{% endfor %}
+        </tbody></table></div>
+    </main>
+</body></html>

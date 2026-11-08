@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop order management. -->
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Orders - Shop Admin</title><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main admin-shop">
+        <h1>Orders</h1>{% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <form class="admin-filter-form" method="get">
+            <label class="store-field">Status<select name="status"><option value="">All statuses</option>
+                {% for item in statuses %}<option value="{{ item }}" {% if item == status %}selected{% endif %}>{{ item|replace('_', ' ')|title }}</option>{% endfor %}
+            </select></label>
+            <label class="store-field">From<input type="date" name="start" value="{{ start }}"></label>
+            <label class="store-field">To<input type="date" name="end" value="{{ end }}"></label>
+            <label class="store-field">Order, phone, or email<input name="q" maxlength="80" value="{{ search }}"></label>
+            <button class="btn small" type="submit">Filter</button>
+        </form>
+        <div class="table-wrap"><table class="table admin-table">
+            <thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Payment</th><th>Total</th><th>Date</th></tr></thead>
+            <tbody>{% for order in orders %}
+                <tr><td><a href="/admin/shop/orders/{{ order.id }}"><strong>{{ order.order_number }}</strong></a></td>
+                    <td>{{ order.customer_name }}<small>{{ order.phone }} · {{ order.email }}</small></td>
+                    <td>{{ order.status|replace('_', ' ')|title }}</td><td>{{ order.payment_status|title }}</td>
+                    <td>₹{{ order.total_paise|paise }}</td>
+                    <td>{{ order.created_at.strftime('%d %b %Y %H:%M') if order.created_at.strftime is defined else order.created_at }}</td></tr>
+            {% else %}<tr><td colspan="6" class="muted">No matching orders.</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </main>
+</body>
+</html>

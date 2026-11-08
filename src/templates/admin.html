@@ -11,7 +11,7 @@
 <body>
     {% include "_nav.html" %}
     <main class="container wide">
-        <h1>Admin</h1>
+        <div class="section-head"><h1>Admin</h1><a class="btn small" href="/admin/shop">Shop administration</a></div>
         {% if notice %}<p class="message ok">{{ notice }}</p>{% endif %}
         <div class="stats">
             <div><strong>{{ stats.customers }}</strong><span>Customers</span></div>

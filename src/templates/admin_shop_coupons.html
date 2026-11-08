@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop coupon management. -->
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Coupons - Shop Admin</title><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body>{% include "_nav.html" %}
+    <main class="store-main admin-shop"><div class="page-head"><h1>Coupons</h1><a class="btn small" href="/admin/shop/coupons/new">Create coupon</a></div>
+        {% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <div class="table-wrap"><table class="table admin-table"><thead><tr><th>Code</th><th>Discount</th><th>Minimum</th><th>Usage</th><th>Schedule</th><th>Status</th><th></th></tr></thead>
+            <tbody>{% for coupon in coupons %}
+            <tr><td><strong>{{ coupon.code }}</strong></td>
+                <td>{% if coupon.type == 'percent' %}{{ coupon.value }}%{% else %}₹{{ coupon.value|paise }}{% endif %}
+                    {% if coupon.max_discount_paise %}<small>Max ₹{{ coupon.max_discount_paise|paise }}</small>{% endif %}</td>
+                <td>₹{{ coupon.min_order_paise|paise }}</td>
+                <td>{{ coupon.used_count }}{% if coupon.usage_limit is not none %} / {{ coupon.usage_limit }}{% endif %}</td>
+                <td>{{ coupon.starts_at or 'Any time' }}<small>to {{ coupon.ends_at or 'No end date' }}</small></td>
+                <td>{% if coupon.unavailable %}<span class="coupon-warning">Expired, inactive, or used up</span>{% else %}Active{% endif %}</td>
+                <td class="admin-row-actions"><a class="small-btn" href="/admin/shop/coupons/{{ coupon.id }}/edit">Edit</a>
+                    <form method="post" action="/admin/shop/coupons/{{ coupon.id }}/toggle">
+                        <input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="active" value="{{ '0' if coupon.is_active else '1' }}">
+                        <button class="small-btn" type="submit">{{ 'Deactivate' if coupon.is_active else 'Activate' }}</button>
+                    </form></td></tr>
+            {% else %}<tr><td colspan="7" class="muted">No coupons yet.</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </main>
+</body></html>

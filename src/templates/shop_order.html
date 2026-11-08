@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!-- Customer order details and status timeline. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ order.order_number }} - Trimzee Shop</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main">
+        <a class="back" href="/orders">← Shop orders</a>
+        <div class="page-head"><h1>{{ order.order_number }}</h1><span class="order-status">{{ order.status|replace('_', ' ')|title }}</span></div>
+        <section class="order-detail-grid">
+            <div class="panel order-panel">
+                <h2>Items</h2>
+                {% for item in order["items"] %}
+                <div class="summary-row order-item-row">
+                    <span>{{ item.product_name_snapshot }}{% if item.variant_label_snapshot %} · {{ item.variant_label_snapshot }}{% endif %} × {{ item.quantity }}</span>
+                    <span>₹{{ item.line_total_paise|paise }}</span>
+                </div>
+                {% endfor %}
+                <div class="summary-row"><span>Subtotal</span><span>₹{{ order.subtotal_paise|paise }}</span></div>
+                <div class="summary-row"><span>Discount</span><span>− ₹{{ order.discount_paise|paise }}</span></div>
+                <div class="summary-row"><span>Shipping</span><span>₹{{ order.shipping_paise|paise }}</span></div>
+                <div class="summary-row"><span>GST</span><span>₹{{ order.tax_paise|paise }}</span></div>
+                <div class="summary-row summary-total"><strong>Total</strong><strong>₹{{ order.total_paise|paise }}</strong></div>
+                <p class="muted">Payment: {{ order.payment_status|title }}</p>
+            </div>
+            <div class="panel order-panel">
+                <h2>Delivery address</h2>
+                <p>{{ order.customer_name }}<br>{{ order.phone }}<br>{{ order.email }}</p>
+                <p>{{ order.address_line1 }}{% if order.address_line2 %}<br>{{ order.address_line2 }}{% endif %}<br>
+                    {{ order.city }}, {{ order.state }} {{ order.pincode }}<br>{{ order.country }}</p>
+                <p class="muted">Delivery is coordinated by the Trimzee team.</p>
+            </div>
+        </section>
+        <section class="panel order-panel">
+            <h2>Order status</h2>
+            <ol class="order-timeline">
+                {% for entry in order.history %}
+                <li><span class="timeline-dot"></span><div><strong>{{ entry.to_status|replace('_', ' ')|title }}</strong>
+                    <p class="muted">{{ entry.created_at.strftime('%d %b %Y, %I:%M %p') if entry.created_at.strftime is defined else entry.created_at }}</p>
+                    {% if entry.note %}<p>{{ entry.note }}</p>{% endif %}</div></li>
+                {% endfor %}
+                {% if not order.history %}<li><span class="timeline-dot"></span><div><strong>{{ order.status|replace('_', ' ')|title }}</strong>
+                    <p class="muted">{{ order.created_at.strftime('%d %b %Y, %I:%M %p') if order.created_at.strftime is defined else order.created_at }}</p></div></li>{% endif %}
+            </ol>
+        </section>
+    </main>
+</body>
+</html>

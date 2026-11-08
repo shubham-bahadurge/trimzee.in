@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop category management. -->
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Categories - Shop Admin</title><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main admin-shop">
+        <h1>Categories</h1>{% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <div class="admin-columns">
+            <section class="panel admin-form"><h2>Create category</h2>
+                <form method="post"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    <label class="store-field">Name<input name="name" maxlength="100" required></label>
+                    <label class="store-field">Slug<input name="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" required></label>
+                    <label class="store-field">Sort order<input name="sort_order" type="number" min="0" value="0"></label>
+                    <button class="btn" type="submit">Add category</button>
+                </form></section>
+            <section class="admin-category-list"><h2>Existing categories</h2>
+                {% for category in categories %}
+                <article class="panel admin-category-card">
+                    <form method="post" action="/admin/shop/categories">
+                        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                        <input type="hidden" name="category_id" value="{{ category.id }}">
+                        <label class="store-field">Name<input name="name" value="{{ category.name }}" required></label>
+                        <label class="store-field">Slug<input name="slug" value="{{ category.slug }}" required></label>
+                        <label class="store-field">Order<input name="sort_order" type="number" min="0" value="{{ category.sort_order }}"></label>
+                        <button class="btn small" type="submit">Save</button>
+                    </form>
+                    <form method="post" action="/admin/shop/categories/{{ category.id }}/toggle">
+                        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                        <input type="hidden" name="active" value="{{ '0' if category.is_active else '1' }}">
+                        <button class="small-btn" type="submit">{{ 'Hide' if category.is_active else 'Show' }}</button>
+                        <span class="muted">{{ 'Visible' if category.is_active else 'Hidden' }}</span>
+                    </form>
+                </article>
+                {% else %}<p class="muted">No categories yet.</p>{% endfor %}
+            </section>
+        </div>
+    </main>
+</body>
+</html>

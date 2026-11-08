@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop product details. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} - Trimzee Shop</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main">
+        <a class="back" href="/shop">← Shop</a>
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        {% if not store_open %}<div class="store-notice" role="status">The shop is temporarily closed. Ordering is paused.</div>{% endif %}
+        <article class="product-detail">
+            <div class="product-detail-photo">
+                {% if product.image_url %}<img src="{{ product.image_url }}" alt="{{ product.name }}">
+                {% else %}<span aria-hidden="true">✦</span>{% endif %}
+            </div>
+            <div class="product-detail-info">
+                {% if product.category_name %}<span class="product-category">{{ product.category_name }}</span>{% endif %}
+                <h1>{{ product.name }}</h1>
+                <p class="product-price large">₹<span id="detailPrice">{{ product.price_paise|paise }}</span>
+                    {% if product.mrp_paise and product.mrp_paise > product.price_paise %}
+                    <del>₹{{ product.mrp_paise|paise }}</del>{% endif %}</p>
+                <p class="product-description">{{ product.description }}</p>
+                {% if product.variants %}
+                <label class="store-field">Choose an option
+                    <select id="variant" name="variant_id" form="addProduct">
+                        {% for variant in product.variants %}
+                        <option value="{{ variant.id }}" data-price="{{ variant.price_paise }}"
+                                data-stock="{{ variant.available_qty }}" {% if loop.first %}selected{% endif %}
+                                {% if variant.available_qty == 0 %}disabled{% endif %}>
+                            {{ variant.label }}{% if variant.available_qty == 0 %} · Out of stock{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </label>
+                {% endif %}
+                <p id="detailStock" class="stock-badge{% if product.available_qty == 0 %} out{% endif %}">
+                    {% if product.available_qty == 0 %}Out of stock{% elif product.available_qty <= 3 %}Only {{ product.available_qty }} left{% else %}In stock{% endif %}
+                </p>
+                <form id="addProduct" method="post" action="/cart/add" class="product-buy-form">
+                    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="quantity" id="quantity" value="1">
+                    <input type="hidden" name="next" id="afterAdd" value="/cart">
+                    <div class="quantity-stepper" aria-label="Quantity">
+                        <button type="button" id="minus" aria-label="Decrease quantity">−</button>
+                        <output id="quantityDisplay" aria-live="polite">1</output>
+                        <button type="button" id="plus" aria-label="Increase quantity">+</button>
+                    </div>
+                    <button class="btn" type="submit" {% if not product.available_qty or not store_open %}disabled{% endif %}>Add to cart</button>
+                    <button class="btn ghost" type="button" id="buyNow" {% if not product.available_qty or not store_open %}disabled{% endif %}>Buy now</button>
+                </form>
+                <p class="delivery-note">Delivered by Trimzee team. Shipping and delivery are coordinated by us.</p>
+            </div>
+        </article>
+        {% if related %}
+        <section class="related-products">
+            <h2>You may also like</h2>
+            <div class="product-grid">
+                {% for item in related %}
+                <article class="product-card">
+                    <a class="product-photo" href="/shop/{{ item.slug }}">
+                        {% if item.image_url %}<img src="{{ item.image_url }}" alt="{{ item.name }}" loading="lazy">{% else %}<span aria-hidden="true">✦</span>{% endif %}
+                    </a>
+                    <div class="product-card-info"><h3><a href="/shop/{{ item.slug }}">{{ item.name }}</a></h3>
+                        <p class="product-price">₹{{ item.price_paise|paise }}</p></div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+    <script>
+        (function () {
+            var variant = document.getElementById("variant");
+            var quantity = document.getElementById("quantity");
+            var display = document.getElementById("quantityDisplay");
+            var price = document.getElementById("detailPrice");
+            var stock = document.getElementById("detailStock");
+            var submit = document.querySelector("#addProduct button[type=submit]");
+            var buy = document.getElementById("buyNow");
+            var maxStock = {{ product.available_qty }};
+            function sync() {
+                if (variant) {
+                    var option = variant.options[variant.selectedIndex];
+                    maxStock = Number(option.dataset.stock);
+                    price.textContent = (Number(option.dataset.price) / 100).toFixed(2);
+                }
+                var count = Math.min(Number(quantity.value), maxStock);
+                quantity.value = String(Math.max(1, count));
+                display.textContent = quantity.value;
+                stock.textContent = maxStock === 0 ? "Out of stock" : maxStock <= 3 ? "Only " + maxStock + " left" : "In stock";
+                stock.classList.toggle("out", maxStock === 0);
+                submit.disabled = maxStock === 0;
+                buy.disabled = maxStock === 0;
+                document.getElementById("minus").disabled = Number(quantity.value) <= 1;
+                document.getElementById("plus").disabled = Number(quantity.value) >= maxStock;
+            }
+            document.getElementById("minus").addEventListener("click", function () {
+                quantity.value = String(Math.max(1, Number(quantity.value) - 1)); sync();
+            });
+            document.getElementById("plus").addEventListener("click", function () {
+                quantity.value = String(Math.min(maxStock, Number(quantity.value) + 1)); sync();
+            });
+            if (variant) { variant.addEventListener("change", sync); }
+            buy.addEventListener("click", function () {
+                document.getElementById("afterAdd").value = "/checkout";
+                document.getElementById("addProduct").requestSubmit();
+            });
+            sync();
+        })();
+    </script>
+</body>
+</html>

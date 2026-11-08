@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop order confirmation. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order confirmed - Trimzee</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main">
+        <section class="order-success">
+            <div class="success-mark" aria-hidden="true">✓</div>
+            <p class="product-category">THANK YOU</p>
+            <h1>
+                {% if order.status == 'paid' %}Order confirmed
+                {% elif order.status == 'refunded' %}Payment refunded
+                {% else %}Order {{ order.status|replace('_', ' ') }}{% endif %}
+            </h1>
+            <p>Your order number is <strong>{{ order.order_number }}</strong>.</p>
+            <p class="muted">Order total: ₹{{ order.total_paise|paise }}</p>
+            {% if order.status == 'refunded' %}
+            <p class="muted">A full refund was initiated because the order could not be fulfilled.</p>
+            {% endif %}
+            <a class="btn" href="/orders/{{ order.order_number }}">Track order</a>
+            <a class="back" href="/shop">Continue shopping</a>
+        </section>
+    </main>
+</body>
+</html>

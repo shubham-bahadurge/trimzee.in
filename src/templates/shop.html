@@ -1,30 +1,83 @@
 <!DOCTYPE html>
-<!-- Trimzee Shop launch information and waitlist sign-up. -->
+<!-- Trimzee Shop product catalog. -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trimzee Shop</title>
+    <title>{{ store_name }} - Trimzee</title>
     <link rel="icon" href="/img/logo-mark.png">
     <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/shop.css">
 </head>
 <body>
     {% include "_nav.html" %}
-    <main class="container shop-page">
-        <section class="panel shop-card" aria-labelledby="shopTitle">
-            <span class="pill">Coming soon</span>
-            <h1 id="shopTitle">Trimzee Shop</h1>
-            <p class="muted">Hair-care and grooming products from trusted brands, delivered to you.</p>
-            {% if current_user %}
-            <button class="btn small" type="button" id="shopNotify" {% if on_waitlist %}disabled{% endif %}>
-                {{ "✓ You're on the list" if on_waitlist else "Notify me at launch" }}
-            </button>
-            <p class="hint" id="shopStatus" aria-live="polite"></p>
-            {% else %}
-            <a class="btn small" href="/register?next=/shop">Sign up to get notified</a>
-            {% endif %}
+    <main class="store-main">
+        <div class="store-heading">
+            <div><p class="store-eyebrow">TRIMZEE STORE</p><h1>{{ store_name }}</h1>
+                <p class="muted">Everyday care, delivered by the Trimzee team.</p></div>
+            <a class="store-cart-link" href="/cart" aria-label="View cart">Cart{% if cart["items"] %} · {{ cart["items"]|sum(attribute='quantity') }}{% endif %}</a>
+        </div>
+        {% if not store_open %}
+        <div class="store-notice" role="status">The shop is temporarily closed. You can browse products, but ordering is paused.</div>
+        {% endif %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <form class="store-search" action="/shop" method="get" role="search">
+            <label class="sr-only" for="storeSearch">Search products</label>
+            <input id="storeSearch" type="search" name="q" value="{{ search }}" maxlength="80" placeholder="Search products">
+            {% if category_slug %}<input type="hidden" name="category" value="{{ category_slug }}">{% endif %}
+            <button type="submit">Search</button>
+        </form>
+        <nav class="category-chips" aria-label="Shop categories">
+            <a class="category-chip {{ 'active' if not category_slug else '' }}" href="/shop">All</a>
+            {% for category in categories %}
+            <a class="category-chip {{ 'active' if category.slug == category_slug else '' }}"
+               href="/shop?category={{ category.slug|urlencode }}{% if search %}&amp;q={{ search|urlencode }}{% endif %}">{{ category.name }}</a>
+            {% endfor %}
+        </nav>
+
+        {% if products %}
+        <section class="product-grid" aria-label="Products">
+            {% for product in products %}
+            <article class="product-card">
+                <a class="product-photo" href="/shop/{{ product.slug }}">
+                    {% if product.image_url %}<img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">
+                    {% else %}<span aria-hidden="true">✦</span>{% endif %}
+                    {% if product.mrp_paise and product.mrp_paise > product.price_paise %}
+                    <span class="discount-badge">{{ ((product.mrp_paise - product.price_paise) * 100 // product.mrp_paise) }}% off</span>
+                    {% endif %}
+                </a>
+                <div class="product-card-info">
+                    {% if product.category_name %}<span class="product-category">{{ product.category_name }}</span>{% endif %}
+                    <h2><a href="/shop/{{ product.slug }}">{{ product.name }}</a></h2>
+                    <p class="product-price">₹{{ product.price_paise|paise }}
+                        {% if product.mrp_paise and product.mrp_paise > product.price_paise %}
+                        <del>₹{{ product.mrp_paise|paise }}</del>{% endif %}</p>
+                    {% if product.available_qty == 0 %}<span class="stock-badge out">Out of stock</span>
+                    {% elif product.available_qty <= 3 %}<span class="stock-badge">Only {{ product.available_qty }} left</span>{% endif %}
+                    {% if product.variant_count %}
+                    <a class="btn small product-add" href="/shop/{{ product.slug }}">Choose options</a>
+                    {% elif store_open and product.available_qty > 0 %}
+                    <form method="post" action="/cart/add">
+                        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        <input type="hidden" name="quantity" value="1">
+                        <input type="hidden" name="next" value="/shop">
+                        <button class="btn small product-add" type="submit">Add to cart</button>
+                    </form>
+                    {% else %}
+                    <button class="btn small product-add" type="button" disabled>{{ 'Out of stock' if product.available_qty == 0 else 'Shop closed' }}</button>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
         </section>
+        {% else %}
+        <div class="store-empty"><strong>No products found</strong><p class="muted">Try another search or category.</p></div>
+        {% endif %}
     </main>
-    {% if current_user %}<script src="/js/shop.js"></script>{% endif %}
+    {% if cart["items"] %}
+    <a class="cart-sticky" href="/cart"><span>{{ cart["items"]|sum(attribute='quantity') }} item{{ '' if cart["items"]|sum(attribute='quantity') == 1 else 's' }} in your cart</span>
+        <strong>₹{{ cart.total_paise|paise }}</strong><span>View cart →</span></a>
+    {% endif %}
 </body>
 </html>

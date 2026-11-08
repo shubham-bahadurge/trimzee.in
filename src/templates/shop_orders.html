@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<!-- Customer's Trimzee Shop order history. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop orders - Trimzee</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main">
+        <div class="page-head"><h1>Shop orders</h1><a class="back" href="/my-bookings">Salon bookings</a></div>
+        {% if orders %}
+        <div class="stack">
+            {% for order in orders %}
+            <article class="order-card">
+                <div><p class="product-category">ORDER</p><h2><a href="/orders/{{ order.order_number }}">{{ order.order_number }}</a></h2>
+                    <p class="muted">{{ order.created_at.strftime('%d %b %Y') if order.created_at.strftime is defined else order.created_at }}</p></div>
+                <div class="order-card-right"><span class="order-status">{{ order.status|replace('_', ' ')|title }}</span>
+                    <strong>₹{{ order.total_paise|paise }}</strong></div>
+                <a class="btn ghost small" href="/orders/{{ order.order_number }}">View order</a>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <section class="store-empty"><strong>No shop orders yet</strong><p class="muted">Your purchases will appear here.</p>
+            <a class="btn small" href="/shop">Browse the shop</a></section>
+        {% endif %}
+    </main>
+</body>
+</html>

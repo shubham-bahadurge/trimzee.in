@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop Admin overview. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shop Admin - Trimzee</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main admin-shop">
+        <div class="page-head"><div><p class="store-eyebrow">PRIVATE ADMIN</p><h1>Shop overview</h1></div>
+            <a class="btn small" href="/shop">View shop</a></div>
+        {% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <section class="admin-stat-grid" aria-label="Today's shop performance">
+            <article><span>Today's orders</span><strong>{{ dashboard.today.order_count }}</strong></article>
+            <article><span>Today's paid revenue</span><strong>₹{{ dashboard.today.revenue_paise|paise }}</strong></article>
+            <article><span>Waiting to be packed</span><strong>{{ dashboard.waiting }}</strong></article>
+        </section>
+        <div class="admin-columns">
+            <section class="panel order-panel">
+                <h2>Paid sales · last 7 days</h2>
+                {% if dashboard.sales %}
+                <div class="admin-sales-list" role="img" aria-label="Paid revenue by day over the last 7 days">
+                    {% for day in dashboard.sales %}
+                    <div class="admin-sale-row"><span>{{ day.day }}</span>
+                        <span class="admin-sale-bar"><i style="width: {{ (day.revenue_paise * 100 // dashboard.max_sales) if dashboard.max_sales else 0 }}%"></i></span>
+                        <strong>₹{{ day.revenue_paise|paise }}</strong></div>
+                    {% endfor %}
+                </div>
+                {% else %}<p class="muted">No paid sales in the last 7 days.</p>{% endif %}
+            </section>
+            <section class="panel order-panel">
+                <h2>Low stock</h2>
+                {% if dashboard.low_stock %}
+                <ul class="admin-simple-list">
+                    {% for item in dashboard.low_stock %}
+                    <li><a href="/admin/shop/products/{{ item.id }}/edit">{{ item.name }}</a><strong>{{ item.stock_qty }} left</strong></li>
+                    {% endfor %}
+                </ul>
+                {% else %}<p class="muted">No products below the low-stock threshold.</p>{% endif %}
+            </section>
+        </div>
+    </main>
+</body>
+</html>

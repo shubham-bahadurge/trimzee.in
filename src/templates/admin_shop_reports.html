@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop reports and order CSV export. -->
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reports - Shop Admin</title><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body>{% include "_nav.html" %}
+    <main class="store-main admin-shop"><h1>Reports</h1>{% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <form class="admin-filter-form" method="get">
+            <label class="store-field">From<input type="date" name="start" required value="{{ start }}"></label>
+            <label class="store-field">To<input type="date" name="end" required value="{{ end }}"></label>
+            <button class="btn small" type="submit">Run report</button>
+            <a class="btn ghost small" href="/admin/shop/reports/orders.csv?start={{ start|urlencode }}&amp;end={{ end|urlencode }}">Export orders CSV</a>
+        </form>
+        <div class="admin-columns">
+            <section class="panel order-panel"><h2>Sales by day</h2><div class="table-wrap"><table class="table"><thead><tr><th>Day</th><th>Orders</th><th>Revenue</th></tr></thead><tbody>
+                {% for row in report.sales %}<tr><td>{{ row.day }}</td><td>{{ row.order_count }}</td><td>₹{{ row.revenue_paise|paise }}</td></tr>{% else %}<tr><td colspan="3">No sales in this period.</td></tr>{% endfor %}
+            </tbody></table></div></section>
+            <section class="panel order-panel"><h2>Top products</h2><div class="table-wrap"><table class="table"><thead><tr><th>Product</th><th>Qty</th><th>Revenue</th></tr></thead><tbody>
+                {% for row in report.top_products %}<tr><td>{{ row.name }}</td><td>{{ row.quantity }}</td><td>₹{{ row.revenue_paise|paise }}</td></tr>{% else %}<tr><td colspan="3">No product sales.</td></tr>{% endfor %}
+            </tbody></table></div></section>
+        </div>
+        <section class="panel order-panel"><h2>Coupon usage</h2><div class="table-wrap"><table class="table"><thead><tr><th>Coupon</th><th>Redemptions</th><th>Discount</th></tr></thead><tbody>
+            {% for row in report.coupon_usage %}<tr><td>{{ row.code }}</td><td>{{ row.redemptions }}</td><td>₹{{ row.discount_paise|paise }}</td></tr>{% else %}<tr><td colspan="3">No coupons.</td></tr>{% endfor %}
+        </tbody></table></div></section>
+    </main>
+</body></html>

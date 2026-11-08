@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop order detail for administrators. -->
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ order.order_number }} - Shop Admin</title><link rel="stylesheet" href="/css/site.css"><link rel="stylesheet" href="/css/shop.css"></head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main admin-shop">
+        <a class="back" href="/admin/shop/orders">← Orders</a>
+        <div class="page-head"><h1>{{ order.order_number }}</h1><span class="order-status">{{ order.status|replace('_', ' ')|title }}</span></div>
+        {% include "_admin_shop_nav.html" %}
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        <div class="admin-columns">
+            <section class="panel order-panel"><h2>Items and payment</h2>
+                {% for item in order["items"] %}
+                <div class="summary-row"><span>{{ item.product_name_snapshot }}{% if item.variant_label_snapshot %} · {{ item.variant_label_snapshot }}{% endif %} × {{ item.quantity }}</span><span>₹{{ item.line_total_paise|paise }}</span></div>
+                {% endfor %}
+                <div class="summary-row"><span>Subtotal</span><span>₹{{ order.subtotal_paise|paise }}</span></div>
+                <div class="summary-row"><span>Discount</span><span>− ₹{{ order.discount_paise|paise }}</span></div>
+                <div class="summary-row"><span>Shipping / GST</span><span>₹{{ (order.shipping_paise + order.tax_paise)|paise }}</span></div>
+                <div class="summary-row summary-total"><strong>Total</strong><strong>₹{{ order.total_paise|paise }}</strong></div>
+                <p>Payment: {{ order.payment_status|title }}{% if order.razorpay_payment_id %} · {{ order.razorpay_payment_id }}{% endif %}</p>
+                {% if refund %}<p class="muted">Refund request: {{ refund.status }}{% if refund.razorpay_refund_id %} · {{ refund.razorpay_refund_id }}{% endif %}</p>{% endif %}
+            </section>
+            <section class="panel order-panel"><h2>Customer and delivery</h2>
+                <p><a href="/admin/shop/customers/{{ order.user_id }}">{{ order.customer_name }}</a><br>{{ order.phone }}<br>{{ order.email }}</p>
+                <p>{{ order.address_line1 }}{% if order.address_line2 %}<br>{{ order.address_line2 }}{% endif %}<br>{{ order.city }}, {{ order.state }} {{ order.pincode }}<br>{{ order.country }}</p>
+            </section>
+        </div>
+        <section class="panel admin-form">
+            <h2>Update order</h2>
+            {% if allowed_next %}<form method="post" action="/admin/shop/orders/{{ order.id }}/status">
+                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                <label class="store-field">Move status to<select name="status" required>
+                    <option value="{{ allowed_next }}">{{ allowed_next|replace('_', ' ')|title }}</option>
+                    </select></label><button class="btn small" type="submit">Update status</button>
+            </form>{% endif %}
+            <form method="post" action="/admin/shop/orders/{{ order.id }}/status">
+                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                <label class="store-field">Admin note<textarea name="admin_notes" rows="3" maxlength="4000">{{ order.admin_notes }}</textarea></label>
+                <button class="btn ghost small" type="submit">Save note</button>
+            </form>
+            {% if order.status == 'pending_payment' %}
+            <form method="post" action="/admin/shop/orders/{{ order.id }}/cancel" class="admin-danger-action"
+                  onsubmit="return confirm('Cancel this unpaid order and release its stock hold?');">
+                <input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="confirm" value="yes">
+                <button class="small-btn danger" type="submit">Cancel unpaid order</button>
+            </form>
+            {% elif order.payment_status == 'paid' and order.status != 'refunded' and not refund %}
+            <a class="btn danger" href="/admin/shop/orders/{{ order.id }}/refund">Request full refund</a>
+            {% endif %}
+        </section>
+        <section class="panel order-panel"><h2>Status history</h2>
+            <ol class="order-timeline">{% for entry in order.history %}
+                <li><span class="timeline-dot"></span><div><strong>{{ entry.to_status|replace('_', ' ')|title }}</strong>
+                    <p class="muted">{{ entry.created_at.strftime('%d %b %Y, %I:%M %p') if entry.created_at.strftime is defined else entry.created_at }}{% if entry.changed_by_name %} · {{ entry.changed_by_name }}{% endif %}</p>
+                    {% if entry.note %}<p>{{ entry.note }}</p>{% endif %}</div></li>
+            {% endfor %}</ol>
+        </section>
+    </main>
+</body>
+</html>

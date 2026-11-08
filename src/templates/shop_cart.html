@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop cart and coupon preview. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your cart - Trimzee Shop</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main">
+        <div class="page-head"><h1>Your cart</h1><a class="back" href="/shop">Continue shopping</a></div>
+        {% if notice %}<p class="message {{ 'err' if notice.error else 'ok' }}">{{ notice.message }}</p>{% endif %}
+        {% if not cart["items"] %}
+        <section class="store-empty"><strong>Your cart is empty</strong><p class="muted">Find something you like in the shop.</p>
+            <a class="btn small" href="/shop">Browse products</a></section>
+        {% else %}
+        <div class="cart-layout">
+            <section class="cart-items" aria-label="Cart items">
+                {% for item in cart["items"] %}
+                <article class="cart-item">
+                    <a class="cart-item-photo" href="/shop/{{ item.slug }}">
+                        {% if item.image_url %}<img src="{{ item.image_url }}" alt="{{ item.name }}">{% else %}<span aria-hidden="true">✦</span>{% endif %}
+                    </a>
+                    <div class="cart-item-main">
+                        <h2><a href="/shop/{{ item.slug }}">{{ item.name }}</a></h2>
+                        {% if item.variant_label %}<p class="muted">{{ item.variant_label }}</p>{% endif %}
+                        <p class="product-price">₹{{ item.unit_price_paise|paise }}</p>
+                        {% if item.available_qty < item.quantity %}
+                        <p class="message err">Only {{ item.available_qty }} available. Update the quantity to continue.</p>
+                        {% endif %}
+                        <div class="cart-item-controls">
+                            <form method="post" action="/cart/items/{{ item.item_id }}/update" class="cart-quantity">
+                                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                                <label class="sr-only" for="qty-{{ item.item_id }}">Quantity for {{ item.name }}</label>
+                                <input id="qty-{{ item.item_id }}" type="number" name="quantity" min="1" max="{{ item.available_qty }}" value="{{ item.quantity }}" required>
+                                <button class="btn ghost small" type="submit">Update</button>
+                            </form>
+                            <form method="post" action="/cart/items/{{ item.item_id }}/remove">
+                                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                                <button class="link-button" type="submit">Remove</button>
+                            </form>
+                        </div>
+                    </div>
+                    <strong class="cart-line-total">₹{{ item.line_total_paise|paise }}</strong>
+                </article>
+                {% endfor %}
+            </section>
+            <aside class="cart-summary">
+                <h2>Order summary</h2>
+                <form method="post" action="/cart/coupon" class="coupon-form">
+                    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    <label class="store-field" for="couponCode">Coupon code
+                        <input id="couponCode" type="text" name="code" maxlength="40" value="{{ cart.coupon.code if cart.coupon else '' }}" placeholder="Enter code" {% if cart.coupon %}disabled{% endif %}>
+                    </label>
+                    <button class="btn ghost small" type="submit" {% if cart.coupon %}disabled{% endif %}>Apply</button>
+                </form>
+                {% if cart.coupon_error %}<p class="coupon-error" role="alert">{{ cart.coupon_error }}</p>{% endif %}
+                {% if cart.coupon %}
+                <div class="applied-coupon"><span>Applied: {{ cart.coupon.code }}</span>
+                    <form method="post" action="/cart/coupon/clear"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                        <button class="link-button" type="submit">Remove</button></form></div>
+                {% endif %}
+                <div class="summary-row"><span>Subtotal</span><span>₹{{ cart.subtotal_paise|paise }}</span></div>
+                <div class="summary-row"><span>Discount</span><span>− ₹{{ cart.discount_paise|paise }}</span></div>
+                <p class="muted summary-hint">Shipping and any applicable GST are confirmed at checkout.</p>
+                <div class="summary-row summary-total"><strong>Total</strong><strong>₹{{ cart.total_paise|paise }}</strong></div>
+                {% if cart.store_open %}
+                <a class="btn checkout-button" href="/checkout">Proceed to checkout</a>
+                {% else %}
+                <button class="btn checkout-button" type="button" disabled>Shop is temporarily closed</button>
+                {% endif %}
+                <p class="muted summary-hint">Online payment only. Delivered by Trimzee team.</p>
+            </aside>
+        </div>
+        {% endif %}
+    </main>
+</body>
+</html>

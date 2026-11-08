@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<!-- Trimzee Shop checkout address and order review. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Trimzee Shop</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/shop.css">
+</head>
+<body>
+    {% include "_nav.html" %}
+    <main class="store-main">
+        <div class="page-head"><h1>Checkout</h1><a class="back" href="/cart">← Back to cart</a></div>
+        <div class="checkout-layout">
+            <section class="checkout-address">
+                <h2>Delivery address</h2>
+                <p class="muted">Delivered by Trimzee team. Please provide a complete address.</p>
+                <form class="checkout-fields" id="shop-checkout-form">
+                    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                    <label class="store-field">Full name<input type="text" name="customer_name" maxlength="100" required value="{{ address.get('customer_name', user.name) }}"></label>
+                    <div class="checkout-two">
+                        <label class="store-field">Phone<input type="tel" name="phone" inputmode="numeric" maxlength="14" autocomplete="tel" required value="{{ address.get('phone', user.phone or '') }}"></label>
+                        <label class="store-field">Email<input type="email" name="email" maxlength="160" autocomplete="email" required value="{{ address.get('email', user.email) }}"></label>
+                    </div>
+                    <label class="store-field">Address line 1<input type="text" name="address_line1" maxlength="180" required value="{{ address.get('address_line1', '') }}"></label>
+                    <label class="store-field">Address line 2 (optional)<input type="text" name="address_line2" maxlength="180" value="{{ address.get('address_line2', '') }}"></label>
+                    <div class="checkout-two">
+                        <label class="store-field">City<input type="text" name="city" maxlength="80" required value="{{ address.get('city', '') }}"></label>
+                        <label class="store-field">State<input type="text" name="state" maxlength="80" required value="{{ address.get('state', '') }}"></label>
+                    </div>
+                    <div class="checkout-two">
+                        <label class="store-field">PIN code<input type="text" name="pincode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required value="{{ address.get('pincode', '') }}"></label>
+                        <label class="store-field">Country<input type="text" name="country" maxlength="80" required value="{{ address.get('country', 'India') }}"></label>
+                    </div>
+                    <button class="btn checkout-button" type="submit" {% if not key_id %}disabled{% endif %}>Pay with Razorpay</button>
+                    <p class="muted summary-hint" id="payment-message" role="status" aria-live="polite">
+                        {% if not key_id %}Online payment is not configured yet. Please try again later.{% endif %}
+                    </p>
+                </form>
+            </section>
+            <aside class="cart-summary">
+                <h2>Order summary</h2>
+                {% for item in cart["items"] %}
+                <div class="summary-row"><span>{{ item.name }}{% if item.variant_label %} · {{ item.variant_label }}{% endif %} × {{ item.quantity }}</span>
+                    <span>₹{{ item.line_total_paise|paise }}</span></div>
+                {% endfor %}
+                <div class="summary-row"><span>Subtotal</span><span>₹{{ cart.subtotal_paise|paise }}</span></div>
+                <div class="summary-row"><span>Discount{% if cart.coupon %} · {{ cart.coupon.code }}{% endif %}</span><span>− ₹{{ cart.discount_paise|paise }}</span></div>
+                <div class="summary-row"><span>Shipping</span><span>₹0.00</span></div>
+                <div class="summary-row"><span>GST ({{ gst_percent }}%)</span>
+                    <span>₹{{ tax_paise|paise }}</span></div>
+                <div class="summary-row summary-total"><strong>Total</strong><strong>₹{{ checkout_total_paise|paise }}</strong></div>
+                <p class="muted summary-hint">Online payment only. The server recalculates inventory, coupon, GST, and total before payment.</p>
+            </aside>
+        </div>
+    </main>
+    {% if key_id %}
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        const checkoutForm = document.getElementById("shop-checkout-form");
+        const paymentMessage = document.getElementById("payment-message");
+        const payButton = checkoutForm.querySelector("button[type=submit]");
+
+        checkoutForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            if (!checkoutForm.reportValidity()) return;
+            payButton.disabled = true;
+            paymentMessage.textContent = "Preparing your secure payment...";
+            try {
+                const response = await fetch("/shop/payment/create", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                    body: new URLSearchParams(new FormData(checkoutForm))
+                });
+                const payment = await response.json();
+                if (!response.ok) throw new Error(payment.error || "Could not start payment.");
+                const checkout = new Razorpay({
+                    key: payment.key_id,
+                    amount: payment.amount_paise,
+                    currency: payment.currency,
+                    name: payment.site_name,
+                    image: payment.image_url,
+                    order_id: payment.razorpay_order_id,
+                    prefill: {
+                        name: payment.customer_name,
+                        email: payment.email,
+                        contact: payment.phone
+                    },
+                    notes: {order_number: payment.order_number},
+                    theme: {color: "#216b55"},
+                    handler: async (result) => {
+                        paymentMessage.textContent = "Verifying your payment...";
+                        const verification = new URLSearchParams({
+                            csrf: checkoutForm.elements.csrf.value,
+                            razorpay_order_id: result.razorpay_order_id,
+                            razorpay_payment_id: result.razorpay_payment_id,
+                            razorpay_signature: result.razorpay_signature
+                        });
+                        try {
+                            const verified = await fetch("/shop/payment/verify", {
+                                method: "POST",
+                                credentials: "same-origin",
+                                headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                                body: verification
+                            });
+                            const outcome = await verified.json();
+                            if (!verified.ok) throw new Error(outcome.error || "Payment verification failed.");
+                            if (outcome.status === "refunded") {
+                                paymentMessage.textContent =
+                                    "Payment was received, but the item could not be reserved. A full refund was initiated.";
+                            }
+                            window.location.assign(outcome.redirect);
+                        } catch (error) {
+                            paymentMessage.textContent = error.message;
+                            payButton.disabled = false;
+                        }
+                    },
+                    modal: {
+                        ondismiss: () => {
+                            paymentMessage.textContent =
+                                "Payment was not completed. Your stock hold will expire automatically.";
+                            payButton.disabled = false;
+                        }
+                    }
+                });
+                checkout.on("payment.failed", (result) => {
+                    paymentMessage.textContent =
+                        result.error && result.error.description
+                            ? result.error.description
+                            : "Payment failed. Please try again.";
+                    payButton.disabled = false;
+                });
+                checkout.open();
+            } catch (error) {
+                paymentMessage.textContent = error.message;
+                payButton.disabled = false;
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

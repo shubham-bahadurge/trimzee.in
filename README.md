@@ -73,7 +73,7 @@ and upgraded automatically when the app starts.
 - `src/public/js/salon.js` loads salon availability and submits appointment requests.
 - `src/public/js/notify.js` displays booking and appointment notifications.
 - `src/public/js/chat.js` controls the assistant widget.
-- `src/public/js/shop.js` controls the shop waiting-list interaction.
+- Shop catalog, cart, checkout, and order pages are rendered from `src/shop_routes.py` and `src/templates/shop_*.html`.
 - Shared page styles are consolidated into `site.css` in the former cascade order: `style.css`, `auth.css`, `extra.css`, `theme.css`, `modern.css`, `modern2.css`, and `modern3.css`. Salon details load `salon.css` after the shared bundle.
 - The corresponding files under root `public/` are static-asset copies used by deployment setups.
 - `src/templates/` contains pages for account access, salons, bookings, owner dashboards, admin tools, plans, checkout, and legal information. Each template begins with a short comment describing its purpose.
@@ -160,6 +160,7 @@ environment variables in your shell or hosting provider when you enable them:
 | `SECRET_KEY` | Signs browser sessions and verification codes. Set a long, private value outside local development. |
 | `DATABASE_URL` or `POSTGRES_URL` | Connects to PostgreSQL. If neither is set, the app uses SQLite. |
 | `PUBLIC_URL` | Public site URL used when generating shareable links. |
+| `SITE_URL` | Canonical Trimzee site URL used by online shop checkout configuration. |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Create or configure the administrator account during database setup. |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Enable Razorpay checkout and payment verification. |
 | `RAZORPAY_WEBHOOK_SECRET` | Verify incoming Razorpay webhook requests. |
@@ -171,6 +172,27 @@ environment variables in your shell or hosting provider when you enable them:
 | `BILLING_ENFORCE` | Set to `1` to enforce the subscription checks used by billing features. |
 
 Never put real credentials in source files or commit them to Git.
+
+### Shop database and Razorpay setup
+
+After setting `DATABASE_URL` (or `POSTGRES_URL`) to the Neon connection string,
+run `python src/migrate_shop.py` from the repository root. The migration runner
+tracks and applies all shop schema, payment-reservation, image-storage, and
+refund migrations. To add the sample catalog, run `python src/seed_shop.py`
+after the migrations.
+
+Keep the existing `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` used for salon
+subscriptions. Configure `RAZORPAY_WEBHOOK_SECRET` in Vercel and set the
+Razorpay webhook URL to `https://<your-site>/webhooks/razorpay` for the
+`payment.captured`, `payment.failed`, and `refund.processed` events.
+
+The customer shop is served from `/shop`; its cart and checkout require a
+customer login. The private owner panel is at `/admin/shop` and requires an
+account whose role is `admin`. It manages the catalog, orders, coupons,
+customers, reports, and store settings. Product uploads are stored in Postgres.
+Run the migrations against Neon before deploying the shop or using the admin
+panel; do not use the local SQLite database for production shop data.
+
 Signed-in browser sessions persist for 30 days. On Vercel, configure a stable,
 private `SECRET_KEY` in the project settings before deploying; the app refuses
 to start there without one because a changing key invalidates saved sessions.
