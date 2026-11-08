@@ -8,17 +8,15 @@ const locBtn = document.getElementById("useLocation");
 const locStatus = document.getElementById("locStatus");
 const mapElement = document.getElementById("nearbyMap");
 const mapMessage = document.getElementById("mapMessage");
-const genderBtn = document.getElementById("genderBtn");
-const genderPanel = document.getElementById("genderPanel");
 const savedView = document.body.dataset.savedView === "true";
 const savedStorageKey = "trimzee.savedSalons";
 
-let activeGender = "";
 let here = null;
 let nearbyMap = null;
 let mapMarkers = new Map();
 let userMarker = null;
 let rangeCircle = null;
+let leafletPromise = null;
 
 function readSavedSalons() {
     try {
@@ -56,11 +54,9 @@ function applyFilters() {
     let visible = 0;
     cards.forEach(function (card) {
         const matchText = !text || card.dataset.name.includes(text) || card.dataset.services.includes(text);
-        const gender = card.dataset.gender;
-        const matchGender = !activeGender || gender === activeGender || gender === "unisex";
         const matchRange = !here || (card.dataset.known === "1" && parseFloat(card.dataset.distance) <= RANGE_KM);
         const matchSaved = !savedView || savedSalons.includes(card.dataset.salonId);
-        const show = matchText && matchGender && matchRange && matchSaved;
+        const show = matchText && matchRange && matchSaved;
         card.hidden = !show;
         if (show) { visible += 1; }
     });
@@ -97,6 +93,31 @@ function statusColor(status) {
     return { available: "#15803d", busy: "#d97706", full: "#dc2626", closed: "#64748b" }[status] || "#64748b";
 }
 
+function loadLeaflet() {
+    if (window.L) { return Promise.resolve(); }
+    if (leafletPromise) { return leafletPromise; }
+    leafletPromise = new Promise(function (resolve, reject) {
+        const css = document.createElement("link");
+        css.rel = "stylesheet";
+        css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        css.integrity = "sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H";
+        css.crossOrigin = "anonymous";
+        document.head.appendChild(css);
+
+        const script = document.createElement("script");
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.integrity = "sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH";
+        script.crossOrigin = "anonymous";
+        script.onload = resolve;
+        script.onerror = function () { reject(new Error("Leaflet failed to load")); };
+        document.head.appendChild(script);
+    }).catch(function (error) {
+        leafletPromise = null;
+        throw error;
+    });
+    return leafletPromise;
+}
+
 function createMapPopup(card) {
     const popup = document.createElement("div");
     const name = document.createElement("strong");
@@ -123,8 +144,12 @@ function updateMap() {
         return;
     }
     if (!window.L) {
-        mapMessage.textContent = "The map could not be loaded. Please try again later.";
+        mapMessage.textContent = "Loading nearby map…";
         mapMessage.hidden = false;
+        loadLeaflet().then(updateMap).catch(function () {
+            mapMessage.textContent = "The map could not be loaded. Please try again later.";
+            mapMessage.hidden = false;
+        });
         return;
     }
     if (!nearbyMap) {
@@ -241,24 +266,3 @@ document.querySelectorAll(".save-salon").forEach(function (btn) {
 });
 updateSaveButtons();
 applyFilters();
-
-if (genderBtn) {
-    genderBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        genderPanel.hidden = !genderPanel.hidden;
-        genderBtn.setAttribute("aria-expanded", String(!genderPanel.hidden));
-    });
-    genderPanel.addEventListener("click", function (e) { e.stopPropagation(); });
-    genderPanel.querySelectorAll(".gender").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-            activeGender = btn.dataset.gender;
-            genderPanel.querySelectorAll(".gender").forEach(function (b) { b.classList.remove("active"); });
-            btn.classList.add("active");
-            genderBtn.classList.toggle("on", activeGender !== "");
-            genderPanel.hidden = true;
-            genderBtn.setAttribute("aria-expanded", "false");
-            applyFilters();
-        });
-    });
-    document.addEventListener("click", function () { genderPanel.hidden = true; });
-}

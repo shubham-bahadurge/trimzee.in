@@ -1,6 +1,6 @@
 // Trimzee salon page: live slots, 5 km live-location check, booking + confirmation code
 const MAX_KM = 5;
-const POLL_MS = 5000;
+const POLL_MS = 15000;
 const info = document.body.dataset;
 const salonId = info.salonId;
 const auth = info.auth;
@@ -22,6 +22,7 @@ let selected = null;
 let here = null;
 let nearOk = false;
 let lastData = null;
+let loadingSlots = false;
 
 function haversineKm(lat1, lon1, lat2, lon2) {
     const rad = Math.PI / 180;
@@ -141,7 +142,8 @@ function render(data) {
 }
 
 async function loadSlots() {
-    if (document.hidden) { return; }
+    if (document.hidden || loadingSlots) { return; }
+    loadingSlots = true;
     try {
         const params = new URLSearchParams({ day: day });
         if (barberSelect && barberSelect.value) { params.set("barber_id", barberSelect.value); }
@@ -157,6 +159,14 @@ async function loadSlots() {
             updateButton();
         }
     } catch (e) { /* offline: keep showing the last times */ }
+    finally { loadingSlots = false; }
+}
+
+function scheduleSlotRefresh() {
+    window.setTimeout(async function () {
+        await loadSlots();
+        scheduleSlotRefresh();
+    }, POLL_MS);
 }
 
 tabs.forEach(function (tab) {
@@ -244,4 +254,4 @@ document.addEventListener("visibilitychange", function () { if (!document.hidden
 watchLocation();
 updateRange();
 loadSlots();
-setInterval(loadSlots, POLL_MS);
+scheduleSlotRefresh();

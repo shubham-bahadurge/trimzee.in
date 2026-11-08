@@ -16,6 +16,7 @@ let nearbyMap = null;
 let mapMarkers = new Map();
 let userMarker = null;
 let rangeCircle = null;
+let leafletPromise = null;
 
 function readSavedSalons() {
     try {
@@ -92,6 +93,31 @@ function statusColor(status) {
     return { available: "#15803d", busy: "#d97706", full: "#dc2626", closed: "#64748b" }[status] || "#64748b";
 }
 
+function loadLeaflet() {
+    if (window.L) { return Promise.resolve(); }
+    if (leafletPromise) { return leafletPromise; }
+    leafletPromise = new Promise(function (resolve, reject) {
+        const css = document.createElement("link");
+        css.rel = "stylesheet";
+        css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        css.integrity = "sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H";
+        css.crossOrigin = "anonymous";
+        document.head.appendChild(css);
+
+        const script = document.createElement("script");
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.integrity = "sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH";
+        script.crossOrigin = "anonymous";
+        script.onload = resolve;
+        script.onerror = function () { reject(new Error("Leaflet failed to load")); };
+        document.head.appendChild(script);
+    }).catch(function (error) {
+        leafletPromise = null;
+        throw error;
+    });
+    return leafletPromise;
+}
+
 function createMapPopup(card) {
     const popup = document.createElement("div");
     const name = document.createElement("strong");
@@ -118,8 +144,12 @@ function updateMap() {
         return;
     }
     if (!window.L) {
-        mapMessage.textContent = "The map could not be loaded. Please try again later.";
+        mapMessage.textContent = "Loading nearby map…";
         mapMessage.hidden = false;
+        loadLeaflet().then(updateMap).catch(function () {
+            mapMessage.textContent = "The map could not be loaded. Please try again later.";
+            mapMessage.hidden = false;
+        });
         return;
     }
     if (!nearbyMap) {

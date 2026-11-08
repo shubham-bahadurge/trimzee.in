@@ -1,4 +1,4 @@
-"""SalonGo extras: admin, salon approval, reviews, service editing,
+"""Trimzee extras: admin, salon approval, reviews, service editing,
 real-location support and login rate limiting. Builds on db.py."""
 import os
 import re

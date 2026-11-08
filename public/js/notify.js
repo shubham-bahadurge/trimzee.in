@@ -1,10 +1,11 @@
 // Trimzee alerts: new bookings for owners, "5 minutes to go" reminders for customers.
-// Works while the site is open (tab or home-screen app). Checks every 15 seconds.
+// Works while the site is open (tab or home-screen app). Checks every 30 seconds.
 (function () {
     if (!window.TZ_AUTH) { return; }
     var box = document.createElement("div");
     box.className = "toasts";
     document.body.appendChild(box);
+    var polling = false;
 
     function toast(item) {
         var el = document.createElement("div");
@@ -23,7 +24,8 @@
         }
     }
     async function poll() {
-        if (document.hidden) { return; }      // don't poll while the tab is in the background
+        if (document.hidden || polling) { return; }
+        polling = true;
         try {
             var res = await fetch("/api/notifications", { credentials: "same-origin" });
             if (!res.ok) { return; }
@@ -39,6 +41,7 @@
                 setTimeout(function () { location.reload(); }, 2500);
             }
         } catch (e) { /* offline: try again next time */ }
+        finally { polling = false; }
     }
     var enable = document.getElementById("enableAlerts");
     if (enable) {
@@ -50,7 +53,11 @@
         });
         if ("Notification" in window && Notification.permission === "granted") { enable.textContent = "🔔 Alerts are on"; }
     }
+    async function schedulePoll() {
+        await poll();
+        setTimeout(schedulePoll, 30000);
+    }
     poll();
-    setInterval(poll, 15000);
+    setTimeout(schedulePoll, 30000);
     document.addEventListener("visibilitychange", function () { if (!document.hidden) { poll(); } });
 })();

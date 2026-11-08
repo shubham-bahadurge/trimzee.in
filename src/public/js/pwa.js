@@ -1,5 +1,12 @@
 "use strict";
 
+if (!document.querySelector('link[rel="manifest"]')) {
+    const manifest = document.createElement("link");
+    manifest.rel = "manifest";
+    manifest.href = "/manifest.webmanifest";
+    document.head.appendChild(manifest);
+}
+
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/service-worker.js")
         .catch((error) => console.error("Trimzee service worker registration failed:", error));
@@ -13,12 +20,12 @@ const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 if (installButton && !isStandalone) {
+    installButton.hidden = false;
     if (isIos) {
         installButton.textContent = "Add Trimzee to Home Screen";
-        installButton.hidden = false;
-        installButton.addEventListener("click", () => {
-            installHelp.hidden = false;
-        });
+        installHelp.textContent = "In Safari, tap Share, then choose Add to Home Screen.";
+    } else {
+        installHelp.textContent = "Use your browser's menu and choose Install Trimzee or Add to Home Screen.";
     }
 
     window.addEventListener("beforeinstallprompt", (event) => {
@@ -29,6 +36,7 @@ if (installButton && !isStandalone) {
 
     installButton.addEventListener("click", async () => {
         if (!installPrompt) {
+            installHelp.hidden = false;
             return;
         }
         installPrompt.prompt();

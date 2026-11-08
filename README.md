@@ -25,7 +25,8 @@ point: it loads the Flask app from `src/app.py` and points static files at
 `src/public/`.
 
 To stop the development server, press `Ctrl+C` in the terminal. The SQLite
-database is stored at `src/database/salongo.db` by default. It is initialized
+database is stored at the legacy path `src/database/salongo.db` by default to
+preserve existing local data. It is initialized
 and upgraded automatically when the app starts.
 
 ## Project map
@@ -79,8 +80,8 @@ and upgraded automatically when the app starts.
 
 ## Install Trimzee
 
-The homepage can be installed from a supported browser using the **Install
-Trimzee** button or the browser's install menu. On iPhone and iPad, use Safari's
+Trimzee can be installed from the shared menu using the **Install Trimzee**
+button or the browser's install menu. On iPhone and iPad, use Safari's
 Share menu and choose **Add to Home Screen**. The app manifest and root-scoped
 service worker provide the standalone app window and a simple offline page.
 
@@ -88,6 +89,9 @@ The service worker caches only the offline page and selected static app assets.
 Salon listings, location results, account pages, bookings, and API responses
 remain network-only and are never stored for offline use. The install prompt
 requires HTTPS in production; `localhost` is supported for local testing.
+The map library is loaded only after location is shared, and availability and
+notification refreshes use lower-frequency, non-overlapping checks to reduce
+unnecessary network work.
 
 ## How appointment booking works
 

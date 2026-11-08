@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "trimzee-pwa-v1";
+const CACHE_NAME = "trimzee-pwa-v2";
 const APP_SHELL = [
     "/offline.html",
     "/manifest.webmanifest",

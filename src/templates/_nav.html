@@ -4,6 +4,8 @@
         <button class="icon-btn" type="button" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="menuPanel">☰</button>
         <nav class="pop left" id="menuPanel" hidden>
             <a href="/">Home</a>
+            <button class="install-menu-button" id="installApp" type="button" hidden>Install Trimzee</button>
+            <p class="install-help" id="installHelp" hidden>In Safari, tap Share, then choose Add to Home Screen.</p>
             {% if current_user and current_user.role == 'owner' %}
             <a href="/dashboard">Dashboard</a>
             <a href="/plans">Subscription</a>
@@ -106,3 +108,4 @@
 </nav>
 {% if current_user %}<script>window.TZ_AUTH = true; window.TZ_ROLE = "{{ current_user.role }}";</script>
 <script src="/js/notify.js"></script>{% endif %}
+<script src="/js/pwa.js"></script>

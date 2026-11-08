@@ -1,6 +1,6 @@
-"""Optional PostgreSQL backend for SalonGo.
+"""Optional PostgreSQL backend for Trimzee.
 
-When the DATABASE_URL (or POSTGRES_URL) setting exists, SalonGo stores everything in
+When the DATABASE_URL (or POSTGRES_URL) setting exists, Trimzee stores everything in
 that Postgres database instead of the temporary SQLite file. db.py and extras.py keep
 working unchanged: this module gives them a connection that speaks the same small
 dialect (`?` placeholders, `.lastrowid`, rows readable by name or position).

@@ -10,10 +10,6 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/img/pwa-icon-192.png">
     <link rel="stylesheet" href="/css/site.css">
-    {% if not saved_view %}
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
-    {% endif %}
 </head>
 <body class="home" data-saved-view="{{ 'true' if saved_view else 'false' }}">
     {% include "_nav.html" %}
@@ -21,8 +17,6 @@
     <section class="hero-tag">
         <h1>Your salon<br>on your time.</h1>
         <p>Quick. Free. Skip the wait.</p>
-        <button class="btn small install-app-button" id="installApp" type="button" hidden>Install Trimzee</button>
-        <p class="muted install-help" id="installHelp" hidden>In Safari, tap Share, then choose Add to Home Screen.</p>
     </section>
 
     <main class="home-main">
@@ -133,10 +127,7 @@
     </div>
 
     <footer class="footer">© Trimzee · Book your salon. Skip the wait.</footer>
-    {% if not saved_view %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>{% endif %}
     <script src="/js/app.js"></script>
     <script src="/js/chat.js"></script>
-    <script src="/js/pwa.js"></script>
 </body>
 </html>

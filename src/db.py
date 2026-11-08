@@ -1,4 +1,4 @@
-"""SalonGo database layer (SQLite).
+"""Trimzee database layer (SQLite).
 
 Tables, sample data, salon queries, slots, booking, accounts and owner tools.
 Uses only Python's built-in sqlite3, so there is nothing extra to install.

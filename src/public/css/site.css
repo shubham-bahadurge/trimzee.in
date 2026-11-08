@@ -234,6 +234,11 @@ h1, h2, h3 { letter-spacing: -.01em; }
 .pop .pop-btn.active { background: var(--ink); color: var(--paper); }
 .pop .soon { color: var(--muted); cursor: default; } .pop .soon small { font-weight: 500; }
 .pop .who { cursor: default; border-bottom: 1px solid var(--line); border-radius: 0; margin-bottom: 4px; }
+.pop .install-menu-button { padding: 11px 12px; border: 0; border-radius: 10px; background: var(--bg); color: var(--ink);
+    font: inherit; font-size: .95rem; font-weight: 700; text-align: left; cursor: pointer; }
+.pop .install-menu-button:hover, .pop .install-menu-button:focus-visible { background: var(--line); outline: none; }
+.pop .install-menu-button[hidden], .pop .install-help[hidden] { display: none; }
+.pop .install-help { margin: 0 8px 8px; color: var(--muted); font-size: .8rem; line-height: 1.4; }
 .pop form { display: contents; }
 .bottom-tabs { position: fixed; z-index: 60; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 9px 12px max(9px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--paper); }
 .bottom-tabs.has-subscription { grid-template-columns: repeat(3, minmax(0, 1fr)); }
