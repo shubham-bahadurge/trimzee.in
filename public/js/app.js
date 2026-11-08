@@ -154,7 +154,7 @@ function updateMap() {
     }
     if (!nearbyMap) {
         const zoom = mapElement.clientWidth < 400 ? 11 : 12;
-        nearbyMap = L.map(mapElement).setView([here.latitude, here.longitude], zoom);
+        nearbyMap = L.map(mapElement, { scrollWheelZoom: false }).setView([here.latitude, here.longitude], zoom);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
