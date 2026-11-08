@@ -52,7 +52,7 @@ function post(url, body) {
 
 function updateButton() {
     const services = serviceOptions.filter(function (service) { return service.checked; });
-    if (auth !== "customer") {
+    if (auth && auth !== "customer") {
         confirmBtn.disabled = true;
         confirmBtn.textContent = "Customer account needed";
     } else if (!nearOk) {
@@ -64,6 +64,9 @@ function updateButton() {
     } else if (!selected) {
         confirmBtn.disabled = true;
         confirmBtn.textContent = "Select a time to continue";
+    } else if (!auth) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "Create account to confirm booking";
     } else {
         confirmBtn.disabled = false;
         confirmBtn.textContent = "Confirm booking for " + pretty(selected.slice(11));
@@ -105,10 +108,6 @@ function watchLocation() {
 
 // ---- slot selection -----------------------------------------------------
 function selectSlot(slot) {
-    if (auth !== "customer") {
-        showMessage(auth === "" ? "Please sign in to book." : "Please use a customer account to book.", false);
-        return;
-    }
     selected = slot;
     message.hidden = true;
     updateButton();
@@ -225,6 +224,10 @@ serviceOptions.forEach(function (service) {
 });
 
 confirmBtn.addEventListener("click", async function () {
+    if (!auth) {
+        window.location.assign("/register?next=" + encodeURIComponent("/salon/" + salonId));
+        return;
+    }
     const services = serviceOptions.filter(function (service) { return service.checked; });
     confirmBtn.disabled = true;
     try {
