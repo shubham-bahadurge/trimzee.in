@@ -224,13 +224,13 @@ confirmBtn.addEventListener("click", async function () {
             phone: document.getElementById("phone").value,
             lat: here ? here.latitude : null, lng: here ? here.longitude : null
         });
-        const data = await res.json();
+        const data = await res.json().catch(function () { return {}; });
         if (res.status === 201) {
             selected = null;
             message.hidden = true;
             openModal(data);
         } else {
-            showMessage(data.error || "Something went wrong. Please try again.", false);
+            showMessage(data.error || "Booking could not be completed (" + res.status + "). Please try again.", false);
         }
     } catch (e) {
         showMessage("Network problem. Please try again.", false);

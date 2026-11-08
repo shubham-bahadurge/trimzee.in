@@ -7,6 +7,7 @@ dialect (`?` placeholders, `.lastrowid`, rows readable by name or position).
 """
 import contextlib
 import os
+import re
 import sqlite3
 import threading
 import time
@@ -21,6 +22,7 @@ ENABLED = bool(DATABASE_URL)
 
 INTEGRITY_ERRORS = (sqlite3.IntegrityError,) + ((psycopg.IntegrityError,) if psycopg else ())
 LOCK_ID = 727001  # any fixed number: makes two starting servers set up the database one at a time
+INSERT_TABLES_WITHOUT_ID = {"booking_services"}
 
 
 class Row(dict):
@@ -70,10 +72,13 @@ class Connection:
             # Postgres style: %s placeholders, and a literal % must be written %%.
             text = text.replace("%", "%%").replace("?", "%s")
         is_insert = text[:6].upper() == "INSERT" and "RETURNING" not in text.upper()
-        if is_insert:
+        table_match = re.match(r'INSERT\s+INTO\s+(?:"?([a-zA-Z_]\w*)"?)(?:\s|[(])', text, re.IGNORECASE)
+        returns_id = (is_insert and table_match is not None
+                      and table_match.group(1).lower() not in INSERT_TABLES_WITHOUT_ID)
+        if returns_id:
             text += " RETURNING id"  # lets us offer .lastrowid like SQLite does
         cur = self._raw.execute(text, tuple(params) if params else None)
-        if is_insert:
+        if returns_id:
             return Cursor(cur, cur.fetchone()["id"])
         return Cursor(cur)
 
