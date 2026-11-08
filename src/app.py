@@ -27,6 +27,7 @@ import minipdf  # noqa: E402
 import qr  # noqa: E402
 import signup  # noqa: E402
 import slots  # noqa: E402
+import push  # noqa: E402
 
 # "public" is where Vercel serves static files from.
 app = Flask(__name__, static_folder="public", static_url_path="")
@@ -1047,6 +1048,43 @@ def api_notifications_read():
     body = request.get_json(silent=True) or {}
     if user and isinstance(body.get("ids"), list):
         meta.mark_read(user["id"], body["ids"])
+    return jsonify({"ok": True})
+
+
+@app.route("/api/push/config")
+def api_push_config():
+    configured = push.available()
+    return jsonify({"available": configured,
+                    "public_key": os.environ.get("VAPID_PUBLIC_KEY") if configured else None})
+
+
+@app.route("/api/push/subscribe", methods=["POST"])
+def api_push_subscribe():
+    user = current_user()
+    if not user:
+        return jsonify({"error": "Sign in to enable notifications."}), 401
+    sent = request.headers.get("X-CSRF-Token", "").encode()
+    real = session.get("csrf", "").encode()
+    if not real or not secrets.compare_digest(sent, real):
+        return jsonify({"error": "Your session expired. Refresh and try again."}), 400
+    if not push.available():
+        return jsonify({"error": "Push notifications are not configured yet."}), 503
+    if not push.save_subscription(user["id"], request.get_json(silent=True)):
+        return jsonify({"error": "The browser subscription is invalid. Please try again."}), 400
+    return jsonify({"ok": True})
+
+
+@app.route("/api/push/unsubscribe", methods=["POST"])
+def api_push_unsubscribe():
+    user = current_user()
+    if not user:
+        return jsonify({"error": "Sign in to manage notifications."}), 401
+    sent = request.headers.get("X-CSRF-Token", "").encode()
+    real = session.get("csrf", "").encode()
+    if not real or not secrets.compare_digest(sent, real):
+        return jsonify({"error": "Your session expired. Refresh and try again."}), 400
+    body = request.get_json(silent=True) or {}
+    push.remove_subscription(user["id"], body.get("endpoint"))
     return jsonify({"ok": True})
 
 

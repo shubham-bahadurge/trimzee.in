@@ -7,6 +7,7 @@ from datetime import timedelta
 import db
 import extras
 import pgdb
+import push
 
 USER_GENDERS = ("male", "female")
 SAMPLE_GENDERS = {"Style Studio": "men", "Royal Cuts": "men", "Glow Beauty Lounge": "women",
@@ -275,6 +276,8 @@ def notify_new_booking(booking_id):
             _notify(conn, r["owner_id"], "booking", booking_id,
                     f"New booking: {r['customer']} · {service} at {_pretty(r['slot_start'])}")
             conn.commit()
+            push.send_to_user(r["owner_id"], f"New booking: {r['customer']} · {service} at "
+                              f"{_pretty(r['slot_start'])}", "/dashboard", f"booking-{booking_id}")
     finally:
         conn.close()
 

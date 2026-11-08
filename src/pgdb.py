@@ -21,6 +21,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") 
 ENABLED = bool(DATABASE_URL)
 
 INTEGRITY_ERRORS = (sqlite3.IntegrityError,) + ((psycopg.IntegrityError,) if psycopg else ())
+DATABASE_ERRORS = (sqlite3.Error,) + ((psycopg.Error,) if psycopg else ())
 LOCK_ID = 727001  # any fixed number: makes two starting servers set up the database one at a time
 INSERT_TABLES_WITHOUT_ID = {"booking_services"}
 
@@ -242,6 +243,7 @@ class _SqliteLikeErrors:
     """Stands in for the sqlite3 module inside db.py so its
     `except sqlite3.IntegrityError` also catches Postgres errors."""
     IntegrityError = INTEGRITY_ERRORS
+    Error = DATABASE_ERRORS
 
 
 def install(db_module):

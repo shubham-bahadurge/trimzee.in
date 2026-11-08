@@ -6,6 +6,10 @@
             <a href="/">Home</a>
             <button class="install-menu-button" id="installApp" type="button" hidden>Install Trimzee</button>
             <p class="install-help" id="installHelp" hidden>In Safari, tap Share, then choose Add to Home Screen.</p>
+            {% if current_user %}
+            <button class="install-menu-button" id="enablePush" type="button" hidden>Enable notifications</button>
+            <p class="install-help" id="pushHelp" hidden aria-live="polite"></p>
+            {% endif %}
             {% if current_user and current_user.role == 'owner' %}
             <a href="/dashboard">Dashboard</a>
             <a href="/plans">Subscription</a>
@@ -106,6 +110,6 @@
     </a>
     {% endif %}
 </nav>
-{% if current_user %}<script>window.TZ_AUTH = true; window.TZ_ROLE = "{{ current_user.role }}";</script>
+{% if current_user %}<script>window.TZ_AUTH = true; window.TZ_ROLE = "{{ current_user.role }}"; window.TZ_CSRF = "{{ csrf_token() }}";</script>
 <script src="/js/notify.js"></script>{% endif %}
 <script src="/js/pwa.js"></script>

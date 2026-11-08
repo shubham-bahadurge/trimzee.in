@@ -93,6 +93,37 @@ The map library is loaded only after location is shared, and availability and
 notification refreshes use lower-frequency, non-overlapping checks to reduce
 unnecessary network work.
 
+### Device push notifications
+
+Signed-in users can enable device notifications from the menu. Web Push works
+when the page is closed after the browser has granted permission. On iPhone or
+iPad, install Trimzee from Safari's Share menu first, then enable notifications
+inside the installed app. Push delivery requires these Vercel environment
+variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `VAPID_PUBLIC_KEY` | Public application-server key used by the browser. |
+| `VAPID_PRIVATE_KEY` | Contents of `private_key.pem`, used only by the server to sign pushes. Keep secret. |
+| `VAPID_CLAIMS_EMAIL` | Contact URI such as `mailto:support@example.com`. |
+
+Generate a VAPID key pair outside the repository so the private key is never
+committed:
+
+```sh
+mkdir -p "$HOME/.trimzee-vapid"
+cd "$HOME/.trimzee-vapid"
+vapid --gen --applicationServerKey
+```
+
+Copy the printed application server key to `VAPID_PUBLIC_KEY`, the contents of
+`private_key.pem` to `VAPID_PRIVATE_KEY`, and a `mailto:` contact URI to
+`VAPID_CLAIMS_EMAIL`. Add the values
+to Vercel's project environment settings and redeploy. Booking requests and
+owner accept/reject updates are sent as device notifications; in-app alerts
+continue to work independently. Users can turn device notifications off again
+from the same menu.
+
 ## How appointment booking works
 
 1. The salon page asks `/api/salons/<salon_id>/slots` for current availability.

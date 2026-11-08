@@ -7,6 +7,7 @@ import db
 import mailer
 import meta
 import extras
+import push
 
 
 def init_growth():
@@ -134,6 +135,7 @@ def tell_customer(booking_id, accepted):
         conn.commit()
     finally:
         conn.close()
+    push.send_to_user(info["customer_id"], text, f"/booking/{booking_id}", f"booking-update-{booking_id}")
     mailer.send_whatsapp(wa_number(info["contact_phone"]), "Trimzee: " + text)
 
 

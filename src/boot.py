@@ -9,8 +9,9 @@ import meta
 import slots
 import billing
 import payments
+import push
 
-SCHEMA_VERSION = "2026-10-v13-early-opening"
+SCHEMA_VERSION = "2026-11-v14-web-push"
 
 
 def _wanted():
@@ -55,4 +56,5 @@ def run(lock):
         slots.init_slots()
         billing.init_billing()
         payments.init_payments()
+        push.init_push()
         _mark()

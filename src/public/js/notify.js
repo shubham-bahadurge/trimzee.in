@@ -18,11 +18,6 @@
         box.appendChild(el);
         setTimeout(function () { el.remove(); }, 15000);
     }
-    function system(item) {
-        if ("Notification" in window && Notification.permission === "granted") {
-            try { new Notification("Trimzee", { body: item.message, icon: "/img/logo-mark.png" }); } catch (e) { /* ignore */ }
-        }
-    }
     async function poll() {
         if (document.hidden || polling) { return; }
         polling = true;
@@ -31,7 +26,7 @@
             if (!res.ok) { return; }
             var data = await res.json();
             if (!data.items || !data.items.length) { return; }
-            data.items.forEach(function (item) { toast(item); system(item); });
+            data.items.forEach(toast);
             if (navigator.vibrate) { navigator.vibrate([200, 100, 200]); }
             await fetch("/api/notifications/read", {
                 method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },

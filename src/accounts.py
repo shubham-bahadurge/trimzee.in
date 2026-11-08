@@ -4,6 +4,7 @@ import time
 
 import db
 import meta
+import push
 
 REWARD_CREDITS = 50
 CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"     # no 0/O/1/I/L: easy to read out loud
@@ -140,6 +141,10 @@ def maybe_reward(customer_id):
         meta._notify(conn, customer_id, "update", ref["id"],
                      f"🎁 Welcome bonus: you earned {REWARD_CREDITS} Trimzee credits.")
         conn.commit()
+        push.send_to_user(ref["referrer_id"], f"{who['name']} completed their first booking. "
+                          f"You earned {REWARD_CREDITS} Trimzee credits.", "/account", f"referral-{ref['id']}")
+        push.send_to_user(customer_id, f"Welcome bonus: you earned {REWARD_CREDITS} Trimzee credits.",
+                          "/account", f"referral-{ref['id']}")
     finally:
         conn.close()
 
