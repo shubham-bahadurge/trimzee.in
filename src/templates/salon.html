@@ -22,8 +22,8 @@
         <p class="muted">{{ "%.1f"|format(salon.distance_km) }} km away ·
             <span class="badge {{ salon.status }}">{{ labels[salon.status] }}</span></p>
 
-        {% if auth != 'customer' %}
-        <div class="signin-box"><strong>Booking is for customer accounts</strong><p class="muted">Sign in with a customer account to book appointments.</p></div>
+        {% if auth and auth != 'customer' %}
+        <div class="signin-box"><strong>Booking is for customer accounts</strong><p class="muted">Please use a customer account to book appointments.</p></div>
         {% endif %}
 
         <p id="rangeInfo" class="range-info">📍 Checking your location…</p>
