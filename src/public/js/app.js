@@ -6,6 +6,7 @@ const cards = Array.from(document.querySelectorAll(".card"));
 const emptyMsg = document.getElementById("empty");
 const locBtn = document.getElementById("useLocation");
 const locStatus = document.getElementById("locStatus");
+const locationPicker = document.getElementById("locationPicker");
 const mapElement = document.getElementById("nearbyMap");
 const mapMessage = document.getElementById("mapMessage");
 const savedView = document.body.dataset.savedView === "true";
@@ -51,17 +52,25 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 
 function applyFilters() {
     const text = searchInput.value.trim().toLowerCase();
+    const locationKey = locationPicker ? locationPicker.value : "";
     let visible = 0;
     cards.forEach(function (card) {
         const matchText = !text || card.dataset.name.includes(text) || card.dataset.services.includes(text);
-        const matchRange = !here || (card.dataset.known === "1" && parseFloat(card.dataset.distance) <= RANGE_KM);
+        const [locationType, ...locationParts] = locationKey.split(":");
+        const selectedPlace = locationParts.join(":");
+        const [selectedArea, selectedCity] = selectedPlace.split("|");
+        const matchLocation = !locationKey || (locationType === "city"
+            ? card.dataset.city === selectedPlace
+            : card.dataset.area === selectedArea && (!selectedCity || card.dataset.city === selectedCity));
+        const matchRange = locationKey || !here || (card.dataset.known === "1" && parseFloat(card.dataset.distance) <= RANGE_KM);
         const matchSaved = !savedView || savedSalons.includes(card.dataset.salonId);
-        const show = matchText && matchRange && matchSaved;
+        const show = matchText && matchLocation && matchRange && matchSaved;
         card.hidden = !show;
         if (show) { visible += 1; }
     });
     emptyMsg.textContent = savedView ? "No saved salons yet. Tap the heart on a salon to save it." :
-        here ? "No salons within 5 km of you yet. Try moving closer or check back soon." :
+        locationKey ? "No salons listed in " + locationPicker.options[locationPicker.selectedIndex].text + " yet. Choose another area or browse all salons." :
+            here ? "No salons within 5 km of you yet. Try moving closer or check back soon." :
             "No salons match here yet. Try another search.";
     emptyMsg.hidden = visible > 0;
     updateMap();
@@ -75,18 +84,29 @@ function updateDistances() {
         if (isNaN(lat) || isNaN(lng)) {
             card.dataset.known = "0";
             card.dataset.distance = "99999";
-            label.textContent = "?";
+            label.textContent = "Location unavailable";
         } else {
             const km = haversineKm(here.latitude, here.longitude, lat, lng);
             card.dataset.known = "1";
             card.dataset.distance = String(km);
-            label.textContent = km.toFixed(1);
+            label.textContent = km.toFixed(1) + " km away";
         }
     });
-    cards.sort(function (a, b) { return parseFloat(a.dataset.distance) - parseFloat(b.dataset.distance); })
+    cards.slice().sort(function (a, b) { return parseFloat(a.dataset.distance) - parseFloat(b.dataset.distance); })
         .forEach(function (card) { grid.appendChild(card); });
+    locBtn.classList.add("on");
     locStatus.textContent = "📍 Live location on · showing salons within 5 km, nearest first";
     applyFilters();
+}
+
+function resetDistances() {
+    cards.forEach(function (card) {
+        const label = card.querySelector(".dist");
+        label.textContent = card.dataset.locationLabel || "Use live location for distance";
+        card.dataset.known = "0";
+        card.dataset.distance = "99999";
+    });
+    cards.forEach(function (card) { grid.appendChild(card); });
 }
 
 function statusColor(status) {
@@ -140,7 +160,10 @@ function updateMap() {
         mapMarkers.clear();
         rangeCircle = null;
         userMarker = null;
-        if (mapMessage) { mapMessage.hidden = false; }
+        if (mapMessage) {
+            mapMessage.textContent = "Use live location to see nearby salons on the map.";
+            mapMessage.hidden = false;
+        }
         return;
     }
     if (!window.L) {
@@ -214,8 +237,13 @@ function updateMap() {
 
 let watchId = null;
 function startLocation() {
+    if (locationPicker) { locationPicker.value = ""; }
+    here = null;
+    resetDistances();
+    locBtn.classList.remove("on");
+    applyFilters();
     if (!navigator.geolocation) {
-        locStatus.textContent = "Your browser can't share location, so we're showing all salons.";
+        locStatus.textContent = "Your browser can't share location, so browse all salons or choose a city or area.";
         if (mapMessage) {
             mapMessage.textContent = "Your browser can't share location, so nearby salons can't be shown on the map.";
         }
@@ -232,7 +260,9 @@ function startLocation() {
         updateDistances();
     }, function () {
         here = null;
-        locStatus.textContent = "📍 Location is off. Tap the pin and allow access to see salons within 5 km.";
+        resetDistances();
+        locBtn.classList.remove("on");
+        locStatus.textContent = "📍 Location is off. Browse all salons or choose a city or area.";
         if (mapMessage) {
             mapMessage.textContent = "Allow location access to see nearby salons on the map.";
             mapMessage.hidden = false;
@@ -243,7 +273,21 @@ function startLocation() {
 
 locBtn.addEventListener("click", startLocation);
 searchInput.addEventListener("input", applyFilters);
-if (!savedView) { startLocation(); }
+if (locationPicker) {
+    locationPicker.addEventListener("change", function () {
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+        }
+        here = null;
+        locBtn.classList.remove("on");
+        resetDistances();
+        locStatus.textContent = locationPicker.value
+            ? "Showing salons in " + locationPicker.options[locationPicker.selectedIndex].text + "."
+            : "Showing all salons. Choose a city or area, or use live location.";
+        applyFilters();
+    });
+}
 
 document.querySelectorAll(".book").forEach(function (btn) {
     btn.addEventListener("click", function () { window.location.href = "/salon/" + btn.dataset.id; });

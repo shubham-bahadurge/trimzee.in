@@ -35,7 +35,8 @@ def init_extras():
         for col, ddl in (("image_data", "BYTEA" if pgdb.ENABLED else "BLOB"),
                          ("image_mime", "TEXT"), ("opening_time", "TEXT NOT NULL DEFAULT '10:00'"),
                          ("closing_time", "TEXT NOT NULL DEFAULT '20:00'"),
-                         ("early_open_date", "TEXT"), ("early_open_time", "TEXT")):
+                         ("early_open_date", "TEXT"), ("early_open_time", "TEXT"),
+                         ("city", "TEXT"), ("area", "TEXT")):
             if pgdb.ENABLED:
                 conn.execute(f"ALTER TABLE salons ADD COLUMN IF NOT EXISTS {col} {ddl}")
             else:
@@ -247,7 +248,7 @@ def get_user_bookings(user_id):
 def owner_salon_full(owner_id):
     conn = get_db()
     try:
-        row = conn.execute("SELECT id, name, status, approved, lat, lng, image_mime, "
+        row = conn.execute("SELECT id, name, status, approved, lat, lng, city, area, image_mime, "
                            "opening_time, closing_time, early_open_date, early_open_time FROM salons "
                            "WHERE owner_id = ? ORDER BY id LIMIT 1", (owner_id,)).fetchone()
         return dict(row) if row else None
@@ -393,18 +394,31 @@ def delete_service(owner_id, service_id):
         conn.close()
 
 
-def set_salon_location(owner_id, lat, lng):
-    try:
-        lat, lng = float(lat), float(lng)
-    except (TypeError, ValueError):
+def set_salon_location(owner_id, lat, lng, city="", area=""):
+    city = (city or "").strip()
+    area = (area or "").strip()
+    if len(city) > 80 or len(area) > 80:
         return False
-    if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+    if bool(lat) != bool(lng):
         return False
+    coordinates = None
+    if lat and lng:
+        try:
+            coordinates = (float(lat), float(lng))
+        except (TypeError, ValueError):
+            return False
+        if not (-90 <= coordinates[0] <= 90 and -180 <= coordinates[1] <= 180):
+            return False
     conn = get_db()
     try:
-        cur = conn.execute("UPDATE salons SET lat = ?, lng = ? WHERE id = "
-                           "(SELECT id FROM salons WHERE owner_id = ? ORDER BY id LIMIT 1)",
-                           (lat, lng, owner_id))
+        if coordinates:
+            cur = conn.execute("UPDATE salons SET lat = ?, lng = ?, city = ?, area = ? WHERE id = "
+                               "(SELECT id FROM salons WHERE owner_id = ? ORDER BY id LIMIT 1)",
+                               (*coordinates, city or None, area or None, owner_id))
+        else:
+            cur = conn.execute("UPDATE salons SET city = ?, area = ? WHERE id = "
+                               "(SELECT id FROM salons WHERE owner_id = ? ORDER BY id LIMIT 1)",
+                               (city or None, area or None, owner_id))
         conn.commit()
         return cur.rowcount > 0
     finally:

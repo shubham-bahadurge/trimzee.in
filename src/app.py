@@ -154,7 +154,23 @@ def home():
     user = current_user()
     gender = viewer_gender()
     saved_view = request.args.get("view") == "saved"
-    return render_template("index.html", salons=slots.get_salons(None if saved_view else gender),
+    salons = slots.get_salons(None if saved_view else gender)
+    location_options = {}
+    for salon in salons:
+        city = (salon.get("city") or "").strip()
+        area = (salon.get("area") or "").strip()
+        if city:
+            location_options.setdefault("city:" + city.lower(), city + " (city)")
+        if area:
+            key = "area:" + area.lower()
+            label = area
+            if city:
+                key += "|" + city.lower()
+                label += ", " + city
+            location_options.setdefault(key, label)
+    locations = [{"value": key, "label": label}
+                 for key, label in sorted(location_options.items(), key=lambda item: item[1].casefold())]
+    return render_template("index.html", salons=salons, locations=locations,
                            labels=STATUS_LABELS, saved_view=saved_view, my_gender=gender,
                            need_gender=bool(user and user["role"] == "customer" and not gender))
 
@@ -840,8 +856,10 @@ def owner_location():
     denied = require_role("owner")
     if denied:
         return denied
-    ok = extras.set_salon_location(current_user()["id"], request.form.get("lat"), request.form.get("lng"))
-    return owner_view("Salon location saved." if ok else "Could not read that location.", error=not ok)
+    ok = extras.set_salon_location(current_user()["id"], request.form.get("lat"), request.form.get("lng"),
+                                   request.form.get("city"), request.form.get("area"))
+    return owner_view("Salon location saved." if ok else "Please check your city, area, and map location.",
+                      error=not ok)
 
 
 @app.route("/dashboard/hours", methods=["POST"])

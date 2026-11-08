@@ -11,7 +11,7 @@ import billing
 import payments
 import push
 
-SCHEMA_VERSION = "2026-11-v14-web-push"
+SCHEMA_VERSION = "2026-11-v15-salon-areas"
 
 
 def _wanted():

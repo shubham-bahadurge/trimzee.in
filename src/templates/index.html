@@ -37,15 +37,26 @@
             </button>
             <input id="search" type="search" placeholder="Search {{ 'parlours' if my_gender == 'female' else 'salons' }} or services" aria-label="Search">
         </div>
-        <p class="muted status-line" id="locStatus" aria-live="polite">{{ 'Saved salons on this device' if saved_view else '📍 Allow location to see salons within 5 km of you.' }}</p>
+        <p class="muted status-line" id="locStatus" aria-live="polite">{{ 'Saved salons on this device' if saved_view else 'Browse all salons, choose a city or area, or use your live location.' }}</p>
+        {% if not saved_view %}
+        <label class="location-picker" for="locationPicker">
+            <span>Browse by city or area</span>
+            <select id="locationPicker">
+                <option value="">All salons</option>
+                {% for location in locations %}
+                <option value="{{ location.value }}">{{ location.label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        {% endif %}
 
-        <h2 class="section-title">{{ 'Saved salons' if saved_view else 'Nearby ' ~ ('parlours' if my_gender == 'female' else 'salons') }}</h2>
+        <h2 class="section-title">{{ 'Saved salons' if saved_view else 'Browse ' ~ ('parlours' if my_gender == 'female' else 'salons') }}</h2>
         {% if not saved_view %}
         <section class="nearby-map-section" aria-labelledby="nearbyMapTitle">
             <h3 id="nearbyMapTitle">Salons within 5 km</h3>
             <div class="nearby-map-wrap">
                 <div id="nearbyMap" class="nearby-map" aria-label="Map of salons within 5 km"></div>
-                <p id="mapMessage" class="nearby-map-message" aria-live="polite">Allow location access to see nearby salons on the map.</p>
+                <p id="mapMessage" class="nearby-map-message" aria-live="polite">Use live location to see nearby salons on the map.</p>
             </div>
             <div class="nearby-map-legend" aria-label="Salon availability">
                 <span><i class="map-dot you"></i>Your location</span>
@@ -62,6 +73,9 @@
                 data-salon-id="{{ s.id }}"
                 data-name="{{ s.name|lower }}"
                 data-services="{{ s.services|join(',')|lower }}"
+                data-city="{{ s.city|lower }}"
+                data-area="{{ s.area|lower }}"
+                data-location-label="{{ s.location_label }}"
                 data-gender="{{ s.gender }}"
                 data-distance="{{ s.distance }}"
                 data-lat="{{ s.lat if s.lat is not none else '' }}" data-lng="{{ s.lng if s.lng is not none else '' }}"
@@ -83,7 +97,7 @@
                             </button>
                         </div>
                     </div>
-                    <p class="muted salon-card-distance">📍 <span class="dist">{{ "%.1f"|format(s.distance) }}</span> km away</p>
+                    <p class="muted salon-card-distance">📍 <span class="dist">{{ s.location_label or 'Use live location for distance' }}</span></p>
                     <div class="salon-service-chips" aria-label="Services">
                         {% for service in s.services[:3] %}
                         <span>{{ service }}</span>
