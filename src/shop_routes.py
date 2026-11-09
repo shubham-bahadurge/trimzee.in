@@ -7,6 +7,31 @@ import db
 import shop_payments
 import shop_store
 
+ORDER_STATUS_LABELS = {
+    "pending_payment": "Payment pending",
+    "paid": "Order confirmed",
+    "packed": "Packed",
+    "handed_to_courier": "Shipped",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled",
+    "refunded": "Refunded",
+}
+ORDER_STATUS_HINTS = {
+    "pending_payment": "Complete payment to confirm this order.",
+    "paid": "Your order is confirmed and being prepared.",
+    "packed": "Your order is packed and getting ready to ship.",
+    "handed_to_courier": "Your order is on its way.",
+    "delivered": "Your order has been delivered.",
+    "cancelled": "This order was cancelled.",
+    "refunded": "A refund has been issued for this order.",
+}
+ORDER_PROGRESS_STEPS = (
+    ("paid", "Confirmed"),
+    ("packed", "Packed"),
+    ("handed_to_courier", "Shipped"),
+    ("delivered", "Delivered"),
+)
+
 
 def register_routes(app, current_user, safe_next):
     def cart_key():
@@ -179,7 +204,11 @@ def register_routes(app, current_user, safe_next):
             return redirect("/login?next=%2Forders")
         if user["role"] != "customer":
             abort(403)
-        return render_template("shop_orders.html", orders=shop_store.orders_for_user(user["id"]))
+        orders = shop_store.orders_for_user(user["id"])
+        for order in orders:
+            order["status_label"] = ORDER_STATUS_LABELS.get(order["status"], order["status"].replace("_", " ").title())
+            order["status_hint"] = ORDER_STATUS_HINTS.get(order["status"], "")
+        return render_template("shop_orders.html", orders=orders)
 
     @app.route("/orders/<order_number>")
     def shop_order_detail(order_number):
@@ -191,7 +220,31 @@ def register_routes(app, current_user, safe_next):
         order = shop_store.order_for_user(user["id"], order_number)
         if not order:
             abort(404)
-        return render_template("shop_order.html", order=order)
+        history_by_status = {entry["to_status"]: entry for entry in order["history"]}
+        current_index = next(
+            (index for index, (status, _) in enumerate(ORDER_PROGRESS_STEPS)
+             if status == order["status"]),
+            -1,
+        )
+        progress_steps = [
+            {
+                "status": status,
+                "label": label,
+                "state": "complete" if index < current_index else
+                         "current" if index == current_index else "upcoming",
+                "history": history_by_status.get(status),
+            }
+            for index, (status, label) in enumerate(ORDER_PROGRESS_STEPS)
+        ]
+        return render_template(
+            "shop_order.html",
+            order=order,
+            status_label=ORDER_STATUS_LABELS.get(
+                order["status"], order["status"].replace("_", " ").title()),
+            status_hint=ORDER_STATUS_HINTS.get(order["status"], ""),
+            progress_steps=progress_steps,
+            status_is_exception=order["status"] in ("pending_payment", "cancelled", "refunded"),
+        )
 
     @app.route("/order/success/<order_number>")
     def shop_order_success(order_number):

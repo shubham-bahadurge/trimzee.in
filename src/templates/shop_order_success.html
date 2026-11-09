@@ -12,10 +12,11 @@
 <body>
     {% include "_nav.html" %}
     <main class="store-main">
-        <section class="order-success">
+        <p><a class="back" href="/shop">← Continue shopping</a></p>
+        <dialog class="order-confirmation" id="order-confirmation" aria-labelledby="confirmation-title">
             <div class="success-mark" aria-hidden="true">✓</div>
             <p class="product-category">THANK YOU</p>
-            <h1>
+            <h1 id="confirmation-title">
                 {% if order.status == 'paid' %}Order confirmed
                 {% elif order.status == 'refunded' %}Payment refunded
                 {% else %}Order {{ order.status|replace('_', ' ') }}{% endif %}
@@ -25,9 +26,21 @@
             {% if order.status == 'refunded' %}
             <p class="muted">A full refund was initiated because the order could not be fulfilled.</p>
             {% endif %}
-            <a class="btn" href="/orders/{{ order.order_number }}">Track order</a>
-            <a class="back" href="/shop">Continue shopping</a>
-        </section>
+            <div class="confirmation-actions">
+                <a class="btn" href="/orders/{{ order.order_number }}">Track order</a>
+                <a class="back" href="/shop">Continue shopping</a>
+            </div>
+        </dialog>
     </main>
+    <script>
+        (function () {
+            var popup = document.getElementById("order-confirmation");
+            if (typeof popup.showModal === "function") {
+                popup.showModal();
+            } else {
+                popup.setAttribute("open", "");
+            }
+        })();
+    </script>
 </body>
 </html>

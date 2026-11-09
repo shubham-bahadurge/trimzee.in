@@ -20,6 +20,9 @@
             {% else %}
             <a href="/my-bookings">Bookings</a>
             <a href="/?view=saved">Saved salons</a>
+            {% if current_user and current_user.role == 'customer' %}
+            <a href="/orders">My shop orders</a>
+            {% endif %}
             {% endif %}
             {% if current_user %}
             <a href="/account">Account</a>
@@ -54,7 +57,7 @@
         document.addEventListener("keydown", function (e) { if (e.key === "Escape") { close(); } });
     })();
 </script>
-<nav class="bottom-tabs{% if current_user and current_user.role in ['owner', 'admin'] %} has-subscription{% endif %}{% if current_user and current_user.role == 'admin' %} has-payments{% else %} has-shop{% endif %}" aria-label="Main navigation">
+<nav class="bottom-tabs{% if current_user and current_user.role in ['owner', 'admin'] %} has-subscription{% endif %}{% if current_user and current_user.role == 'admin' %} has-payments{% else %} has-shop{% endif %}{% if current_user and current_user.role == 'customer' %} has-orders{% endif %}" aria-label="Main navigation">
     <a href="/" class="{{ 'active' if request.path == '/' and request.args.get('view') != 'saved' else '' }}"
        {% if request.path == '/' and request.args.get('view') != 'saved' %}aria-current="page"{% endif %}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></svg>
@@ -101,6 +104,13 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
         <span>Saved</span>
     </a>
+    {% if current_user and current_user.role == 'customer' %}
+    <a href="/orders" class="{{ 'active' if request.path == '/orders' or request.path.startswith('/orders/') else '' }}"
+       {% if request.path == '/orders' or request.path.startswith('/orders/') %}aria-current="page"{% endif %}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v17H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+        <span>Orders</span>
+    </a>
+    {% endif %}
     {% endif %}
     {% if not current_user or current_user.role != 'admin' %}
     <a href="/shop" class="{{ 'active' if request.path.startswith('/shop') else '' }}"

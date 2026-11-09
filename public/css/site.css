@@ -521,3 +521,4 @@ h1 { font-size: 1.7rem; font-weight: 800; }
     .poster { border: 3px solid #000; margin: 0 auto; max-width: 520px; break-inside: avoid; }
 }
 @media (max-width: 420px) { .code-form { grid-template-columns: 1fr 1fr; } .code-form .field { grid-column: 1 / -1; } }
+.bottom-tabs.has-orders.has-shop { grid-template-columns: repeat(5, minmax(0, 1fr)); }

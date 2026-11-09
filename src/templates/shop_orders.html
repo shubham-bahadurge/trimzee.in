@@ -19,8 +19,9 @@
             <article class="order-card">
                 <div><p class="product-category">ORDER</p><h2><a href="/orders/{{ order.order_number }}">{{ order.order_number }}</a></h2>
                     <p class="muted">{{ order.created_at.strftime('%d %b %Y') if order.created_at.strftime is defined else order.created_at }}</p></div>
-                <div class="order-card-right"><span class="order-status">{{ order.status|replace('_', ' ')|title }}</span>
+                <div class="order-card-right"><span class="order-status">{{ order.status_label }}</span>
                     <strong>₹{{ order.total_paise|paise }}</strong></div>
+                {% if order.status_hint %}<p class="muted">{{ order.status_hint }}</p>{% endif %}
                 <a class="btn ghost small" href="/orders/{{ order.order_number }}">View order</a>
             </article>
             {% endfor %}

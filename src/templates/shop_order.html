@@ -13,7 +13,45 @@
     {% include "_nav.html" %}
     <main class="store-main">
         <a class="back" href="/orders">← Shop orders</a>
-        <div class="page-head"><h1>{{ order.order_number }}</h1><span class="order-status">{{ order.status|replace('_', ' ')|title }}</span></div>
+        <div class="page-head"><h1>{{ order.order_number }}</h1><span class="order-status">{{ status_label }}</span></div>
+        <section class="order-progress-panel" aria-label="Order progress">
+            <div class="order-progress-heading">
+                <div><p class="product-category">ORDER STATUS</p><h2>{{ status_label }}</h2></div>
+                <p class="muted">{{ status_hint }}</p>
+            </div>
+            {% if status_is_exception %}
+            <p class="order-status-notice {{ 'is-error' if order.status in ['cancelled', 'refunded'] else '' }}">
+                {% if order.status == 'pending_payment' %}
+                Payment is not complete yet. If you already paid, allow a little time for confirmation before trying again.
+                {% elif order.status == 'refunded' %}
+                Your payment has been refunded. Contact support if it does not appear in your account.
+                {% else %}
+                This order was cancelled. Contact support if you need help.
+                {% endif %}
+            </p>
+            {% else %}
+            <ol class="order-progress">
+                {% for step in progress_steps %}
+                <li class="order-progress-step is-{{ step.state }}"{% if step.state == 'current' %} aria-current="step"{% endif %}>
+                    <span class="progress-marker" aria-hidden="true">{% if step.state == 'complete' %}✓{% else %}{{ loop.index }}{% endif %}</span>
+                    <div class="progress-copy">
+                        <strong>{{ step.label }}</strong>
+                        {% if step.history %}
+                        <time class="muted" datetime="{{ step.history.created_at.isoformat() if step.history.created_at.isoformat is defined else '' }}">
+                            {{ step.history.created_at.strftime('%d %b %Y, %I:%M %p') if step.history.created_at.strftime is defined else step.history.created_at }}
+                        </time>
+                        {% elif step.state == 'current' %}
+                        <span class="muted">In progress</span>
+                        {% else %}
+                        <span class="muted">Up next</span>
+                        {% endif %}
+                        {% if step.history and step.history.note %}<p>{{ step.history.note }}</p>{% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ol>
+            {% endif %}
+        </section>
         <section class="order-detail-grid">
             <div class="panel order-panel">
                 <h2>Items</h2>
@@ -38,8 +76,8 @@
                 <p class="muted">Delivery is coordinated by the Trimzee team.</p>
             </div>
         </section>
-        <section class="panel order-panel">
-            <h2>Order status</h2>
+        <details class="panel order-panel order-history">
+            <summary>Order updates</summary>
             <ol class="order-timeline">
                 {% for entry in order.history %}
                 <li><span class="timeline-dot"></span><div><strong>{{ entry.to_status|replace('_', ' ')|title }}</strong>
@@ -49,7 +87,7 @@
                 {% if not order.history %}<li><span class="timeline-dot"></span><div><strong>{{ order.status|replace('_', ' ')|title }}</strong>
                     <p class="muted">{{ order.created_at.strftime('%d %b %Y, %I:%M %p') if order.created_at.strftime is defined else order.created_at }}</p></div></li>{% endif %}
             </ol>
-        </section>
+        </details>
     </main>
 </body>
 </html>
