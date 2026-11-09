@@ -428,7 +428,7 @@ def coupons():
             "(NOT is_active OR (starts_at IS NOT NULL AND starts_at > now()) OR "
             "(ends_at IS NOT NULL AND ends_at <= now()) OR "
             "(usage_limit IS NOT NULL AND used_count >= usage_limit)) AS unavailable "
-            "FROM coupons ORDER BY created_at DESC LIMIT 300")
+            "FROM shop_coupons ORDER BY created_at DESC LIMIT 300")
         return [dict(row) for row in rows]
     finally:
         conn.close()
@@ -440,7 +440,7 @@ def save_coupon(admin_id, coupon_id, values):
     try:
         if coupon_id:
             cursor = conn.execute(
-                "UPDATE coupons SET code = ?, type = ?, value = ?, min_order_paise = ?, "
+                "UPDATE shop_coupons SET code = ?, type = ?, value = ?, min_order_paise = ?, "
                 "max_discount_paise = ?, usage_limit = ?, per_user_limit = ?, starts_at = ?, "
                 "ends_at = ?, updated_at = now() WHERE id = ?",
                 (*values, coupon_id))
@@ -449,7 +449,7 @@ def save_coupon(admin_id, coupon_id, values):
             saved_id, action = coupon_id, "coupon.updated"
         else:
             saved_id = conn.execute(
-                "INSERT INTO coupons (code, type, value, min_order_paise, max_discount_paise, "
+                "INSERT INTO shop_coupons (code, type, value, min_order_paise, max_discount_paise, "
                 "usage_limit, per_user_limit, starts_at, ends_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id", values).fetchone()["id"]
             action = "coupon.created"
@@ -465,7 +465,7 @@ def toggle_coupon(admin_id, coupon_id, active):
     conn = _connection()
     try:
         cursor = conn.execute(
-            "UPDATE coupons SET is_active = ?, updated_at = now() WHERE id = ?",
+            "UPDATE shop_coupons SET is_active = ?, updated_at = now() WHERE id = ?",
             (active, coupon_id))
         if cursor.rowcount:
             _audit(conn, admin_id, "coupon.toggled", "coupon", coupon_id, {"active": bool(active)})
@@ -574,7 +574,7 @@ def report(start_date, end_date):
         coupon_usage = [dict(row) for row in conn.execute(
             "SELECT c.code, COUNT(o.id) AS redemptions, "
             "COALESCE(SUM(o.discount_paise), 0) AS discount_paise "
-            "FROM coupons c LEFT JOIN coupon_redemptions cr ON cr.coupon_id = c.id "
+            "FROM shop_coupons c LEFT JOIN shop_coupon_redemptions cr ON cr.coupon_id = c.id "
             "LEFT JOIN orders o ON o.id = cr.order_id AND o.created_at >= ?::date "
             "AND o.created_at < (?::date + interval '1 day') GROUP BY c.id ORDER BY redemptions DESC",
             params)]

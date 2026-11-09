@@ -15,6 +15,7 @@ MIGRATIONS = [
     ("001_shop", Path(__file__).parent / "migrations" / "001_shop.sql"),
     ("002_shop_payments", Path(__file__).parent / "migrations" / "002_shop_payments.sql"),
     ("003_shop_product_images", Path(__file__).parent / "migrations" / "003_shop_product_images.sql"),
+    ("004_shop_coupon_tables", Path(__file__).parent / "migrations" / "004_shop_coupon_tables.sql"),
 ]
 
 

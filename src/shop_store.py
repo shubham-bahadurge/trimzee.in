@@ -312,7 +312,7 @@ def apply_coupon(user, subtotal_paise, code):
         coupon = conn.execute(
             "SELECT *, (starts_at IS NULL OR starts_at <= now()) AS has_started, "
             "(ends_at IS NULL OR ends_at > now()) AS has_not_ended "
-            "FROM coupons WHERE code = ? AND is_active = TRUE",
+            "FROM shop_coupons WHERE code = ? AND is_active = TRUE",
             (code,)).fetchone()
         if not coupon:
             return None, "That coupon is not valid."
@@ -331,7 +331,7 @@ def apply_coupon(user, subtotal_paise, code):
             return None, "Your cart does not meet the minimum order for this coupon."
         if user and coupon["per_user_limit"] is not None:
             used = conn.execute(
-                "SELECT COUNT(*) FROM coupon_redemptions WHERE coupon_id = ? AND user_id = ?",
+                "SELECT COUNT(*) FROM shop_coupon_redemptions WHERE coupon_id = ? AND user_id = ?",
                 (coupon["id"], user["id"])).fetchone()[0]
             reserved = conn.execute(
                 "SELECT COUNT(*) FROM shop_coupon_reservations WHERE coupon_id = ? AND user_id = ? "

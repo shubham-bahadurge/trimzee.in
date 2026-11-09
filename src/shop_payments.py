@@ -85,7 +85,7 @@ def _coupon_quote(conn, user_id, code, subtotal):
     coupon_row = conn.execute(
         "SELECT *, (starts_at IS NULL OR starts_at <= now()) AS has_started, "
         "(ends_at IS NULL OR ends_at > now()) AS has_not_ended "
-        "FROM coupons WHERE code = ? AND is_active = TRUE FOR UPDATE", (code,)).fetchone()
+        "FROM shop_coupons WHERE code = ? AND is_active = TRUE FOR UPDATE", (code,)).fetchone()
     if not coupon_row:
         raise PaymentError("That coupon is not valid.")
     coupon = dict(coupon_row)
@@ -103,7 +103,7 @@ def _coupon_quote(conn, user_id, code, subtotal):
         raise PaymentError("That coupon has reached its usage limit.")
     if coupon["per_user_limit"] is not None:
         used = conn.execute(
-            "SELECT COUNT(*) FROM coupon_redemptions WHERE coupon_id = ? AND user_id = ?",
+            "SELECT COUNT(*) FROM shop_coupon_redemptions WHERE coupon_id = ? AND user_id = ?",
             (coupon["id"], user_id)).fetchone()[0]
         reserved = conn.execute(
             "SELECT COUNT(*) FROM shop_coupon_reservations WHERE coupon_id = ? AND user_id = ? "
@@ -395,10 +395,10 @@ def _mark_paid(conn, order, payment_id, amount=None, currency="INR"):
         (order["id"],)).fetchone()
     if coupon_reservation:
         conn.execute(
-            "UPDATE coupons SET used_count = used_count + 1, updated_at = now() WHERE id = ?",
+            "UPDATE shop_coupons SET used_count = used_count + 1, updated_at = now() WHERE id = ?",
             (coupon_reservation["coupon_id"],))
         conn.execute(
-            "INSERT INTO coupon_redemptions (coupon_id, user_id, order_id) VALUES (?, ?, ?) "
+            "INSERT INTO shop_coupon_redemptions (coupon_id, user_id, order_id) VALUES (?, ?, ?) "
             "ON CONFLICT (order_id) DO NOTHING RETURNING id",
             (coupon_reservation["coupon_id"], coupon_reservation["user_id"], order["id"])).fetchone()
         conn.execute(
