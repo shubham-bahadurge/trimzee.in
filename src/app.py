@@ -119,7 +119,24 @@ def csrf_protect():
         sent = request.form.get("csrf", "").encode()
         real = session.get("csrf", "").encode()
         if not real or not secrets.compare_digest(sent, real):
+            if request.endpoint == "login":
+                return render_template(
+                    "login.html", email=request.form.get("email", ""),
+                    next=safe_next(request.form.get("next")),
+                    error="This sign-in page expired. Please try again."
+                ), 400
+            if request.endpoint == "logout":
+                if session.get("user_id"):
+                    return redirect("/account?csrf=expired")
+                return redirect("/login?csrf=expired")
             abort(400)
+
+
+@app.after_request
+def prevent_auth_form_caching(response):
+    if request.path in ("/login", "/account", "/logout"):
+        response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 def require_role(role):
@@ -332,9 +349,11 @@ def login():
             return redirect(nxt or home_for(user["role"]))
         extras.record_login_failure(ip, email)
         return render_template("login.html", error="Incorrect email or password.", email=email, next=nxt), 401
-    return render_template("login.html", email="", next=nxt, error=(
-        "Password changed. Please sign in with your new password."
-        if request.args.get("reset") else None))
+    if request.args.get("csrf") == "expired":
+        error = "Your sign-in page expired. Please try again."
+    else:
+        error = "Password changed. Please sign in with your new password." if request.args.get("reset") else None
+    return render_template("login.html", email="", next=nxt, error=error)
 
 
 @app.route("/forgot", methods=["GET", "POST"])
@@ -696,6 +715,8 @@ def account_view(notice=None, error=False):
 def account():
     if not current_user():
         return redirect("/login?next=/account")
+    if request.args.get("csrf") == "expired":
+        return account_view("This page expired before logout completed. Please try again.", error=True)
     return account_view()
 
 
