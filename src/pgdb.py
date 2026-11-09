@@ -23,7 +23,7 @@ ENABLED = bool(DATABASE_URL)
 INTEGRITY_ERRORS = (sqlite3.IntegrityError,) + ((psycopg.IntegrityError,) if psycopg else ())
 DATABASE_ERRORS = (sqlite3.Error,) + ((psycopg.Error,) if psycopg else ())
 LOCK_ID = 727001  # any fixed number: makes two starting servers set up the database one at a time
-INSERT_TABLES_WITHOUT_ID = {"booking_services"}
+INSERT_TABLES_WITHOUT_ID = {"booking_services", "store_settings"}
 
 
 class Row(dict):
