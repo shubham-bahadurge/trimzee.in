@@ -175,11 +175,11 @@ Never put real credentials in source files or commit them to Git.
 
 ### Shop database and Razorpay setup
 
-After setting `DATABASE_URL` (or `POSTGRES_URL`) to the Neon connection string,
-run `python src/migrate_shop.py` from the repository root. The migration runner
-tracks and applies all shop schema, payment-reservation, image-storage, and
-refund migrations. To add the sample catalog, run `python src/seed_shop.py`
-after the migrations.
+Set `DATABASE_URL` (or `POSTGRES_URL`) to the Neon connection string. On startup,
+the app tracks and applies all shop schema, payment-reservation, image-storage,
+and refund migrations automatically. To add the sample catalog, run
+`python src/seed_shop.py` from the repository root after startup or after running
+`python src/migrate_shop.py` manually.
 
 Keep the existing `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` used for salon
 subscriptions. Configure `RAZORPAY_WEBHOOK_SECRET` in Vercel and set the
@@ -190,8 +190,8 @@ The customer shop is served from `/shop`; its cart and checkout require a
 customer login. The private owner panel is at `/admin/shop` and requires an
 account whose role is `admin`. It manages the catalog, orders, coupons,
 customers, reports, and store settings. Product uploads are stored in Postgres.
-Run the migrations against Neon before deploying the shop or using the admin
-panel; do not use the local SQLite database for production shop data.
+The shop requires PostgreSQL; do not use the local SQLite database for
+production shop data.
 
 Signed-in browser sessions persist for 30 days. On Vercel, configure a stable,
 private `SECRET_KEY` in the project settings before deploying; the app refuses

@@ -10,8 +10,9 @@ import slots
 import billing
 import payments
 import push
+import pgdb
 
-SCHEMA_VERSION = "2026-11-v14-web-push"
+SCHEMA_VERSION = "2026-11-v15-shop-migrations"
 
 
 def _wanted():
@@ -57,4 +58,7 @@ def run(lock):
         billing.init_billing()
         payments.init_payments()
         push.init_push()
+        if pgdb.ENABLED:
+            import migrate_shop
+            migrate_shop.apply_migration()
         _mark()
