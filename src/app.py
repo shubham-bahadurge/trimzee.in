@@ -96,6 +96,19 @@ def pretty_time(value):
     return f"{(h + 11) % 12 + 1}:{m} {'PM' if h >= 12 else 'AM'}"
 
 
+SHOP_PATH_PREFIXES = ("/shop", "/cart", "/orders", "/checkout", "/admin/shop", "/webhooks/razorpay")
+
+
+@app.before_request
+def shop_requires_postgres():
+    """The shop uses Postgres-only SQL features; fail early with a clear message."""
+    if not pgdb.ENABLED and request.path.startswith(SHOP_PATH_PREFIXES):
+        abort(503, description=(
+            "The shop requires PostgreSQL. Set DATABASE_URL or POSTGRES_URL before using the "
+            "shop storefront or admin tools."
+        ))
+
+
 @app.before_request
 def csrf_protect():
     """Every HTML form POST must carry the secret token from our own pages."""

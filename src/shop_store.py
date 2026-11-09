@@ -309,15 +309,23 @@ def apply_coupon(user, subtotal_paise, code):
         return None, "Enter a valid coupon code."
     conn = db.get_db()
     try:
-        coupon = conn.execute("SELECT * FROM coupons WHERE code = ? AND is_active = TRUE", (code,)).fetchone()
+        coupon = conn.execute(
+            "SELECT *, (starts_at IS NULL OR starts_at <= now()) AS has_started, "
+            "(ends_at IS NULL OR ends_at > now()) AS has_not_ended "
+            "FROM coupons WHERE code = ? AND is_active = TRUE",
+            (code,)).fetchone()
         if not coupon:
             return None, "That coupon is not valid."
         coupon = dict(coupon)
-        if coupon["starts_at"] and conn.execute("SELECT ? > now()", (coupon["starts_at"],)).fetchone()[0]:
+        if not coupon["has_started"]:
             return None, "That coupon is not active yet."
-        if coupon["ends_at"] and conn.execute("SELECT ? <= now()", (coupon["ends_at"],)).fetchone()[0]:
+        if not coupon["has_not_ended"]:
             return None, "That coupon has expired."
-        if coupon["usage_limit"] is not None and coupon["used_count"] >= coupon["usage_limit"]:
+        active = conn.execute(
+            "SELECT COUNT(*) FROM shop_coupon_reservations "
+            "WHERE coupon_id = ? AND released_at IS NULL AND consumed_at IS NULL AND expires_at > now()",
+            (coupon["id"],)).fetchone()[0]
+        if coupon["usage_limit"] is not None and coupon["used_count"] + active >= coupon["usage_limit"]:
             return None, "That coupon has reached its usage limit."
         if subtotal_paise < coupon["min_order_paise"]:
             return None, "Your cart does not meet the minimum order for this coupon."
@@ -325,7 +333,11 @@ def apply_coupon(user, subtotal_paise, code):
             used = conn.execute(
                 "SELECT COUNT(*) FROM coupon_redemptions WHERE coupon_id = ? AND user_id = ?",
                 (coupon["id"], user["id"])).fetchone()[0]
-            if used >= coupon["per_user_limit"]:
+            reserved = conn.execute(
+                "SELECT COUNT(*) FROM shop_coupon_reservations WHERE coupon_id = ? AND user_id = ? "
+                "AND released_at IS NULL AND consumed_at IS NULL AND expires_at > now()",
+                (coupon["id"], user["id"])).fetchone()[0]
+            if used + reserved >= coupon["per_user_limit"]:
                 return None, "You have already used this coupon the maximum number of times."
         if coupon["type"] == "percent":
             discount = subtotal_paise * coupon["value"] // 100
