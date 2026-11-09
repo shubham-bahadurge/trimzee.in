@@ -44,21 +44,22 @@ def _mark():
 
 def run(lock):
     """lock: a context manager that serialises set-up across servers (pgdb.init_lock)."""
-    if _current():
+    if _current() and not pgdb.ENABLED:
         return
     with lock():
-        if _current():           # another server finished while we waited
-            return
-        db.init_db()
-        extras.init_extras()
-        meta.init_meta()
-        growth.init_growth()
-        accounts.init_accounts()
-        slots.init_slots()
-        billing.init_billing()
-        payments.init_payments()
-        push.init_push()
+        current = _current()
+        if not current:
+            db.init_db()
+            extras.init_extras()
+            meta.init_meta()
+            growth.init_growth()
+            accounts.init_accounts()
+            slots.init_slots()
+            billing.init_billing()
+            payments.init_payments()
+            push.init_push()
         if pgdb.ENABLED:
             import migrate_shop
             migrate_shop.apply_migration()
-        _mark()
+        if not current:
+            _mark()
