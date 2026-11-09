@@ -107,6 +107,8 @@ def shop_requires_postgres():
             "The shop requires PostgreSQL. Set DATABASE_URL or POSTGRES_URL before using the "
             "shop storefront or admin tools."
         ))
+    if boot.SHOP_MIGRATION_ERROR and request.path.startswith(SHOP_PATH_PREFIXES):
+        abort(503, description=boot.SHOP_MIGRATION_ERROR)
 
 
 @app.before_request
