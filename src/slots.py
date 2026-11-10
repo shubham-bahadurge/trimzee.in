@@ -310,6 +310,24 @@ def whatsapp_booking(info, code):
                          f"Trimzee: new booking request from {info['customer']} for {info['service']} "
                          f"with {info['barber']}, {when}. "
                          "Open your dashboard to Accept or Reject.")
+    # Email alert to the salon owner (never blocks the booking; the code is not included)
+    owner_email = info.get("owner_email") or ""
+    if owner_email and not owner_email.endswith("@salongo.local") and mailer.email_configured():
+        try:
+            mailer.send_email(
+                owner_email,
+                f"New booking request #{info['id']} - {info['salon']}",
+                "You have a new booking request.\n\n"
+                f"Booking: #{info['id']}\n"
+                f"Customer: {info['customer']}\n"
+                f"Service: {info['service']}\n"
+                f"Barber: {info.get('barber') or 'Any'}\n"
+                f"When: {when}\n\n"
+                "Open your Trimzee dashboard to Accept or Reject this request.",
+            )
+        except Exception as exc:
+            import logging
+            logging.getLogger("trimzee").warning("Owner email failed for booking %s: %s", info["id"], exc)
 
 
 def complete_with_code(owner_id, booking_id, code):
