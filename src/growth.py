@@ -2,6 +2,7 @@
 import re
 import secrets
 import time
+import logging
 
 import db
 import mailer
@@ -72,7 +73,8 @@ def booking_info(booking_id):
     conn = db.get_db()
     try:
         r = conn.execute("SELECT b.id, b.service_id, b.slot_start, b.contact_phone, b.customer_id, s.name AS salon, s.owner_id, "
-                         "sv.name AS service, sv.price, br.name AS barber, cu.name AS customer, ow.phone AS owner_phone "
+                         "sv.name AS service, sv.price, br.name AS barber, cu.name AS customer, "
+                         "ow.phone AS owner_phone, ow.email AS owner_email "
                          "FROM bookings b JOIN salons s ON s.id = b.salon_id JOIN services sv ON sv.id = b.service_id "
                          "LEFT JOIN barbers br ON br.id = b.barber_id "
                          "JOIN users cu ON cu.id = b.customer_id JOIN users ow ON ow.id = s.owner_id "
@@ -108,6 +110,26 @@ def whatsapp_new_booking(info):
     mailer.send_whatsapp(wa_number(info["owner_phone"]),
                          f"Trimzee: new booking request from {info['customer']} for {info['service']} on {when}. "
                          "Open your dashboard to Accept or Reject.")
+
+    # Email alert to the salon owner (never blocks the booking)
+    owner_email = info.get("owner_email") or ""
+    if owner_email and not owner_email.endswith("@salongo.local") and mailer.email_configured():
+        try:
+            mailer.send_email(
+                owner_email,
+                f"New booking request #{info['id']} - {info['salon']}",
+                f"You have a new booking request.\n\n"
+                f"Booking: #{info['id']}\n"
+                f"Customer: {info['customer']}\n"
+                f"Service: {info['service']}\n"
+                f"Barber: {info.get('barber') or 'Any'}\n"
+                f"When: {when}\n\n"
+                "Open your Trimzee dashboard to Accept or Reject this request.",
+            )
+        except Exception as exc:
+            logging.getLogger("trimzee").warning(
+                "Owner email failed for booking %s: %s", info["id"], exc
+            )
 
 
 def owner_accept(owner_id, booking_id):
