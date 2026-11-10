@@ -159,8 +159,10 @@ environment variables in your shell or hosting provider when you enable them:
 | --- | --- |
 | `SECRET_KEY` | Signs browser sessions and verification codes. Set a long, private value outside local development. |
 | `DATABASE_URL` or `POSTGRES_URL` | Connects to PostgreSQL. If neither is set, the app uses SQLite. |
-| `PUBLIC_URL` | Public site URL used when generating shareable links. |
-| `SITE_URL` | Canonical Trimzee site URL used by online shop checkout configuration. |
+| `PUBLIC_URL` | Older public site URL setting used for shareable links; `SITE_URL` takes priority. |
+| `SITE_URL` | Canonical public site URL used for SEO links and online shop checkout. Set to `https://trimzee.vercel.app` (no trailing slash). |
+| `GA_MEASUREMENT_ID` | Google Analytics 4 measurement ID, for example `G-ABC1234567`. Used when GA4 tracking is enabled. |
+| `GSC_VERIFICATION` | Google Search Console HTML-tag verification value (only the value inside the tag, not the full tag). |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Create or configure the administrator account during database setup. |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Enable Razorpay checkout and payment verification. |
 | `RAZORPAY_WEBHOOK_SECRET` | Verify incoming Razorpay webhook requests. |
@@ -170,6 +172,23 @@ environment variables in your shell or hosting provider when you enable them:
 | `GEMINI_API_KEY` | Enable the assistant's Google Gemini integration. |
 | `GEMINI_MODEL` | Gemini model name; defaults to `gemini-2.5-flash`. |
 | `BILLING_ENFORCE` | Set to `1` to enforce the subscription checks used by billing features. |
+
+### Search indexing and SEO
+
+The app serves `/robots.txt` and `/sitemap.xml` from Flask. The sitemap lists
+the homepage and currently bookable salon pages; it leaves out account,
+dashboard, booking, queue, and API routes. The homepage and salon pages have
+canonical, description, Open Graph, and Twitter Card tags. Private routes also
+send an `X-Robots-Tag: noindex, nofollow` response header. These crawl settings
+do not replace login permissions.
+
+In Vercel, open the project settings, choose **Environment Variables**, and add
+`SITE_URL`, `GA_MEASUREMENT_ID`, and `GSC_VERIFICATION` for the Production
+environment. `SITE_URL` should be `https://trimzee.vercel.app`. For Search
+Console, copy the verification value from the HTML-tag method into
+`GSC_VERIFICATION`. Save the settings and redeploy for changes to take effect.
+The GA4 event setup is documented in the SEO implementation steps; do not put
+private credentials or a database URL in browser code.
 
 Never put real credentials in source files or commit them to Git.
 
@@ -193,9 +212,15 @@ customers, reports, and store settings. Product uploads are stored in Postgres.
 The shop requires PostgreSQL; do not use the local SQLite database for
 production shop data.
 
-Signed-in browser sessions persist for 30 days. On Vercel, configure a stable,
-private `SECRET_KEY` in the project settings before deploying; the app refuses
-to start there without one because a changing key invalidates saved sessions.
+Signed-in browser sessions persist for 30 days. In production, configure a
+stable, private `SECRET_KEY` in the hosting provider before deploying; the app
+refuses to start without one. Local development uses a randomly generated key
+when no key is configured, so sessions expire when the app restarts.
+Vercel automatically sets `VERCEL`. If you deploy elsewhere, set
+`APP_ENV=production` so the app requires a key and marks session cookies secure.
+Set private credentials in the hosting provider's Production environment, and
+use separate values for Preview deployments rather than copying production
+database or payment credentials into previews.
 
 ## Making a change
 

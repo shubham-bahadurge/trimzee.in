@@ -13,7 +13,7 @@ import growth
 import mailer
 import meta
 
-TTL, MAX_TRIES, GAP, MAX_SENDS, WINDOW = 600, 5, 45, 5, 3600
+TTL, MAX_TRIES, GAP, MAX_SENDS, WINDOW = 240, 5, 45, 5, 3600
 
 
 def _hash(email, code):
@@ -54,7 +54,7 @@ def _exists(conn, email):
 
 def _send_code(email, code):
     mailer.send_email(email, "Your Trimzee verification code",
-                      f"Your Trimzee verification code is {code}.\n\nIt expires in 10 minutes. "
+                      f"Your Trimzee verification code is {code}.\n\nIt expires in 4 minutes. "
                       "If you didn't try to sign up, you can ignore this email.")
 
 
@@ -107,16 +107,29 @@ def verify(email, code):
             conn.commit()
             return "error", "This code has expired. Please sign up again."
         if not hmac.compare_digest(_hash(email, code), row["otp_hash"]):
-            tries = row["tries"] + 1
-            if tries >= MAX_TRIES:
+            updated = conn.execute(
+                "UPDATE signups SET tries = tries + 1 WHERE email = ? AND expires > ? "
+                "AND tries < ?", (email, time.time(), MAX_TRIES)
+            )
+            if not updated.rowcount:
                 conn.execute("DELETE FROM signups WHERE email = ?", (email,))
                 conn.commit()
                 return "error", "Too many wrong codes. Please sign up again."
-            conn.execute("UPDATE signups SET tries = ? WHERE email = ?", (tries, email))
+            tries = conn.execute("SELECT tries FROM signups WHERE email = ?", (email,)).fetchone()["tries"]
+            if tries >= MAX_TRIES:
+                conn.execute("DELETE FROM signups WHERE email = ?", (email,))
             conn.commit()
+            if tries >= MAX_TRIES:
+                return "error", "Too many wrong codes. Please sign up again."
             return "error", f"That code isn't right. {MAX_TRIES - tries} tries left."
         data = json.loads(row["data"])
-        conn.execute("DELETE FROM signups WHERE email = ?", (email,))
+        consumed = conn.execute(
+            "DELETE FROM signups WHERE email = ? AND otp_hash = ? AND expires > ? AND tries < ?",
+            (email, row["otp_hash"], time.time(), MAX_TRIES),
+        )
+        if not consumed.rowcount:
+            conn.commit()
+            return "error", "This code has expired or was already used. Please sign up again."
         conn.commit()
     finally:
         conn.close()

@@ -4,7 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ salon.name }} - Trimzee</title>
+    {% set seo_title = (salon.name ~ ' | Book on Trimzee')|truncate(59, true, '...') %}
+    {% set seo_description = ('View services, prices and live availability, then book an appointment at ' ~ salon.name ~ ' on Trimzee.')|truncate(154, true, '...') %}
+    <title>{{ seo_title }}</title>
+    <meta name="description" content="{{ seo_description }}">
+    <link rel="canonical" href="{{ seo_site_url }}{{ request.path }}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ seo_title }}">
+    <meta property="og:description" content="{{ seo_description }}">
+    <meta property="og:url" content="{{ seo_site_url }}{{ request.path }}">
+    <meta property="og:image" content="{{ seo_site_url }}{{ '/salons/' ~ salon.id ~ '/image' if salon.image_mime else '/img/pwa-icon-512.png' }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ seo_title }}">
+    <meta name="twitter:description" content="{{ seo_description }}">
+    <meta name="twitter:image" content="{{ seo_site_url }}{{ '/salons/' ~ salon.id ~ '/image' if salon.image_mime else '/img/pwa-icon-512.png' }}">
     <link rel="stylesheet" href="/css/site.css">
     <link rel="stylesheet" href="/css/salon.css">
 </head>

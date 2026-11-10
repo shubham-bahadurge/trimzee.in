@@ -47,6 +47,24 @@ def _api_post(path, payload):
                            status_code=503) from None
 
 
+def _api_get(path):
+    config = shop_config.load_shop_config()
+    token = base64.b64encode(
+        f"{config.razorpay_key_id}:{config.razorpay_key_secret}".encode()).decode()
+    request = urllib.request.Request(
+        API + path,
+        method="GET",
+        headers={"Authorization": "Basic " + token},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=12) as response:
+            return json.loads(response.read().decode())
+    except (urllib.error.URLError, TimeoutError, ValueError):
+        logger.exception("Razorpay payment lookup failed")
+        raise PaymentError("Could not confirm payment status yet. Please try again.",
+                           status_code=503) from None
+
+
 def _require_config():
     config = shop_config.load_shop_config()
     if not (config.razorpay_key_id and config.razorpay_key_secret
@@ -317,8 +335,8 @@ def _refund_unfulfillable(conn, order, payment_id):
          "Payment arrived after the stock hold expired; a full refund was requested."))
 
 
-def _mark_paid(conn, order, payment_id, amount=None, currency="INR"):
-    if currency != "INR" or (amount is not None and int(amount) != order["total_paise"]):
+def _mark_paid(conn, order, payment_id, amount, currency):
+    if currency != "INR" or int(amount) != order["total_paise"]:
         raise PaymentError("Payment amount does not match the order.")
     if order["status"] == "paid" and order["payment_status"] == "paid":
         return False, order["order_number"], "paid"
@@ -429,7 +447,7 @@ def _mark_paid(conn, order, payment_id, amount=None, currency="INR"):
     return True, order["order_number"], "paid"
 
 
-def _complete_payment(razorpay_order_id, payment_id, amount=None, currency="INR", expected_user_id=None):
+def _complete_payment(razorpay_order_id, payment_id, amount, currency, expected_user_id=None):
     if not razorpay_order_id or not payment_id or len(razorpay_order_id) > 80 or len(payment_id) > 80:
         raise PaymentError("Payment details are incomplete.")
     conn = db.get_db()
@@ -466,7 +484,13 @@ def verify_checkout(user_id, razorpay_order_id, payment_id, signature):
     message = f"{razorpay_order_id}|{payment_id}".encode()
     if not _signature_ok(message, signature, config.razorpay_key_secret):
         raise PaymentError("Payment verification failed.")
-    return _complete_payment(razorpay_order_id, payment_id, expected_user_id=user_id)
+    payment = _api_get(f"/payments/{urllib.parse.quote(payment_id, safe='')}")
+    if (payment.get("id") != payment_id or payment.get("order_id") != razorpay_order_id
+            or payment.get("status") != "captured"):
+        raise PaymentError("Payment has not been captured yet.")
+    return _complete_payment(
+        razorpay_order_id, payment_id, payment.get("amount"),
+        payment.get("currency", ""), expected_user_id=user_id)
 
 
 def request_admin_refund(order_id, admin_id):

@@ -2,9 +2,10 @@
 import os
 import secrets
 from datetime import timedelta
+from xml.etree import ElementTree
 
 from flask import (Flask, Response, abort, g, jsonify, redirect, render_template, request,
-                   session)
+                   session, url_for)
 
 import db
 import pgdb
@@ -35,19 +36,32 @@ import shop_admin  # noqa: E402
 app = Flask(__name__, static_folder="public", static_url_path="")
 
 secret_key = os.environ.get("SECRET_KEY")
-if os.environ.get("VERCEL") and not secret_key:
-    raise RuntimeError("Set a stable SECRET_KEY in the Vercel project settings.")
+is_production = (
+    bool(os.environ.get("VERCEL"))
+    or os.environ.get("APP_ENV", "").strip().lower() == "production"
+    or os.environ.get("FLASK_ENV", "").strip().lower() == "production"
+)
+if is_production and not secret_key:
+    raise RuntimeError("Set a stable SECRET_KEY in the production environment.")
+if not secret_key:
+    secret_key = secrets.token_urlsafe(32)
 
 app.config.update(
-    SECRET_KEY=secret_key or "dev-only-secret-change-me",
+    SECRET_KEY=secret_key,
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=bool(os.environ.get("VERCEL")),
+    SESSION_COOKIE_SECURE=is_production,
     MAX_CONTENT_LENGTH=5 * 1024 * 1024 + 64 * 1024,
 )
 
 STATUS_LABELS = {"available": "Available", "busy": "Busy", "closed": "Closed", "full": "Fully booked"}
+PRIVATE_PATH_PREFIXES = (
+    "/account", "/admin", "/api", "/auth", "/booking", "/cart", "/checkout",
+    "/dashboard", "/forgot", "/health", "/login", "/logout", "/my-bookings",
+    "/order", "/orders", "/pay", "/plans", "/profile", "/q", "/register",
+    "/reset", "/verify", "/webhooks",
+)
 
 # Create or upgrade the tables only when needed (a stored version number makes cold starts fast).
 boot.run(pgdb.init_lock)
@@ -87,7 +101,12 @@ def request_too_large(_error):
 
 @app.context_processor
 def inject_user():
-    return {"current_user": current_user(), "google_enabled": googleauth.configured()}
+    return {
+        "current_user": current_user(),
+        "google_enabled": googleauth.configured(),
+        "seo_site_url": public_base(),
+        "gsc_verification": os.environ.get("GSC_VERIFICATION", "").strip(),
+    }
 
 
 @app.template_filter("pretty_time")
@@ -139,6 +158,16 @@ def prevent_auth_form_caching(response):
     return response
 
 
+@app.after_request
+def prevent_private_page_indexing(response):
+    path = request.path.rstrip("/") or "/"
+    if any(path == prefix or path.startswith(prefix + "/") for prefix in PRIVATE_PATH_PREFIXES):
+        response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    elif path == "/" and request.args.get("view") == "saved":
+        response.headers["X-Robots-Tag"] = "noindex, follow"
+    return response
+
+
 def require_role(role):
     """Returns a redirect/abort response if the visitor isn't allowed, else None."""
     user = current_user()
@@ -180,12 +209,10 @@ shop_admin.register_routes(app, current_user)
 
 
 def public_base():
-    env = os.environ.get("PUBLIC_URL", "").strip().rstrip("/")
+    env = (os.environ.get("SITE_URL") or os.environ.get("PUBLIC_URL") or "").strip().rstrip("/")
     if env:
         return env
-    proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip() or request.scheme
-    host = request.headers.get("x-forwarded-host", "").split(",")[0].strip() or request.host
-    return f"{proto}://{host}"
+    return "https://trimzee.vercel.app"
 
 
 def viewer_gender():
@@ -202,6 +229,39 @@ def home():
     return render_template("index.html", salons=slots.get_salons(None if saved_view else gender),
                            labels=STATUS_LABELS, saved_view=saved_view, my_gender=gender,
                            need_gender=bool(user and user["role"] == "customer" and not gender))
+
+
+@app.route("/robots.txt")
+def robots_txt():
+    rules = [
+        "User-agent: *",
+        "Allow: /",
+        *(f"Disallow: {prefix}/" for prefix in PRIVATE_PATH_PREFIXES),
+        *(f"Disallow: {prefix}" for prefix in PRIVATE_PATH_PREFIXES),
+        f"Sitemap: {public_base()}/sitemap.xml",
+        "",
+    ]
+    return Response("\n".join(rules), mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    namespace = "http://www.sitemaps.org/schemas/sitemap/0.9"
+    ElementTree.register_namespace("", namespace)
+    root = ElementTree.Element(f"{{{namespace}}}urlset")
+    lastmod = db.now_ist().strftime("%Y-%m-%d")
+    public_urls = [("/", lastmod)]
+    public_urls.extend(
+        (url_for("salon_page", salon_id=salon["id"]), lastmod)
+        for salon in slots.get_salons()
+    )
+    for path, modified in public_urls:
+        entry = ElementTree.SubElement(root, f"{{{namespace}}}url")
+        ElementTree.SubElement(entry, f"{{{namespace}}}loc").text = public_base() + path
+        ElementTree.SubElement(entry, f"{{{namespace}}}lastmod").text = modified
+    content = ElementTree.tostring(root, encoding="utf-8", xml_declaration=True)
+    return Response(content, mimetype="application/xml",
+                    headers={"Cache-Control": "public, max-age=3600"})
 
 
 @app.route("/salon/<int:salon_id>")

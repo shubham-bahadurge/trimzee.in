@@ -6,6 +6,8 @@ import hmac
 import json
 import os
 import secrets
+import urllib.error
+import urllib.parse
 import urllib.request
 
 import billing
@@ -73,6 +75,20 @@ def _post(path, payload):
                                      headers={"Content-Type": "application/json", "Authorization": "Basic " + token})
     with urllib.request.urlopen(request, timeout=10) as response:
         return json.loads(response.read().decode())
+
+
+def _get(path):
+    """Fetch payment details from Razorpay before activating a paid plan."""
+    token = base64.b64encode(f"{key_id()}:{_secret()}".encode()).decode()
+    request = urllib.request.Request(
+        API + path, method="GET",
+        headers={"Authorization": "Basic " + token},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return json.loads(response.read().decode())
+    except (urllib.error.URLError, TimeoutError, ValueError):
+        raise RuntimeError("Could not confirm payment status yet.") from None
 
 
 # ----------------------------------------------------------------- price + coupon
@@ -200,6 +216,15 @@ def confirm(user_id, order_id, payment_id, signature):
     """Called when the customer comes back from the Razorpay window. Returns (ok, message)."""
     if not (order_id and payment_id and signature) or not configured():
         return False, "Payment could not be verified."
+    if not _signature_ok(f"{order_id}|{payment_id}".encode(), signature, _secret()):
+        return False, "Payment could not be verified. If money was deducted, it will be matched automatically."
+    try:
+        payment = _get(f"/payments/{urllib.parse.quote(payment_id, safe='')}")
+    except RuntimeError:
+        return False, "Payment status could not be confirmed yet. Please try again shortly."
+    if (payment.get("id") != payment_id or payment.get("order_id") != order_id
+            or payment.get("status") != "captured" or payment.get("currency") != "INR"):
+        return False, "Payment has not been captured yet. If money was deducted, it will be matched automatically."
     _ensure()
     conn = db.get_db()
     try:
@@ -210,8 +235,8 @@ def confirm(user_id, order_id, payment_id, signature):
         plan = conn.execute("SELECT kind FROM plans WHERE code = ?", (pay["plan_code"],)).fetchone()
         if not plan or plan["kind"] != "owner":
             return False, "Payment could not be verified."
-        if not _signature_ok(f"{order_id}|{payment_id}".encode(), signature, _secret()):
-            return False, "Payment could not be verified. If money was deducted, it will be matched automatically."
+        if int(payment.get("amount", -1)) != pay["amount"]:
+            return False, "Payment amount does not match the plan order."
         _activate(conn, pay, payment_id)   # False here just means the webhook was faster: the plan is active
     finally:
         conn.close()
@@ -228,10 +253,13 @@ def webhook(raw_body, signature):
         return 400, "bad signature"
     try:
         data = json.loads(raw_body.decode("utf-8"))
-        if data.get("event") not in ("payment.captured", "order.paid"):
+        if data.get("event") != "payment.captured":
             return 200, "ignored"
         entity = data["payload"]["payment"]["entity"]
         order_id, payment_id = entity["order_id"], entity["id"]
+        if (entity.get("status") != "captured" or entity.get("currency") != "INR"
+                or not isinstance(entity.get("amount"), int)):
+            return 200, "ignored"
     except Exception:
         return 200, "ignored"
     _ensure()
@@ -239,7 +267,8 @@ def webhook(raw_body, signature):
     try:
         pay = conn.execute("SELECT p.*, u.role AS user_role FROM payments p JOIN users u ON u.id = p.user_id "
                            "WHERE p.order_id = ?", (order_id,)).fetchone()
-        if pay and pay["user_role"] == "owner":
+        if (pay and pay["user_role"] == "owner" and pay["amount"] == entity["amount"]
+                and entity["order_id"] == pay["order_id"]):
             _activate(conn, pay, payment_id)
     finally:
         conn.close()

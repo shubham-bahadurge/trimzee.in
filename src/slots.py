@@ -327,14 +327,31 @@ def complete_with_code(owner_id, booking_id, code):
             return False, "This booking can't be completed."
         typed = re.sub(r"\D", "", code or "")
         if row["code"]:
-            if row["code_tries"] >= MAX_CODE_TRIES:
-                return False, "Too many wrong codes for this booking. Please contact Trimzee support."
-            if not hmac.compare_digest(typed, row["code"]):
-                conn.execute("UPDATE bookings SET code_tries = code_tries + 1 WHERE id = ?", (booking_id,))
+            attempt = conn.execute(
+                "UPDATE bookings SET code_tries = code_tries + 1 "
+                "WHERE id = ? AND status = 'confirmed' AND code_tries < ? "
+                "AND EXISTS (SELECT 1 FROM salons s WHERE s.id = bookings.salon_id AND s.owner_id = ?)",
+                (booking_id, MAX_CODE_TRIES, owner_id),
+            )
+            if not attempt.rowcount:
                 conn.commit()
-                left = MAX_CODE_TRIES - row["code_tries"] - 1
+                return False, "Too many wrong codes for this booking. Please contact Trimzee support."
+            tries = conn.execute("SELECT code_tries FROM bookings WHERE id = ?", (booking_id,)).fetchone()["code_tries"]
+            if not hmac.compare_digest(typed, row["code"]):
+                if tries >= MAX_CODE_TRIES:
+                    conn.commit()
+                    return False, "Wrong code. No tries left. Please contact Trimzee support."
+                conn.commit()
+                left = MAX_CODE_TRIES - tries
                 return False, f"Wrong code. {left} {'try' if left == 1 else 'tries'} left."
-        conn.execute("UPDATE bookings SET status = 'completed' WHERE id = ? AND status = 'confirmed'", (booking_id,))
+        completed = conn.execute(
+            "UPDATE bookings SET status = 'completed' WHERE id = ? AND status = 'confirmed' "
+            "AND EXISTS (SELECT 1 FROM salons s WHERE s.id = bookings.salon_id AND s.owner_id = ?)",
+            (booking_id, owner_id),
+        )
+        if not completed.rowcount:
+            conn.rollback()
+            return False, "This booking can't be completed."
         conn.commit()
         customer = row["customer_id"]
     finally:

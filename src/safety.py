@@ -12,7 +12,7 @@ import db
 import mailer
 import meta
 
-TTL, MAX_TRIES, GAP, WINDOW = 600, 5, 45, 3600
+TTL, MAX_TRIES, GAP, WINDOW = 240, 5, 45, 3600
 _ready = False
 
 
@@ -86,7 +86,7 @@ def reset_begin(email):
         conn.close()
     try:
         mailer.send_email(email, "Your Trimzee password reset code",
-                          f"Your Trimzee password reset code is {code}.\n\nIt expires in 10 minutes. "
+                          f"Your Trimzee password reset code is {code}.\n\nIt expires in 4 minutes. "
                           "If you did not ask for this, ignore this email: your password has not changed.")
     except Exception:
         pass
@@ -110,17 +110,30 @@ def reset_verify(email, code, password):
             conn.commit()
             return False, "This code has expired. Please ask for a new one."
         if not hmac.compare_digest(_hash(email, code), row["otp_hash"]):
-            tries = row["tries"] + 1
-            if tries >= MAX_TRIES:
+            updated = conn.execute(
+                "UPDATE resets SET tries = tries + 1 WHERE email = ? AND expires > ? "
+                "AND tries < ?", (email, time.time(), MAX_TRIES)
+            )
+            if not updated.rowcount:
                 conn.execute("DELETE FROM resets WHERE email = ?", (email,))
                 conn.commit()
                 return False, "Too many wrong codes. Please ask for a new one."
-            conn.execute("UPDATE resets SET tries = ? WHERE email = ?", (tries, email))
+            tries = conn.execute("SELECT tries FROM resets WHERE email = ?", (email,)).fetchone()["tries"]
+            if tries >= MAX_TRIES:
+                conn.execute("DELETE FROM resets WHERE email = ?", (email,))
             conn.commit()
+            if tries >= MAX_TRIES:
+                return False, "Too many wrong codes. Please ask for a new one."
             return False, f"That code is not right. {MAX_TRIES - tries} tries left."
+        consumed = conn.execute(
+            "DELETE FROM resets WHERE email = ? AND otp_hash = ? AND expires > ? AND tries < ?",
+            (email, row["otp_hash"], time.time(), MAX_TRIES),
+        )
+        if not consumed.rowcount:
+            conn.commit()
+            return False, "This code has expired or was already used. Please ask for a new one."
         conn.execute("UPDATE users SET password_hash = ? WHERE email = ? AND is_active = 1 AND role != 'admin'",
                      (generate_password_hash(password), email))
-        conn.execute("DELETE FROM resets WHERE email = ?", (email,))
         conn.commit()
     finally:
         conn.close()
