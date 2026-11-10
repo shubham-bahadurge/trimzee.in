@@ -1,4 +1,11 @@
 <!-- Shared site header and bottom navigation. -->
+<script>
+    window.trimzeeInstallPrompt = null;
+    window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        window.trimzeeInstallPrompt = event;
+    });
+</script>
 <header class="topbar">
     <div class="menu-wrap">
         <button class="icon-btn" type="button" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="menuPanel">☰</button>

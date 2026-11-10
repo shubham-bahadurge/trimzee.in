@@ -14,7 +14,7 @@ if ("serviceWorker" in navigator) {
 
 const installButton = document.getElementById("installApp");
 const installHelp = document.getElementById("installHelp");
-let installPrompt;
+let installPrompt = window.trimzeeInstallPrompt || null;
 const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
 const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -31,6 +31,7 @@ if (installButton && !isStandalone) {
     window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         installPrompt = event;
+        window.trimzeeInstallPrompt = event;
         installButton.hidden = false;
     });
 
@@ -39,14 +40,27 @@ if (installButton && !isStandalone) {
             installHelp.hidden = false;
             return;
         }
-        installPrompt.prompt();
-        await installPrompt.userChoice;
+        const prompt = installPrompt;
         installPrompt = null;
-        installButton.hidden = true;
+        window.trimzeeInstallPrompt = null;
+        try {
+            await prompt.prompt();
+            const choice = await prompt.userChoice;
+            if (choice.outcome === "accepted") {
+                installButton.hidden = true;
+            } else {
+                installHelp.hidden = false;
+            }
+        } catch (error) {
+            console.error("Trimzee install prompt failed:", error);
+            installHelp.textContent = "Could not open the install prompt. Use your browser's menu to install Trimzee.";
+            installHelp.hidden = false;
+        }
     });
 
     window.addEventListener("appinstalled", () => {
         installPrompt = null;
+        window.trimzeeInstallPrompt = null;
         installButton.hidden = true;
     });
 }
