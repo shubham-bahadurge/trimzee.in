@@ -171,6 +171,14 @@ def _activate(conn, pay, payment_id, record_coupon=True):
     return True
 
 
+def _unbilled_fees(conn, user_id):
+    """Completed-booking fees for this owner's salons that no order has taken yet."""
+    rows = conn.execute("SELECT b.id, b.commission FROM bookings b JOIN salons s ON s.id = b.salon_id "
+                        "WHERE s.owner_id = ? AND b.status = 'completed' AND b.commission > 0 "
+                        "AND b.billed_in IS NULL", (user_id,)).fetchall()
+    return rows, sum(r["commission"] for r in rows)
+
+
 def create_order(user, plan_code, coupon_code=""):
     q = quote(user, plan_code, coupon_code)
     if not q["ok"]:
@@ -178,7 +186,13 @@ def create_order(user, plan_code, coupon_code=""):
     conn = db.get_db()
     try:
         now = billing.now_str()
-        if q["final"] == 0:  # a 100% coupon: no payment needed
+        conn.execute("UPDATE bookings SET billed_in = NULL WHERE billed_in IN "
+                     "(SELECT order_id FROM payments WHERE user_id = ? AND status != 'paid') "
+                     "AND salon_id IN (SELECT id FROM salons WHERE owner_id = ?)", (user["id"], user["id"]))
+        fee_rows, fee = _unbilled_fees(conn, user["id"])
+        total = q["final"] + fee
+        q["fee"], q["total"] = fee, total
+        if total == 0:  # a 100% coupon and no fees: no payment needed
             order_id = "free-" + secrets.token_hex(8)
             conn.execute("INSERT INTO payments (user_id, purpose, plan_code, amount, coupon_code, order_id, status, "
                          "created_at) VALUES (?, 'plan', ?, 0, ?, ?, 'created', ?)",
@@ -191,17 +205,20 @@ def create_order(user, plan_code, coupon_code=""):
         if not configured():
             return {"ok": False, "error": "Online payments are not set up yet."}
         try:
-            order = _post("/orders", {"amount": q["final"] * 100, "currency": "INR",
+            order = _post("/orders", {"amount": total * 100, "currency": "INR",
                                       "receipt": f"trz{user['id']}-{secrets.token_hex(4)}",
-                                      "notes": {"user_id": str(user["id"]), "plan": plan_code, "coupon": q["coupon"] or ""}})
+                                      "notes": {"user_id": str(user["id"]), "plan": plan_code,
+                                                "coupon": q["coupon"] or "", "fees_rs": str(fee)}})
             order_id = order["id"]
         except Exception:
             return {"ok": False, "error": "Could not start the payment. Please try again in a moment."}
         conn.execute("INSERT INTO payments (user_id, purpose, plan_code, amount, coupon_code, order_id, status, created_at) "
                      "VALUES (?, 'plan', ?, ?, ?, ?, 'created', ?)",
-                     (user["id"], plan_code, q["final"] * 100, q["coupon"], order_id, now))
+                     (user["id"], plan_code, total * 100, q["coupon"], order_id, now))
+        for row in fee_rows:  # reserve these bookings for this order
+            conn.execute("UPDATE bookings SET billed_in = ? WHERE id = ? AND billed_in IS NULL", (order_id, row["id"]))
         conn.commit()
-        return {"ok": True, "free": False, "order_id": order_id, "amount_paise": q["final"] * 100, "key_id": key_id(),
+        return {"ok": True, "free": False, "order_id": order_id, "amount_paise": total * 100, "key_id": key_id(),
                 "quote": q, "test_mode": test_mode()}
     finally:
         conn.close()

@@ -58,6 +58,7 @@ def init_slots():
         meta._add_column(conn, "bookings", "code", "TEXT")
         meta._add_column(conn, "bookings", "code_tries", "INTEGER NOT NULL DEFAULT 0")
         meta._add_column(conn, "bookings", "commission", "INTEGER NOT NULL DEFAULT 0")
+        meta._add_column(conn, "bookings", "billed_in", "TEXT")
         conn.execute("DROP TABLE IF EXISTS slot_holds")
         conn.commit()
     finally:

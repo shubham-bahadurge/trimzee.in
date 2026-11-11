@@ -13,7 +13,7 @@ import payments
 import push
 import pgdb
 
-SCHEMA_VERSION = "2026-11-v16-booking-commission"
+SCHEMA_VERSION = "2026-11-v17-booking-fee-reservations"
 logger = logging.getLogger(__name__)
 SHOP_MIGRATION_ERROR = None
 

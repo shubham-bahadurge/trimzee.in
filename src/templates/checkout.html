@@ -36,7 +36,8 @@
 <section class="panel">
 <div class="co-row"><span>{{ quote.plan.name }}</span><b>&#8377;{{ quote.price }}</b></div>
 {% if quote.discount %}<div class="co-row"><span>Coupon {{ quote.coupon }}</span><b>- &#8377;{{ quote.discount }}</b></div>{% endif %}
-<div class="co-row co-total"><span>You pay</span><span>&#8377;{{ quote.final }}</span></div>
+{% if quote.fee %}<div class="co-row"><span>Booking fees</span><b>+ &#8377;{{ quote.fee }}</b></div>{% endif %}
+<div class="co-row co-total"><span>You pay</span><span>&#8377;{{ quote.total }}</span></div>
 <details class="co-coupon" {% if quote.coupon %}open{% endif %}>
 <summary>{{ 'Change coupon code' if quote.coupon else 'Have a coupon code?' }}</summary>
 <form class="co-coupon-row" method="post" action="/plans/buy">
@@ -47,7 +48,7 @@
 </form>
 <p class="co-coupon-note">Applying a coupon updates your checkout total. Free-day coupons can be redeemed from the salon plan page.</p>
 </details>
-<button id="pay" class="btn co-pay" type="button">Pay &#8377;{{ quote.final }}</button>
+<button id="pay" class="btn co-pay" type="button">Pay &#8377;{{ quote.total }}</button>
 <p id="msg" class="co-msg"></p>
 </section>
 <p class="co-secure">Secure payment by Razorpay: UPI, cards and netbanking.<br>Your plan starts as soon as the payment is confirmed.</p>
