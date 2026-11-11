@@ -202,6 +202,10 @@ function link(text, href, ghost) {
 function openModal(data) {
     document.getElementById("modalWhen").textContent = data.salon + " · " + data.when + " · " + data.service +
         (data.barber ? " · " + data.barber : "");
+    const successMark = document.getElementById("bookingSuccessMark");
+    successMark.classList.remove("is-animated");
+    void successMark.offsetWidth;
+    successMark.classList.add("is-animated");
     document.getElementById("modalCode").textContent = data.code;
     const actions = document.getElementById("modalActions");
     actions.innerHTML = "";
@@ -242,6 +246,7 @@ confirmBtn.addEventListener("click", async function () {
             selected = null;
             message.hidden = true;
             openModal(data);
+            if (window.TrimzeeSound) { window.TrimzeeSound.playChime(); }
         } else {
             showMessage(data.error || "Booking could not be completed (" + res.status + "). Please try again.", false);
         }
