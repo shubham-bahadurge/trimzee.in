@@ -34,7 +34,7 @@ import shop_admin  # noqa: E402
 
 # "public" is where Vercel serves static files from.
 app = Flask(__name__, static_folder="public", static_url_path="")
-app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 3600
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
 
 secret_key = os.environ.get("SECRET_KEY")
 is_production = (
@@ -55,6 +55,30 @@ app.config.update(
     SESSION_COOKIE_SECURE=is_production,
     MAX_CONTENT_LENGTH=5 * 1024 * 1024 + 64 * 1024,
 )
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)")
+    if is_production:
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+        if response.mimetype == "text/html":
+            response.headers.setdefault(
+                "Content-Security-Policy",
+                "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; "
+                "form-action 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com "
+                "https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://unpkg.com; "
+                "img-src 'self' data: blob: https:; font-src 'self' data:; "
+                "connect-src 'self' https://api.razorpay.com https://*.razorpay.com "
+                "https://tile.openstreetmap.org https://*.tile.openstreetmap.org; "
+                "frame-src 'self' https://*.razorpay.com https://www.openstreetmap.org; "
+                "upgrade-insecure-requests"
+            )
+    return response
+
 
 STATUS_LABELS = {"available": "Available", "busy": "Busy", "closed": "Closed", "full": "Fully booked"}
 PRIVATE_PATH_PREFIXES = (
@@ -229,7 +253,13 @@ def home():
     saved_view = request.args.get("view") == "saved"
     return render_template("index.html", salons=slots.get_salons(None if saved_view else gender),
                            labels=STATUS_LABELS, saved_view=saved_view, my_gender=gender,
-                           need_gender=bool(user and user["role"] == "customer" and not gender))
+                           need_gender=bool(user and user["role"] == "customer" and not gender),
+                           business=legal.BUSINESS)
+
+
+@app.route("/about")
+def about():
+    return render_template("about.html", b=legal.BUSINESS)
 
 
 @app.route("/robots.txt")
@@ -251,7 +281,7 @@ def sitemap_xml():
     ElementTree.register_namespace("", namespace)
     root = ElementTree.Element(f"{{{namespace}}}urlset")
     lastmod = db.now_ist().strftime("%Y-%m-%d")
-    public_urls = [("/", lastmod)]
+    public_urls = [("/", lastmod), ("/about", lastmod)]
     public_urls.extend(
         (url_for("salon_page", salon_id=salon["id"]), lastmod)
         for salon in slots.get_salons()
@@ -701,10 +731,11 @@ def legal_footer(response):
         end = body.rfind("</body>")
         if end < 0 or "/refund-policy" in body:
             return response
-        links = ('<div style="text-align:center;font:13px system-ui,-apple-system,sans-serif;color:#777;padding:18px 12px">'
-                 '<a style="color:#777" href="/terms">Terms</a> &middot; <a style="color:#777" href="/privacy">Privacy</a> '
-                 '&middot; <a style="color:#777" href="/refund-policy">Refunds</a> &middot; '
-                 '<a style="color:#777" href="/contact">Contact</a></div>')
+        links = ('<div style="text-align:center;font:13px system-ui,-apple-system,sans-serif;color:#4b5960;padding:18px 12px">'
+                 '<a style="color:#4b5960" href="/about">About</a> &middot; '
+                 '<a style="color:#4b5960" href="/terms">Terms</a> &middot; <a style="color:#4b5960" href="/privacy">Privacy</a> '
+                 '&middot; <a style="color:#4b5960" href="/refund-policy">Refunds</a> &middot; '
+                 '<a style="color:#4b5960" href="/contact">Contact</a></div>')
         response.set_data(body[:end] + links + body[end:])
     except Exception:
         pass

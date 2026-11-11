@@ -108,6 +108,7 @@ function loadLeaflet() {
         script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
         script.integrity = "sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH";
         script.crossOrigin = "anonymous";
+        script.async = true;
         script.onload = resolve;
         script.onerror = function () { reject(new Error("Leaflet failed to load")); };
         document.head.appendChild(script);
@@ -243,7 +244,6 @@ function startLocation() {
 
 locBtn.addEventListener("click", startLocation);
 searchInput.addEventListener("input", applyFilters);
-if (!savedView) { startLocation(); }
 
 document.querySelectorAll(".book").forEach(function (btn) {
     btn.addEventListener("click", function () { window.location.href = "/salon/" + btn.dataset.id; });

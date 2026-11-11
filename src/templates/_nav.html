@@ -1,16 +1,10 @@
 <!-- Shared site header and bottom navigation. -->
-<script>
-    window.trimzeeInstallPrompt = null;
-    window.addEventListener("beforeinstallprompt", function (event) {
-        event.preventDefault();
-        window.trimzeeInstallPrompt = event;
-    });
-</script>
 <header class="topbar">
     <div class="menu-wrap">
         <button class="icon-btn" type="button" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="menuPanel">☰</button>
         <nav class="pop left" id="menuPanel" hidden>
             <a href="/">Home</a>
+            <a href="/about">About Trimzee</a>
             <button class="install-menu-button" id="installApp" type="button" hidden>Install Trimzee</button>
             <p class="install-help" id="installHelp" hidden>In Safari, tap Share, then choose Add to Home Screen.</p>
             {% if current_user %}
@@ -46,24 +40,10 @@
     <div class="menu-wrap">
         <a class="icon-btn" href="{{ '/account' if current_user else '/login' }}" aria-label="{{ 'My account' if current_user else 'Sign in' }}">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+            <span class="sr-only">{{ 'My account' if current_user else 'Sign in' }}</span>
         </a>
     </div>
 </header>
-<script>
-    (function () {
-        var btn = document.getElementById("menuBtn"), panel = document.getElementById("menuPanel");
-        function close() { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); }
-        btn.addEventListener("click", function (e) {
-            e.stopPropagation();
-            var open = panel.hidden;
-            panel.hidden = !open;
-            btn.setAttribute("aria-expanded", String(open));
-        });
-        panel.addEventListener("click", function (e) { e.stopPropagation(); });
-        document.addEventListener("click", close);
-        document.addEventListener("keydown", function (e) { if (e.key === "Escape") { close(); } });
-    })();
-</script>
 <nav class="bottom-tabs{% if current_user and current_user.role in ['owner', 'admin'] %} has-subscription{% endif %}{% if current_user and current_user.role == 'admin' %} has-payments{% else %} has-shop{% endif %}{% if current_user and current_user.role == 'customer' %} has-orders{% endif %}" aria-label="Main navigation">
     <a href="/" class="{{ 'active' if request.path == '/' and request.args.get('view') != 'saved' else '' }}"
        {% if request.path == '/' and request.args.get('view') != 'saved' %}aria-current="page"{% endif %}>
@@ -128,6 +108,7 @@
     {% endif %}
 </nav>
 {% if current_user %}<script>window.TZ_AUTH = true; window.TZ_ROLE = "{{ current_user.role }}"; window.TZ_CSRF = "{{ csrf_token() }}";</script>
-<script src="/js/notify.js"></script>{% endif %}
-<script src="/js/pwa.js"></script>
+<script src="/js/notify.js" defer></script>{% endif %}
+<script src="/js/nav.js" defer></script>
+<script src="/js/pwa.js" defer></script>
 <script src="/js/sound.js" defer></script>

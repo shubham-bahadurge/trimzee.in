@@ -25,8 +25,10 @@
     {% set priority_salon_image = salons|selectattr('image_url')|first %}
     {% if priority_salon_image %}<link rel="preload" as="image" href="{{ priority_salon_image.image_url }}" fetchpriority="high">{% endif %}
     <link rel="stylesheet" href="/css/site.css">
+    <script type="application/ld+json">{{ {"@context": "https://schema.org", "@type": "WebSite", "name": "Trimzee", "url": seo_site_url ~ "/", "description": "Compare salon services and prices, check appointment availability, and request a booking on Trimzee.", "publisher": {"@type": "Organization", "name": business.name, "url": seo_site_url, "email": business.email, "telephone": business.phone, "address": {"@type": "PostalAddress", "streetAddress": business.address, "addressLocality": business.city}}}|tojson }}</script>
 </head>
 <body class="home" data-saved-view="{{ 'true' if saved_view else 'false' }}">
+    {% if not saved_view %}<a class="skip-link" href="#home-content">Skip to content</a>{% endif %}
     {% include "_nav.html" %}
 
     <section class="hero-tag">
@@ -34,7 +36,7 @@
         <p>Quick. Free. Skip the wait.</p>
     </section>
 
-    <main class="home-main">
+    <main class="home-main" id="home-content" tabindex="-1">
         {% if need_gender %}
         <div class="notice-card">
             <strong>Show salons made for you</strong>
@@ -52,15 +54,15 @@
             </button>
             <input id="search" type="search" placeholder="Search {{ 'parlours' if my_gender == 'female' else 'salons' }} or services" aria-label="Search">
         </div>
-        <p class="muted status-line" id="locStatus" aria-live="polite">{{ 'Saved salons on this device' if saved_view else '📍 Allow location to see salons within 5 km of you.' }}</p>
+        <p class="muted status-line" id="locStatus" aria-live="polite">{{ 'Saved salons on this device' if saved_view else '📍 Tap the pin to sort nearby options by distance.' }}</p>
 
-        <h2 class="section-title">{{ 'Saved salons' if saved_view else 'Nearby ' ~ ('parlours' if my_gender == 'female' else 'salons') }}</h2>
+        <h2 class="section-title">{{ 'Saved salons' if saved_view else 'Options near you' }}</h2>
         {% if not saved_view %}
         <section class="nearby-map-section" aria-labelledby="nearbyMapTitle">
-            <h3 id="nearbyMapTitle">Salons within 5 km</h3>
+            <h3 id="nearbyMapTitle">Availability map</h3>
             <div class="nearby-map-wrap">
-                <div id="nearbyMap" class="nearby-map" aria-label="Map of salons within 5 km"></div>
-                <p id="mapMessage" class="nearby-map-message" aria-live="polite">Allow location access to see nearby salons on the map.</p>
+                <div id="nearbyMap" class="nearby-map" aria-label="Availability map"></div>
+                <p id="mapMessage" class="nearby-map-message" aria-live="polite">Tap the pin to load the map and see nearby availability.</p>
             </div>
             <div class="nearby-map-legend" aria-label="Salon availability">
                 <span><i class="map-dot you"></i>Your location</span>
@@ -84,6 +86,7 @@
                 <div class="salon-card-photo">
                 {% if s.image_url %}
                     <img src="{{ s.image_url }}" alt="{{ s.name }}" title="{{ s.name }}"
+                        width="1200" height="800"
                         {% if priority_salon_image and s.id == priority_salon_image.id %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
                 {% else %}
                     <span aria-hidden="true">✂</span>
@@ -122,8 +125,21 @@
             </article>
             {% endfor %}
         </div>
-        <p id="empty" class="empty" hidden>{{ 'No saved salons yet. Tap the heart on a salon to save it.' if saved_view else 'No salons match here yet. Try another search.' }}</p>
+        <p id="empty" class="empty" hidden>{{ 'No saved salons yet. Tap the heart on a salon to save it.' if saved_view else 'No listings match your search yet. Try another service.' }}</p>
     </main>
+
+    {% if not saved_view %}
+    <section class="home-guide" aria-labelledby="home-guide-title">
+        <h2 id="home-guide-title">A simpler way to plan your visit</h2>
+        <p>Trimzee brings service details, starting prices, and appointment information together so you can choose a local salon with confidence. Search by business or service, compare the options shown, and open a listing to review its services, hours, and available times.</p>
+        <h3>Choose a service and time</h3>
+        <p>On a listing, select one or more services and choose an open time that suits you. Add your phone number and send the request. The salon must accept it before the appointment is confirmed; you can check its status later in My bookings.</p>
+        <h3>Know what to expect</h3>
+        <p>Each request includes a visit code. Show it when you arrive so the owner can complete the booking. Unless online payment is offered at checkout, payment for the service is made directly to the salon. Prices, hours, and service details are supplied by each business, so contact the owner if you need to confirm something before visiting.</p>
+        <h3>Use location only when you want to</h3>
+        <p>Browsing does not require location access. Tap the pin beside search to share your device location and sort participating businesses by distance. If you skip that step, you can still explore the listings and open their details. Location access is also needed to place a booking, so the app can check that the selected business is within the booking area.</p>
+    </section>
+    {% endif %}
 
     <div class="chat">
         <section class="chat-panel" id="chatPanel" hidden aria-label="Trimzee assistant">
@@ -143,7 +159,7 @@
     </div>
 
     <footer class="footer">© Trimzee · Book your salon. Skip the wait.</footer>
-    <script src="/js/app.js"></script>
-    <script src="/js/chat.js"></script>
+    <script src="/js/app.js" defer></script>
+    <script src="/js/chat.js" defer></script>
 </body>
 </html>

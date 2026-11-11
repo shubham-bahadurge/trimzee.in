@@ -1,0 +1,34 @@
+<!doctype html>
+<!-- About Trimzee and how its booking service works. -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>About Trimzee</title>
+    <meta name="description" content="Learn how Trimzee helps customers compare salon services and request appointments, and how to contact the business.">
+    <link rel="canonical" href="{{ seo_site_url }}/about">
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/site.css">
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    {% include "_nav.html" %}
+    <main class="container" id="main-content" tabindex="-1">
+        <h1>About Trimzee</h1>
+        <section class="panel">
+            <h2>Our service</h2>
+            <p>Trimzee is an online booking platform that helps customers review salon services, prices, and appointment availability. Customers can send a booking request, see its status, and use a visit code when they arrive.</p>
+            <p>Local businesses provide their own service information, prices, hours, and appointment decisions. A request is not confirmed until the business accepts it. Unless online payment is offered at checkout, customers pay the salon directly for its services.</p>
+            <p>Location access is optional while browsing. It is requested when a customer chooses the location feature and is needed to check the booking area before a request is placed.</p>
+        </section>
+        <section class="panel">
+            <h2>Business and contact details</h2>
+            <p><strong>{{ b.name }}</strong><br>{{ b.owner }}</p>
+            <p>{{ b.address }}<br>{{ b.city }}</p>
+            <p><a href="mailto:{{ b.email }}">{{ b.email }}</a><br><a href="tel:{{ b.phone }}">{{ b.phone }}</a></p>
+            <p>For help with an appointment, contact the salon listed on the booking. For help with your Trimzee account or the platform, contact us using the details above.</p>
+        </section>
+        <p><a href="/terms">Terms</a> · <a href="/privacy">Privacy</a> · <a href="/refund-policy">Refunds</a> · <a href="/contact">Contact</a></p>
+    </main>
+</body>
+</html>
