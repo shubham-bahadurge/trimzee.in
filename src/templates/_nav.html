@@ -130,3 +130,4 @@
 {% if current_user %}<script>window.TZ_AUTH = true; window.TZ_ROLE = "{{ current_user.role }}"; window.TZ_CSRF = "{{ csrf_token() }}";</script>
 <script src="/js/notify.js"></script>{% endif %}
 <script src="/js/pwa.js"></script>
+<script src="/js/sound.js" defer></script>
