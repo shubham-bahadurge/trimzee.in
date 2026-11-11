@@ -12,6 +12,8 @@ import mailer
 import meta
 import billing
 
+PLATFORM_FEE_PER_BOOKING = 5  # rupees charged to the salon per completed booking
+
 DAYS = 2
 MAX_CODE_TRIES = 5
 
@@ -55,6 +57,7 @@ def init_slots():
     try:
         meta._add_column(conn, "bookings", "code", "TEXT")
         meta._add_column(conn, "bookings", "code_tries", "INTEGER NOT NULL DEFAULT 0")
+        meta._add_column(conn, "bookings", "commission", "INTEGER NOT NULL DEFAULT 0")
         conn.execute("DROP TABLE IF EXISTS slot_holds")
         conn.commit()
     finally:
@@ -363,9 +366,9 @@ def complete_with_code(owner_id, booking_id, code):
                 left = MAX_CODE_TRIES - tries
                 return False, f"Wrong code. {left} {'try' if left == 1 else 'tries'} left."
         completed = conn.execute(
-            "UPDATE bookings SET status = 'completed' WHERE id = ? AND status = 'confirmed' "
+            "UPDATE bookings SET status = 'completed', commission = ? WHERE id = ? AND status = 'confirmed' "
             "AND EXISTS (SELECT 1 FROM salons s WHERE s.id = bookings.salon_id AND s.owner_id = ?)",
-            (booking_id, owner_id),
+            (PLATFORM_FEE_PER_BOOKING, booking_id, owner_id),
         )
         if not completed.rowcount:
             conn.rollback()
