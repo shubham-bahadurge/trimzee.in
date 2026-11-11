@@ -22,6 +22,8 @@
     <link rel="icon" href="/img/logo-mark.png">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/img/pwa-icon-192.png">
+    {% set priority_salon_image = salons|selectattr('image_url')|first %}
+    {% if priority_salon_image %}<link rel="preload" as="image" href="{{ priority_salon_image.image_url }}" fetchpriority="high">{% endif %}
     <link rel="stylesheet" href="/css/site.css">
 </head>
 <body class="home" data-saved-view="{{ 'true' if saved_view else 'false' }}">
@@ -81,7 +83,8 @@
                 data-status="{{ s.status }}">
                 <div class="salon-card-photo">
                 {% if s.image_url %}
-                    <img src="{{ s.image_url }}" alt="{{ s.name }}" loading="lazy">
+                    <img src="{{ s.image_url }}" alt="{{ s.name }}" title="{{ s.name }}"
+                        {% if priority_salon_image and s.id == priority_salon_image.id %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
                 {% else %}
                     <span aria-hidden="true">✂</span>
                 {% endif %}

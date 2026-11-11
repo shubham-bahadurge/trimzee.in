@@ -34,6 +34,7 @@ import shop_admin  # noqa: E402
 
 # "public" is where Vercel serves static files from.
 app = Flask(__name__, static_folder="public", static_url_path="")
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 3600
 
 secret_key = os.environ.get("SECRET_KEY")
 is_production = (
