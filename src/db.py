@@ -410,13 +410,29 @@ def create_user(name, email, password, role, salon_name=""):
         conn.close()
 
 
-def authenticate(email, password):
-    """Returns the user dict, or None if email/password is wrong."""
+def authenticate(identifier, password):
+    """Authenticate by email or by a unique, saved Indian mobile number."""
     conn = get_db()
     try:
-        row = conn.execute(
-            "SELECT id, name, role, password_hash FROM users "
-            "WHERE email = ? AND is_active = 1", ((email or "").strip().lower(),)).fetchone()
+        identifier = (identifier or "").strip()
+        if "@" in identifier:
+            row = conn.execute(
+                "SELECT id, name, role, password_hash FROM users "
+                "WHERE email = ? AND is_active = 1", (identifier.lower(),)).fetchone()
+        else:
+            phone = re.sub(r"\D", "", identifier)
+            if len(phone) == 12 and phone.startswith("91"):
+                phone = phone[2:]
+            elif len(phone) == 11 and phone.startswith("0"):
+                phone = phone[1:]
+            if not re.fullmatch(r"[6-9]\d{9}", phone):
+                return None
+            matches = conn.execute(
+                "SELECT id, name, role, password_hash FROM users "
+                "WHERE phone = ? AND is_active = 1", (phone,)).fetchall()
+            if len(matches) != 1:
+                return None
+            row = matches[0]
         if not row or row["password_hash"] == "!":
             return None
         try:

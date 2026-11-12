@@ -1,58 +1,80 @@
-<!DOCTYPE html>
-<!-- New account form for customers and salon owners. -->
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign up - Trimzee</title>
-    <link rel="stylesheet" href="/css/site.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f6f8">
+    <title>Create an account - Trimzee</title>
+    <link rel="stylesheet" href="/css/site.css?v=account-portal">
 </head>
-<body>
-    {% include "_nav.html" %}
-    <main class="auth-card">
-        <h1>Create your account</h1>
-        {% if error %}<p class="message err">{{ error }}</p>{% endif %}
-        <form method="post" action="/register">
+<body class="account-page">
+    <header class="account-toolbar">
+        <a class="account-back" href="/" aria-label="Back to salons">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12"/></svg>
+            <span>Back to Salon</span>
+        </a>
+        <span class="account-secure">Secure Account Portal</span>
+    </header>
+    <main class="account-card">
+        <header class="account-intro">
+            <h1>Create your Trimzee account</h1>
+            <p>Join Trimzee to find salons and manage your appointments</p>
+        </header>
+        <nav class="account-switch" aria-label="Account options">
+            <a href="/login{% if next %}?next={{ next|urlencode }}{% endif %}">Login (Phone)</a>
+            <a class="active" href="/register{% if next %}?next={{ next|urlencode }}{% endif %}" aria-current="page">Register</a>
+        </nav>
+        {% if error %}<p class="account-error" role="alert">{{ error }}</p>{% endif %}
+        <form class="account-form register-form" method="post" action="/register">
             <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-            <div class="gender-opts" role="radiogroup" aria-label="Your gender">
-                <label><input type="radio" name="gender" value="male" required {% if form.get('gender') == 'male' %}checked{% endif %}> Male</label>
-                <label><input type="radio" name="gender" value="female" required {% if form.get('gender') == 'female' %}checked{% endif %}> Female</label>
+            <input type="hidden" name="next" value="{{ next or '' }}">
+            <div class="account-choice-row">
+                <fieldset class="account-choices">
+                    <legend>I'm joining as</legend>
+                    <label><input type="radio" name="role" value="customer" {% if form.get('role') != 'owner' %}checked{% endif %}><span>Customer</span></label>
+                    <label><input type="radio" name="role" value="owner" {% if form.get('role') == 'owner' %}checked{% endif %}><span>Salon owner</span></label>
+                </fieldset>
+                <fieldset class="account-choices">
+                    <legend>Gender</legend>
+                    <label><input type="radio" name="gender" value="male" required {% if form.get('gender') == 'male' %}checked{% endif %}><span>Male</span></label>
+                    <label><input type="radio" name="gender" value="female" required {% if form.get('gender') == 'female' %}checked{% endif %}><span>Female</span></label>
+                </fieldset>
             </div>
-            <div class="role-options">
-                <label><input type="radio" name="role" value="customer" {% if form.get('role') != 'owner' %}checked{% endif %}> I'm a customer</label>
-                <label><input type="radio" name="role" value="owner" {% if form.get('role') == 'owner' %}checked{% endif %}> <span id="ownerLabel">I own a salon</span></label>
-            </div>
-            <label>Your name<input type="text" name="name" value="{{ form.get('name', '') }}" maxlength="60" required autocomplete="name"></label>
-            <label id="salonField" hidden><span id="bizLabel">Salon name</span><input type="text" name="salon_name" value="{{ form.get('salon_name', '') }}" maxlength="60"></label>
-            <label id="phoneField" hidden>Mobile number (for booking alerts)<input type="tel" name="phone" value="{{ form.get('phone', '') }}" inputmode="numeric" maxlength="14" placeholder="10-digit mobile number" autocomplete="tel"></label>
-            <label>Email<input type="email" name="email" value="{{ form.get('email', '') }}" maxlength="120" required autocomplete="email"></label>
-            <label>Password (8+ characters)<input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password"></label>
-            <label>Referral code (optional)<input type="text" name="ref" value="{{ form.get('ref', '') }}" maxlength="10" autocapitalize="characters" placeholder="e.g. K7M2QX"></label>
-            <button class="book" type="submit">Create account</button>
-            <p class="hint">We'll email you a 6-digit code to verify your address.</p>
+            <label class="account-field" for="name">Your name
+                <input id="name" type="text" name="name" value="{{ form.get('name', '') }}" maxlength="60" required autocomplete="name" placeholder="Enter your full name">
+            </label>
+            <label class="account-field" id="salonField" for="salon_name" hidden><span id="bizLabel">Salon name</span>
+                <input id="salon_name" type="text" name="salon_name" value="{{ form.get('salon_name', '') }}" maxlength="60" placeholder="Enter your business name">
+            </label>
+            <label class="account-field" id="phoneField" for="phone" hidden>Mobile number
+                <input id="phone" type="tel" name="phone" value="{{ form.get('phone', '') }}" inputmode="numeric" maxlength="14" placeholder="10-digit mobile number" autocomplete="tel">
+            </label>
+            <label class="account-field" for="email">Email address
+                <input id="email" type="email" name="email" value="{{ form.get('email', '') }}" maxlength="120" required autocomplete="email" placeholder="you@example.com">
+            </label>
+            <label class="account-field" for="registerPassword">Password (8+ characters)
+                <div class="account-input-wrap">
+                    <input id="registerPassword" type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password" placeholder="Create a secure password">
+                    <button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle="registerPassword">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </label>
+            <label class="account-field" for="ref">Referral code (optional)
+                <input id="ref" type="text" name="ref" value="{{ form.get('ref', '') }}" maxlength="10" autocapitalize="characters" placeholder="Enter referral code">
+            </label>
+            <button class="account-submit" type="submit">Create New Account</button>
+            <p class="account-hint">We'll email you a 6-digit code to verify your address.</p>
         </form>
-{% if google_enabled %}
-<div style="text-align:center;color:#888;margin-top:14px;font-size:.85rem">or</div>
-<a href="/auth/google" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;padding:12px;border:1px solid #dadce0;border-radius:12px;background:#fff;color:#3c4043;font-weight:600;text-decoration:none;font-size:.95rem"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Continue with Google</span></a>
-<p style="text-align:center;color:#888;margin-top:14px;font-size:.85rem;margin-top:8px">For customers. Salon owners sign up with the form above.</p>
-{% endif %}
-
-        <p class="muted">Already have an account? <a href="/login{% if next %}?next={{ next|urlencode }}{% endif %}">Log in</a></p>
+        {% if google_enabled %}
+        <div class="account-divider"><span>OR CONTINUE WITH</span></div>
+        <a class="account-google" href="/auth/google{% if next %}?next={{ next|urlencode }}{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            <span>Sign up with Google</span>
+        </a>
+        {% endif %}
+        <p class="account-bottom-link">Already have an account? <a href="/login{% if next %}?next={{ next|urlencode }}{% endif %}">Log in</a></p>
     </main>
-    <script>
-        var salonField = document.getElementById("salonField"), phoneField = document.getElementById("phoneField");
-        function sync() {
-            var owner = document.querySelector("input[name=role]:checked").value === "owner";
-            var female = document.querySelector("input[name=gender]:checked");
-            var word = female && female.value === "female" ? "parlour" : "salon";
-            salonField.hidden = !owner;
-            phoneField.hidden = !owner;
-            phoneField.querySelector("input").required = owner;
-            document.getElementById("ownerLabel").textContent = "I own a " + word;
-            document.getElementById("bizLabel").textContent = word.charAt(0).toUpperCase() + word.slice(1) + " name";
-        }
-        document.querySelectorAll("input[name=role], input[name=gender]").forEach(function (r) { r.addEventListener("change", sync); });
-        sync();
-    </script>
+    <script src="/js/auth.js" defer></script>
 </body>
 </html>

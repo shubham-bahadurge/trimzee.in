@@ -429,22 +429,23 @@ def login():
     if current_user():
         return redirect(nxt or home_for(current_user()["role"]))
     if request.method == "POST":
-        email, ip = request.form.get("email", ""), client_ip()
-        if extras.too_many_logins(ip, email):
-            return render_template("login.html", email=email, next=nxt, error=(
+        identifier, ip = request.form.get("identifier", request.form.get("email", "")).strip(), client_ip()
+        if extras.too_many_logins(ip, identifier):
+            return render_template("login.html", identifier=identifier, next=nxt, error=(
                 "Too many failed attempts. Please wait 15 minutes and try again.")), 429
-        user = db.authenticate(email, request.form.get("password"))
+        user = db.authenticate(identifier, request.form.get("password"))
         if user:
-            extras.clear_login_failures(email)
+            extras.clear_login_failures(identifier)
             start_session(user["id"])
             return redirect(nxt or home_for(user["role"]))
-        extras.record_login_failure(ip, email)
-        return render_template("login.html", error="Incorrect email or password.", email=email, next=nxt), 401
+        extras.record_login_failure(ip, identifier)
+        return render_template("login.html", error="Incorrect phone number or email, or password.",
+                               identifier=identifier, next=nxt), 401
     if request.args.get("csrf") == "expired":
         error = "Your sign-in page expired. Please try again."
     else:
         error = "Password changed. Please sign in with your new password." if request.args.get("reset") else None
-    return render_template("login.html", email="", next=nxt, error=error)
+    return render_template("login.html", identifier="", next=nxt, error=error)
 
 
 @app.route("/forgot", methods=["GET", "POST"])
