@@ -14,6 +14,7 @@ pgdb.install(db)  # uses Postgres when DATABASE_URL exists, otherwise SQLite
 
 import extras  # noqa: E402  (must come after install)
 import accounts  # noqa: E402
+import account_delete  # noqa: E402
 import boot  # noqa: E402
 import chatbot  # noqa: E402
 import growth  # noqa: E402
@@ -822,6 +823,30 @@ def account_profile():
                                           request.form.get("phone"))
     g.pop("user", None)
     return account_view(message, error=not ok)
+
+
+@app.route("/account/delete/request", methods=["POST"])
+def account_delete_request():
+    user = current_user()
+    if not user:
+        return redirect("/login")
+    if user["role"] != "customer":
+        return account_view("Owner accounts can't be deleted here. Please contact Trimzee support.", error=True)
+    ok, message = account_delete.request_code(user)
+    return account_view(message, error=not ok)
+
+
+@app.route("/account/delete/confirm", methods=["POST"])
+def account_delete_confirm():
+    user = current_user()
+    if not user:
+        return redirect("/login")
+    ok, message = account_delete.delete_account(user, request.form.get("code"))
+    if not ok:
+        return account_view(message, error=True)
+    session.clear()
+    g.pop("user", None)
+    return redirect("/?notice=account-deleted")
 
 
 # ----------------------------- customer ------------------------------------
