@@ -825,6 +825,20 @@ def account_profile():
     return account_view(message, error=not ok)
 
 
+def delete_view(notice=None, error=False):
+    return render_template("account_delete.html", notice=notice, error=error)
+
+
+@app.route("/account/delete")
+def account_delete_page():
+    user = current_user()
+    if not user:
+        return redirect("/login?next=/account/delete")
+    if user["role"] != "customer":
+        return account_view("Owner accounts can't be deleted here. Please contact Trimzee support.", error=True)
+    return delete_view()
+
+
 @app.route("/account/delete/request", methods=["POST"])
 def account_delete_request():
     user = current_user()
@@ -833,7 +847,7 @@ def account_delete_request():
     if user["role"] != "customer":
         return account_view("Owner accounts can't be deleted here. Please contact Trimzee support.", error=True)
     ok, message = account_delete.request_code(user)
-    return account_view(message, error=not ok)
+    return delete_view(message, error=not ok)
 
 
 @app.route("/account/delete/confirm", methods=["POST"])
@@ -843,7 +857,7 @@ def account_delete_confirm():
         return redirect("/login")
     ok, message = account_delete.delete_account(user, request.form.get("code"))
     if not ok:
-        return account_view(message, error=True)
+        return delete_view(message, error=True)
     session.clear()
     g.pop("user", None)
     return redirect("/?notice=account-deleted")

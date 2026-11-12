@@ -58,25 +58,12 @@
         </div>
 
         <div class="account-logout">
-            <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn danger" type="submit">Log out</button></form>
+            <div class="account-actions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn danger" type="submit">Log out</button></form>
+                <a class="btn danger" href="/account/delete">Delete account</a>
+            </div>
         </div>
 
-        <div class="panel danger-zone">
-            <h2>Delete account</h2>
-            <p class="muted">This permanently deletes your account. Your personal details are removed,
-            and you can't undo it. Booking and payment records are kept in anonymized form, as required for tax and accounting.</p>
-            <form method="post" action="/account/delete/request">
-                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-                <button class="btn ghost" type="submit">Send me a delete code</button>
-            </form>
-            <form method="post" action="/account/delete/confirm" class="delete-confirm">
-                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-                <label>6-digit code from your email
-                    <input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
-                </label>
-                <button class="btn danger" type="submit">Permanently delete my account</button>
-            </form>
-        </div>
     </main>
     <script>
         document.getElementById("copyBtn").addEventListener("click", function () {
