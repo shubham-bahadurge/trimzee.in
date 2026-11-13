@@ -37,6 +37,7 @@ import analytics  # noqa: E402
 # "public" is where Vercel serves static files from.
 app = Flask(__name__, static_folder="public", static_url_path="")
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
+app.config["DEBUG"] = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true")
 
 secret_key = os.environ.get("SECRET_KEY")
 is_production = (
@@ -123,6 +124,22 @@ def request_too_large(_error):
     if request.path == "/dashboard/image" and user and user["role"] == "owner":
         return owner_view("The image must be 5 MB or smaller.", error=True), 413
     return "Request is too large.", 413
+
+
+@app.errorhandler(404)
+def not_found(_error):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Resource not found"}), 404
+    return render_template("404.html"), 404
+
+
+@app.errorhandler(500)
+@app.errorhandler(Exception)
+def internal_error(error):
+    app.logger.error("Internal error on %s: %s", request.path, error, exc_info=True)
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "An unexpected error occurred"}), 500
+    return render_template("500.html"), 500
 
 
 @app.context_processor

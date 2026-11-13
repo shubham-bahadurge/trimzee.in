@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- 404 Not Found error page matching Trimzee look and feel. -->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Page not found - Trimzee</title>
+    <link rel="icon" href="/img/logo-mark.png">
+    <link rel="stylesheet" href="/css/site.css">
+    <style>
+        .error-wrap { max-width: 520px; margin: 40px auto; padding: 24px 16px 80px; text-align: center; }
+        .error-code { font-size: 4rem; font-weight: 800; color: var(--ink, #111); margin: 0 0 8px; line-height: 1; }
+        .error-msg { color: var(--muted, #64748b); font-size: 1.05rem; line-height: 1.5; margin: 12px 0 28px; }
+    </style>
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    {% include "_nav.html" %}
+    <main class="container error-wrap" id="main-content" tabindex="-1">
+        <h1 class="error-code">404</h1>
+        <h2>Page not found</h2>
+        <p class="error-msg">The page you were looking for doesn't exist, was moved, or is no longer available.</p>
+        <p><a class="btn" href="/">Return to home</a></p>
+    </main>
+</body>
+</html>
