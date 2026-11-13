@@ -52,6 +52,7 @@
             <button class="round-btn" type="button" id="useLocation" aria-label="Use my live location" title="Use my live location">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
             </button>
+            <label for="search" class="sr-only">Search {{ 'parlours' if my_gender == 'female' else 'salons' }} or services</label>
             <input id="search" type="search" placeholder="Search {{ 'parlours' if my_gender == 'female' else 'salons' }} or services" aria-label="Search">
         </div>
         <p class="muted status-line" id="locStatus" aria-live="polite">{{ 'Saved salons on this device' if saved_view else '📍 Tap the pin to sort nearby options by distance.' }}</p>
@@ -157,6 +158,7 @@
                 <button type="button">Nearest salon</button><button type="button">How do I book?</button>
             </div>
             <form class="chat-form" id="chatForm">
+                <label for="chatInput" class="sr-only">Your question</label>
                 <input id="chatInput" type="text" maxlength="300" placeholder="Type your question…" autocomplete="off" aria-label="Your question">
                 <button type="submit">Send</button>
             </form>
