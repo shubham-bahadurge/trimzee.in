@@ -1,3 +1,5 @@
+import os
+
 # Business details shown on the Terms, Privacy, Refund and Contact pages. Edit this file to change them.
 
 UPDATED = "19 October 2026"
@@ -9,4 +11,4 @@ BUSINESS = {'name': 'trimzee',
  'address': 'post rupur tq shirur dis beed',
  'city': 'beed , maharashtra',
  'gst': '',
- 'site': 'trimzee.in'}
+ 'site': os.environ.get("SITE_URL", "").strip().rstrip("/") or "https://trimzee.vercel.app"}
