@@ -32,6 +32,7 @@ import slots  # noqa: E402
 import push  # noqa: E402
 import shop_routes  # noqa: E402
 import shop_admin  # noqa: E402
+import analytics  # noqa: E402
 
 # "public" is where Vercel serves static files from.
 app = Flask(__name__, static_folder="public", static_url_path="")
@@ -127,11 +128,15 @@ def request_too_large(_error):
 
 @app.context_processor
 def inject_user():
+    path = request.path
+    is_admin_or_dashboard = path.startswith("/admin") or path.startswith("/dashboard")
+    ga_id = os.environ.get("GA_MEASUREMENT_ID", "").strip()
     return {
         "current_user": current_user(),
         "google_enabled": googleauth.configured(),
         "seo_site_url": public_base(),
         "gsc_verification": os.environ.get("GSC_VERIFICATION", "").strip(),
+        "ga_measurement_id": ga_id if (ga_id and not is_admin_or_dashboard) else "",
     }
 
 
@@ -1203,6 +1208,12 @@ def api_book():
     if user.get("phone") is None:
         accounts.update_phone(user["id"], body.get("phone"))
     detail = slots.booking_detail(user["id"], booking_id) or {}
+    analytics.send_booking_completed(
+        booking_id=booking_id,
+        salon_id=salon_id,
+        value=info.get("price") or 0,
+        user_id=user["id"],
+    )
     return jsonify({"message": message, "booking_id": booking_id, "code": secret, "salon": info["salon"],
                     "when": detail.get("when"), "service": info["service"], "barber": detail.get("barber"),
                     "price": info["price"],
