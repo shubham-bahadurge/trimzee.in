@@ -20,6 +20,7 @@
     <meta name="twitter:image" content="{{ seo_site_url }}{{ '/salons/' ~ salon.id ~ '/image' if salon.image_mime else '/img/pwa-icon-512.png' }}">
     <link rel="stylesheet" href="/css/site.css">
     <link rel="stylesheet" href="/css/salon.css">
+    {% if salon_json_ld %}<script type="application/ld+json">{{ salon_json_ld|tojson }}</script>{% endif %}
 </head>
 <body data-salon-id="{{ salon.id }}" data-lat="{{ salon.lat if salon.lat is not none else '' }}" data-lng="{{ salon.lng if salon.lng is not none else '' }}" data-owner-phone="{{ owner_phone or '' }}" data-salon="{{ salon.name }}" data-auth="{{ auth }}">
     {% include "_nav.html" %}

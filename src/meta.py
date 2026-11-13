@@ -337,3 +337,66 @@ def admin_people():
         return customers, owners
     finally:
         conn.close()
+
+
+# ----------------------------- SEO & structured data -----------------------
+def salon_json_ld(salon, services=None, review_count=0, owner_phone=None, base_url=""):
+    """Generate Schema.org LocalBusiness JSON-LD markup using only filled-in salon fields."""
+    url = f"{base_url}/salon/{salon['id']}" if base_url else f"/salon/{salon['id']}"
+    data = {
+        "@context": "https://schema.org",
+        "@type": "BeautySalon",
+        "name": salon.get("name") or "Salon",
+        "url": url,
+    }
+    if salon.get("image_mime"):
+        data["image"] = f"{base_url}/salons/{salon['id']}/image"
+    if salon.get("address") and str(salon["address"]).strip():
+        data["address"] = {
+            "@type": "PostalAddress",
+            "streetAddress": str(salon["address"]).strip(),
+        }
+    if salon.get("lat") is not None and salon.get("lng") is not None:
+        try:
+            data["geo"] = {
+                "@type": "GeoCoordinates",
+                "latitude": float(salon["lat"]),
+                "longitude": float(salon["lng"]),
+            }
+        except (ValueError, TypeError):
+            pass
+    if owner_phone and str(owner_phone).strip():
+        data["telephone"] = str(owner_phone).strip()
+    if review_count and int(review_count) > 0 and salon.get("rating"):
+        try:
+            data["aggregateRating"] = {
+                "@type": "AggregateRating",
+                "ratingValue": float(salon["rating"]),
+                "reviewCount": int(review_count),
+            }
+        except (ValueError, TypeError):
+            pass
+    if salon.get("opening_time") and salon.get("closing_time"):
+        data["openingHoursSpecification"] = [{
+            "@type": "OpeningHoursSpecification",
+            "opens": salon["opening_time"],
+            "closes": salon["closing_time"],
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+        }]
+    if services:
+        offers = [
+            {
+                "@type": "Offer",
+                "name": s["name"],
+                "price": s["price"],
+                "priceCurrency": "INR",
+            }
+            for s in services if s.get("name") and s.get("price") is not None
+        ]
+        if offers:
+            data["hasOfferCatalog"] = {
+                "@type": "OfferCatalog",
+                "name": "Salon Services",
+                "itemListElement": offers,
+            }
+    return data

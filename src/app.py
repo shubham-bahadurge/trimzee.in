@@ -84,10 +84,9 @@ def set_security_headers(response):
 
 STATUS_LABELS = {"available": "Available", "busy": "Busy", "closed": "Closed", "full": "Fully booked"}
 PRIVATE_PATH_PREFIXES = (
-    "/account", "/admin", "/api", "/auth", "/booking", "/cart", "/checkout",
-    "/dashboard", "/forgot", "/health", "/login", "/logout", "/my-bookings",
-    "/order", "/orders", "/pay", "/plans", "/profile", "/q", "/register",
-    "/reset", "/verify", "/webhooks",
+    "/dashboard", "/admin", "/account", "/api", "/my-bookings", "/booking",
+    "/login", "/register", "/verify", "/reset", "/forgot", "/pay",
+    "/auth", "/cart", "/checkout", "/order", "/orders", "/profile", "/webhooks",
 )
 
 # Create or upgrade the tables only when needed (a stored version number makes cold starts fast).
@@ -287,9 +286,18 @@ def sitemap_xml():
     ElementTree.register_namespace("", namespace)
     root = ElementTree.Element(f"{{{namespace}}}urlset")
     lastmod = db.now_ist().strftime("%Y-%m-%d")
-    public_urls = [("/", lastmod), ("/about", lastmod)]
+    public_urls = [
+        ("/", lastmod),
+        ("/about", lastmod),
+        ("/terms", lastmod),
+        ("/privacy", lastmod),
+        ("/refund-policy", lastmod),
+        ("/contact", lastmod),
+        ("/plans", lastmod),
+        ("/shop", lastmod),
+    ]
     public_urls.extend(
-        (url_for("salon_page", salon_id=salon["id"]), lastmod)
+        (f"/salon/{salon['id']}", lastmod)
         for salon in slots.get_salons()
     )
     for path, modified in public_urls:
@@ -309,11 +317,20 @@ def salon_page(salon_id):
     user = current_user()
     if user and user["role"] == "customer" and not meta.gender_allows(salon_id, viewer_gender())[0]:
         abort(404)
+    owner_phone = growth.salon_owner_phone(salon_id)
+    json_ld = meta.salon_json_ld(
+        data["salon"],
+        services=data["services"],
+        review_count=data["review_count"],
+        owner_phone=owner_phone,
+        base_url=public_base(),
+    )
     return render_template("salon.html", salon=data["salon"], services=data["services"], labels=STATUS_LABELS,
                            reviews=data["reviews"], review_count=data["review_count"],
                            barbers=slots.get_barbers(salon_id),
-                           owner_phone=growth.salon_owner_phone(salon_id), days=slots.day_tabs()[:1],
-                           auth=user["role"] if user else "", my_phone=(user or {}).get("phone") or "")
+                           owner_phone=owner_phone, days=slots.day_tabs()[:1],
+                           auth=user["role"] if user else "", my_phone=(user or {}).get("phone") or "",
+                           salon_json_ld=json_ld)
 
 
 @app.route("/salons/<int:salon_id>/image")
