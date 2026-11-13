@@ -85,17 +85,19 @@
                 data-status="{{ s.status }}">
                 <div class="salon-card-photo">
                 {% if s.image_url %}
-                    <img src="{{ s.image_url }}" alt="{{ s.name }}" title="{{ s.name }}"
-                        width="1200" height="800"
-                        {% if priority_salon_image and s.id == priority_salon_image.id %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+                    <a href="/salon/{{ s.id }}" class="salon-photo-link" aria-label="{{ s.name }}">
+                        <img src="{{ s.image_url }}" alt="{{ s.name }}" title="{{ s.name }}"
+                            width="1200" height="800"
+                            {% if priority_salon_image and s.id == priority_salon_image.id %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+                    </a>
                 {% else %}
-                    <span aria-hidden="true">✂</span>
+                    <a href="/salon/{{ s.id }}" class="salon-photo-link" aria-label="{{ s.name }}"><span aria-hidden="true">✂</span></a>
                 {% endif %}
                     <span class="rating salon-photo-rating">{% if s.review_count %}★ {{ s.rating }}{% else %}New on Trimzee{% endif %}</span>
                 </div>
                 <div class="card-body salon-card-body">
                     <div class="row salon-card-heading">
-                        <h3>{{ s.name }}</h3>
+                        <h3><a href="/salon/{{ s.id }}">{{ s.name }}</a></h3>
                         <div class="salon-card-actions">
                             <button class="save-salon" type="button" aria-label="Save {{ s.name }}" aria-pressed="false" title="Save salon">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>
@@ -107,6 +109,10 @@
                         {% for service in s.services[:3] %}
                         <span>{{ service }}</span>
                         {% endfor %}
+                        {% if s.services|length > 3 %}
+                        <span class="muted" title="{{ s.services[3:]|join(', ') }}">+{{ s.services|length - 3 }} more</span>
+                        <span class="sr-only">More services: {{ s.services[3:]|join(', ') }}</span>
+                        {% endif %}
                     </div>
                     <div class="salon-card-footer">
                         <div class="salon-card-info">
@@ -116,10 +122,10 @@
                                 <span class="muted">Next free: {{ s.next }}</span>
                             </div>
                         </div>
-                        <button class="book salon-book-button" data-id="{{ s.id }}" data-name="{{ s.name }}"
-                            {% if s.status in ['closed', 'full'] %}disabled{% endif %}>
+                        <a class="book salon-book-button" href="/salon/{{ s.id }}" data-id="{{ s.id }}" data-name="{{ s.name }}" role="button"
+                            {% if s.status in ['closed', 'full'] %}aria-disabled="true"{% endif %}>
                             {% if s.status == 'closed' %}Closed{% elif s.status == 'full' %}Fully booked{% else %}Book Slot{% endif %}
-                        </button>
+                        </a>
                     </div>
                 </div>
             </article>
