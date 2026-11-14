@@ -1,8 +1,14 @@
 """Flask application: routes connect browser requests to Trimzee's feature modules."""
 import os
 import secrets
+import sys
 from datetime import timedelta
 from xml.etree import ElementTree
+
+# Ensure src/ is in sys.path so nested and sibling imports resolve in all runtimes
+_SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
 
 from flask import (Flask, Response, abort, g, jsonify, redirect, render_template, request,
                    session, url_for)
@@ -40,8 +46,10 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400
 app.config["DEBUG"] = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true")
 
 secret_key = os.environ.get("SECRET_KEY")
+is_vercel = bool(os.environ.get("VERCEL"))
+vercel_env = os.environ.get("VERCEL_ENV", "").strip().lower()
 is_production = (
-    bool(os.environ.get("VERCEL"))
+    (is_vercel and (vercel_env == "production" or not vercel_env))
     or os.environ.get("APP_ENV", "").strip().lower() == "production"
     or os.environ.get("FLASK_ENV", "").strip().lower() == "production"
 )
@@ -55,7 +63,7 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=30),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=is_production,
+    SESSION_COOKIE_SECURE=is_vercel or is_production,
     MAX_CONTENT_LENGTH=5 * 1024 * 1024 + 64 * 1024,
 )
 
